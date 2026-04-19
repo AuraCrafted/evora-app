@@ -6,10 +6,12 @@ import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { InstallBanner } from "@/components/InstallBanner";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
+import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
+import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
-import { Sparkles, Infinity as InfinityIcon } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Plus } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 
@@ -44,6 +46,7 @@ const Index = () => {
     recordDecision,
     upgrade,
   } = useSpins();
+  const { items: customSuggestions } = useCustomSuggestions();
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -52,6 +55,7 @@ const Index = () => {
   const [hasRerolled, setHasRerolled] = useState(false);
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
+  const [showCustomDialog, setShowCustomDialog] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -71,10 +75,11 @@ const Index = () => {
 
   const usageDots = useMemo(() => Array.from({ length: total }), [total]);
 
-  const filteredPool = useMemo(
-    () => (category === "any" ? suggestions : suggestions.filter((s) => s.category === category)),
-    [category],
-  );
+  const filteredPool = useMemo(() => {
+    if (category === "custom") return customSuggestions;
+    if (category === "any") return [...suggestions, ...customSuggestions];
+    return suggestions.filter((s) => s.category === category);
+  }, [category, customSuggestions]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
@@ -102,6 +107,10 @@ const Index = () => {
 
   const handleRoll = () => {
     sfx.tap();
+    if (filteredPool.length === 0) {
+      setShowCustomDialog(true);
+      return;
+    }
     if (!canSpin) {
       setShowUpgrade(true);
       return;
@@ -192,6 +201,14 @@ const Index = () => {
                     pick something kind.
                   </span>
                 </>
+              ) : category === "custom" ? (
+                <>
+                  Roll one of
+                  <br />
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
+                    your own nudges.
+                  </span>
+                </>
               ) : (
                 <>
                   Roll for a
@@ -203,7 +220,9 @@ const Index = () => {
               )}
             </h1>
             <p className="mt-3 text-muted-foreground text-[15px] max-w-sm mx-auto">
-              One small action. Two minutes or twenty. You decide if you do it.
+              {category === "custom"
+                ? `${customSuggestions.length} saved. Add more anytime.`
+                : "One small action. Two minutes or twenty. You decide if you do it."}
             </p>
           </div>
         )}
@@ -218,27 +237,63 @@ const Index = () => {
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
             <Dice rolling={rolling} face={face} />
-            <Button
-              onClick={handleRoll}
-              variant="hero"
-              size="xl"
-              disabled={rolling}
-              className="min-w-[220px]"
-            >
-              {rolling ? "Rolling…" : canSpin ? "Roll the dice" : "Get more rolls"}
-            </Button>
-            {!isPro && (
-              <p className="text-xs text-muted-foreground text-center max-w-xs">
-                {remaining > 0 ? (
-                  <>
-                    {remaining} free roll{remaining === 1 ? "" : "s"} left this week.
-                    <br />
-                    Resets in {formatTimeLeft(nextResetMs)}.
-                  </>
-                ) : (
-                  <>You've used all 3 free rolls. Upgrade for unlimited.</>
+            {category === "custom" && customSuggestions.length === 0 ? (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-muted-foreground text-center max-w-xs">
+                  You haven't saved any custom nudges yet.
+                </p>
+                <Button
+                  onClick={() => {
+                    sfx.tap();
+                    setShowCustomDialog(true);
+                  }}
+                  variant="hero"
+                  size="xl"
+                  className="min-w-[220px]"
+                >
+                  <Plus className="h-5 w-5" />
+                  Add your first
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  onClick={handleRoll}
+                  variant="hero"
+                  size="xl"
+                  disabled={rolling}
+                  className="min-w-[220px]"
+                >
+                  {rolling ? "Rolling…" : canSpin ? "Roll the dice" : "Get more rolls"}
+                </Button>
+                {category === "custom" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      sfx.tap();
+                      setShowCustomDialog(true);
+                    }}
+                    className="text-muted-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Manage your nudges
+                  </Button>
                 )}
-              </p>
+                {!isPro && (
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    {remaining > 0 ? (
+                      <>
+                        {remaining} free roll{remaining === 1 ? "" : "s"} left this week.
+                        <br />
+                        Resets in {formatTimeLeft(nextResetMs)}.
+                      </>
+                    ) : (
+                      <>You've used all 3 free rolls. Upgrade for unlimited.</>
+                    )}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
@@ -252,6 +307,7 @@ const Index = () => {
         onOpenChange={(v) => !v && setMilestone(null)}
         days={milestone ?? 0}
       />
+      <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
     </main>
   );
 };

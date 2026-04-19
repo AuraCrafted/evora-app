@@ -1,4 +1,4 @@
-export type Category = "any" | "outside" | "social" | "fitness" | "mind" | "tidy" | "create" | "care";
+export type Category = "any" | "outside" | "social" | "fitness" | "mind" | "tidy" | "create" | "care" | "custom";
 
 export interface Suggestion {
   id: string;
@@ -18,6 +18,7 @@ export const categoryLabels: Record<Category, string> = {
   tidy: "Tidy",
   create: "Create",
   care: "Self-care",
+  custom: "My nudges",
 };
 
 export const categoryEmoji: Record<Category, string> = {
@@ -29,6 +30,7 @@ export const categoryEmoji: Record<Category, string> = {
   tidy: "🧹",
   create: "🎨",
   care: "💛",
+  custom: "✨",
 };
 
 export const suggestions: Suggestion[] = [

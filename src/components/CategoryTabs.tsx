@@ -7,7 +7,7 @@ interface Props {
   onChange: (c: Category) => void;
 }
 
-const order: Category[] = ["any", "outside", "social", "fitness", "mind", "tidy", "create", "care"];
+const order: Category[] = ["any", "custom", "outside", "social", "fitness", "mind", "tidy", "create", "care"];
 
 export const CategoryTabs = ({ value, onChange }: Props) => {
   return (
