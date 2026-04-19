@@ -43,7 +43,7 @@ const HistoryPage = () => {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-3xl bg-card p-4 soft-shadow text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+            <div className="flex items-center justify-center gap-1 text-primary mb-1">
               <Flame className="h-5 w-5 fill-current" />
               <span className="font-display text-2xl font-semibold text-foreground">
                 {streak}
