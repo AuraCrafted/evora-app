@@ -120,6 +120,10 @@ export function useSpins() {
   const streak = useMemo(() => calcStreak(state.history), [state.history]);
   const completed = useMemo(() => state.history.filter((h) => h.accepted).length, [state.history]);
   const nextResetMs = state.weekStart + 7 * 24 * 60 * 60 * 1000 - Date.now();
+  const hasNudgedToday = useMemo(() => {
+    const today = startOfDay(Date.now());
+    return state.history.some((h) => h.accepted && startOfDay(h.ts) === today);
+  }, [state.history]);
 
   return {
     used: state.used,
@@ -131,6 +135,7 @@ export function useSpins() {
     streak,
     completed,
     nextResetMs,
+    hasNudgedToday,
     recordSpin,
     recordDecision,
     upgrade,

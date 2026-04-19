@@ -1,7 +1,8 @@
-import { useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dice } from "@/components/Dice";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,9 @@ import { useSpins } from "@/hooks/useSpins";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon } from "lucide-react";
 import { sfx } from "@/lib/feedback";
+import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
+
+const MILESTONES = [3, 7, 14, 30] as const;
 
 const ROLL_DURATION = 1100;
 
@@ -46,7 +50,23 @@ const Index = () => {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [hasRerolled, setHasRerolled] = useState(false);
   const [category, setCategory] = useState<Category>("any");
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
+
+  // Detect when streak crosses a milestone
+  useEffect(() => {
+    const prev = prevStreakRef.current;
+    if (streak > prev) {
+      const hit = MILESTONES.find((m) => prev < m && streak >= m);
+      if (hit) {
+        setMilestone(hit);
+        celebrateMilestone();
+        sfx.celebrate();
+      }
+    }
+    prevStreakRef.current = streak;
+  }, [streak]);
 
   const usageDots = useMemo(() => Array.from({ length: total }), [total]);
 
@@ -91,6 +111,7 @@ const Index = () => {
 
   const handleAccept = () => {
     sfx.accept();
+    celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
     setCurrent(null);
     setCurrentEntryId(null);
@@ -223,6 +244,11 @@ const Index = () => {
       <BottomNav streak={streak} />
 
       <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={handleUpgrade} />
+      <MilestoneDialog
+        open={milestone !== null}
+        onOpenChange={(v) => !v && setMilestone(null)}
+        days={milestone ?? 0}
+      />
     </main>
   );
 };

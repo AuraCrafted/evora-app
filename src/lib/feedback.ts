@@ -60,6 +60,9 @@ function tone({
   if (!ac) return;
   const start = ac.currentTime + delay;
   const end = start + duration;
+  const safeAttack = Math.min(attack, duration * 0.3);
+  const safeRelease = Math.min(release, duration * 0.5);
+  const sustainStart = Math.max(start + safeAttack, end - safeRelease);
 
   const osc = ac.createOscillator();
   const gain = ac.createGain();
@@ -69,8 +72,8 @@ function tone({
     osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), end);
   }
   gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(volume, start + attack);
-  gain.gain.setValueAtTime(volume, end - release);
+  gain.gain.linearRampToValueAtTime(volume, start + safeAttack);
+  gain.gain.setValueAtTime(volume, sustainStart);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
 
   osc.connect(gain).connect(ac.destination);
