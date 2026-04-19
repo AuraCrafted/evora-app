@@ -3,6 +3,7 @@ import { Dice } from "@/components/Dice";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
+import { InstallBanner } from "@/components/InstallBanner";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
