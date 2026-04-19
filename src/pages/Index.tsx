@@ -172,6 +172,8 @@ const Index = () => {
         </div>
       </header>
 
+      <InstallBanner />
+
       {/* Category tabs */}
       <div className="max-w-2xl mx-auto w-full">
         <CategoryTabs value={category} onChange={setCategory} />
