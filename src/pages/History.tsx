@@ -1,5 +1,6 @@
 import { useSpins } from "@/hooks/useSpins";
 import { BottomNav } from "@/components/BottomNav";
+import { ReminderSettings } from "@/components/ReminderSettings";
 import { Button } from "@/components/ui/button";
 import { Flame, Check, X, Clock, Trash2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,7 @@ function timeAgo(ts: number): string {
 }
 
 const HistoryPage = () => {
-  const { history, streak, completed, clearHistory } = useSpins();
+  const { history, streak, completed, hasNudgedToday, clearHistory } = useSpins();
   const navigate = useNavigate();
 
   const acceptanceRate =
@@ -93,6 +94,11 @@ const HistoryPage = () => {
             </div>
           </div>
         )}
+
+        {/* Daily reminder */}
+        <div className="mt-4">
+          <ReminderSettings streak={streak} hasNudgedToday={hasNudgedToday} />
+        </div>
       </section>
 
       {/* History list */}
