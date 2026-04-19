@@ -1,17 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Dice } from "@/components/Dice";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { CategoryTabs } from "@/components/CategoryTabs";
+import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
-import { suggestions, Suggestion } from "@/data/suggestions";
+import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon } from "lucide-react";
+import { sfx } from "@/lib/feedback";
 
 const ROLL_DURATION = 1100;
 
-function pickRandom<T>(arr: T[], excludeId?: string): T {
-  const pool = excludeId ? arr.filter((s: any) => s.id !== excludeId) : arr;
-  return pool[Math.floor(Math.random() * pool.length)];
+function pickRandom(pool: Suggestion[], excludeId?: string): Suggestion {
+  const filtered = excludeId && pool.length > 1 ? pool.filter((s) => s.id !== excludeId) : pool;
+  return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
 function formatTimeLeft(ms: number): string {
@@ -24,33 +27,60 @@ function formatTimeLeft(ms: number): string {
 }
 
 const Index = () => {
-  const { used, total, remaining, canSpin, isPro, nextResetMs, recordSpin, recordDecision, upgrade } = useSpins();
+  const {
+    used,
+    total,
+    remaining,
+    canSpin,
+    isPro,
+    streak,
+    nextResetMs,
+    recordSpin,
+    recordDecision,
+    upgrade,
+  } = useSpins();
   const [current, setCurrent] = useState<Suggestion | null>(null);
+  const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
   const [face, setFace] = useState(1);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [hasRerolled, setHasRerolled] = useState(false);
+  const [category, setCategory] = useState<Category>("any");
+  const tickRef = useRef<number | null>(null);
 
   const usageDots = useMemo(() => Array.from({ length: total }), [total]);
 
+  const filteredPool = useMemo(
+    () => (category === "any" ? suggestions : suggestions.filter((s) => s.category === category)),
+    [category],
+  );
+
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
-    // animate face changes during roll
-    const interval = setInterval(() => {
-      setFace(Math.floor(Math.random() * 6) + 1);
-    }, 120);
+    sfx.rollStart();
 
-    setTimeout(() => {
-      clearInterval(interval);
-      const next = pickRandom(suggestions, excludeId);
+    const interval = window.setInterval(() => {
+      setFace(Math.floor(Math.random() * 6) + 1);
+    }, 110);
+    tickRef.current = interval;
+
+    window.setTimeout(() => {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+      const next = pickRandom(filteredPool, excludeId);
       setFace(Math.floor(Math.random() * 6) + 1);
       setCurrent(next);
       setRolling(false);
-      recordSpin(next.id);
+      sfx.rollLand();
+      const entryId = recordSpin(next);
+      setCurrentEntryId(entryId);
     }, ROLL_DURATION);
   };
 
   const handleRoll = () => {
+    sfx.tap();
     if (!canSpin) {
       setShowUpgrade(true);
       return;
@@ -60,14 +90,17 @@ const Index = () => {
   };
 
   const handleAccept = () => {
-    if (current) recordDecision(current.id, true);
+    sfx.accept();
+    if (currentEntryId) recordDecision(currentEntryId, true);
     setCurrent(null);
+    setCurrentEntryId(null);
     setHasRerolled(false);
   };
 
   const handleReject = () => {
     if (!current) return;
-    recordDecision(current.id, false);
+    sfx.reject();
+    if (currentEntryId) recordDecision(currentEntryId, false);
     if (hasRerolled || !canSpin) {
       if (!canSpin) setShowUpgrade(true);
       return;
@@ -76,10 +109,14 @@ const Index = () => {
     triggerRoll(current.id);
   };
 
+  const handleUpgrade = () => {
+    sfx.celebrate();
+    upgrade();
+  };
+
   return (
     <main className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-2 flex items-center justify-between max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-3 flex items-center justify-between max-w-2xl mx-auto w-full">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
@@ -113,16 +150,33 @@ const Index = () => {
         </div>
       </header>
 
+      {/* Category tabs */}
+      <div className="max-w-2xl mx-auto w-full">
+        <CategoryTabs value={category} onChange={setCategory} />
+      </div>
+
       {/* Main content */}
-      <section className="flex-1 flex flex-col items-center justify-center px-5 py-6 max-w-2xl mx-auto w-full">
+      <section className="flex-1 flex flex-col items-center justify-center px-5 py-4 max-w-2xl mx-auto w-full">
         {!current && !rolling && (
-          <div className="text-center mb-8 animate-fade-in-up">
+          <div className="text-center mb-6 animate-fade-in-up">
             <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight tracking-tight text-foreground">
-              Stuck? Let the dice
-              <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
-                pick something kind.
-              </span>
+              {category === "any" ? (
+                <>
+                  Stuck? Let the dice
+                  <br />
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
+                    pick something kind.
+                  </span>
+                </>
+              ) : (
+                <>
+                  Roll for a
+                  <br />
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
+                    {categoryLabels[category].toLowerCase()} nudge.
+                  </span>
+                </>
+              )}
             </h1>
             <p className="mt-3 text-muted-foreground text-[15px] max-w-sm mx-auto">
               One small action. Two minutes or twenty. You decide if you do it.
@@ -138,7 +192,7 @@ const Index = () => {
             canReroll={!hasRerolled && canSpin}
           />
         ) : (
-          <div className="flex flex-col items-center gap-8 w-full">
+          <div className="flex flex-col items-center gap-7 w-full">
             <Dice rolling={rolling} face={face} />
             <Button
               onClick={handleRoll}
@@ -166,13 +220,9 @@ const Index = () => {
         )}
       </section>
 
-      <footer className="px-5 pb-6 pt-2 text-center max-w-2xl mx-auto w-full">
-        <p className="text-[11px] text-muted-foreground">
-          Be gentle with yourself. Tiny steps count.
-        </p>
-      </footer>
+      <BottomNav streak={streak} />
 
-      <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={upgrade} />
+      <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={handleUpgrade} />
     </main>
   );
 };
