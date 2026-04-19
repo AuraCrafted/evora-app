@@ -237,63 +237,48 @@ const Index = () => {
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
             <Dice rolling={rolling} face={face} />
-            {category === "custom" && customSuggestions.length === 0 ? (
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-sm text-muted-foreground text-center max-w-xs">
-                  You haven't saved any custom nudges yet.
-                </p>
+            <Button
+              onClick={handleRoll}
+              variant="hero"
+              size="xl"
+              disabled={rolling}
+              className="min-w-[220px]"
+            >
+              {rolling ? "Rolling…" : canSpin ? "Roll the dice" : "Get more rolls"}
+            </Button>
+            {category === "custom" && (
+              <div className="flex flex-col items-center gap-2">
+                {customSuggestions.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    No custom nudges yet — rolling will help you add your first.
+                  </p>
+                )}
                 <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     sfx.tap();
                     setShowCustomDialog(true);
                   }}
-                  variant="hero"
-                  size="xl"
-                  className="min-w-[220px]"
+                  className="text-muted-foreground"
                 >
-                  <Plus className="h-5 w-5" />
-                  Add your first
+                  <Plus className="h-4 w-4" />
+                  {customSuggestions.length === 0 ? "Add your first nudge" : "Manage your nudges"}
                 </Button>
               </div>
-            ) : (
-              <>
-                <Button
-                  onClick={handleRoll}
-                  variant="hero"
-                  size="xl"
-                  disabled={rolling}
-                  className="min-w-[220px]"
-                >
-                  {rolling ? "Rolling…" : canSpin ? "Roll the dice" : "Get more rolls"}
-                </Button>
-                {category === "custom" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      sfx.tap();
-                      setShowCustomDialog(true);
-                    }}
-                    className="text-muted-foreground"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Manage your nudges
-                  </Button>
+            )}
+            {!isPro && (
+              <p className="text-xs text-muted-foreground text-center max-w-xs">
+                {remaining > 0 ? (
+                  <>
+                    {remaining} free roll{remaining === 1 ? "" : "s"} left this week.
+                    <br />
+                    Resets in {formatTimeLeft(nextResetMs)}.
+                  </>
+                ) : (
+                  <>You've used all 3 free rolls. Upgrade for unlimited.</>
                 )}
-                {!isPro && (
-                  <p className="text-xs text-muted-foreground text-center max-w-xs">
-                    {remaining > 0 ? (
-                      <>
-                        {remaining} free roll{remaining === 1 ? "" : "s"} left this week.
-                        <br />
-                        Resets in {formatTimeLeft(nextResetMs)}.
-                      </>
-                    ) : (
-                      <>You've used all 3 free rolls. Upgrade for unlimited.</>
-                    )}
-                  </p>
-                )}
-              </>
+              </p>
             )}
           </div>
         )}
