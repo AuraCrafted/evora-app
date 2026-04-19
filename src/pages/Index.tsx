@@ -6,10 +6,12 @@ import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { InstallBanner } from "@/components/InstallBanner";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
+import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
+import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
-import { Sparkles, Infinity as InfinityIcon } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Plus } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 
@@ -44,6 +46,7 @@ const Index = () => {
     recordDecision,
     upgrade,
   } = useSpins();
+  const { items: customSuggestions } = useCustomSuggestions();
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -52,6 +55,7 @@ const Index = () => {
   const [hasRerolled, setHasRerolled] = useState(false);
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
+  const [showCustomDialog, setShowCustomDialog] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -71,10 +75,11 @@ const Index = () => {
 
   const usageDots = useMemo(() => Array.from({ length: total }), [total]);
 
-  const filteredPool = useMemo(
-    () => (category === "any" ? suggestions : suggestions.filter((s) => s.category === category)),
-    [category],
-  );
+  const filteredPool = useMemo(() => {
+    if (category === "custom") return customSuggestions;
+    if (category === "any") return [...suggestions, ...customSuggestions];
+    return suggestions.filter((s) => s.category === category);
+  }, [category, customSuggestions]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
