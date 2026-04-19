@@ -107,6 +107,10 @@ const Index = () => {
 
   const handleRoll = () => {
     sfx.tap();
+    if (filteredPool.length === 0) {
+      setShowCustomDialog(true);
+      return;
+    }
     if (!canSpin) {
       setShowUpgrade(true);
       return;
