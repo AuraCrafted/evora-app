@@ -120,6 +120,31 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: var(--gradient-warm);
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .dice-shadow {
+    box-shadow: var(--shadow-dice);
+  }
+  .soft-shadow {
+    box-shadow: var(--shadow-soft);
+  }
+  .glow-shadow {
+    box-shadow: var(--shadow-glow);
+  }
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  .gradient-sage {
+    background: var(--gradient-sage);
+  }
+  .gradient-dice {
+    background: var(--gradient-dice);
   }
 }
