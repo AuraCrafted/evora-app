@@ -297,6 +297,23 @@ const Index = () => {
 
       <div className="pb-24" />
 
+      {/* Floating coach launcher */}
+      <button
+        onClick={() => {
+          sfx.tap();
+          setShowCoach(true);
+        }}
+        aria-label={isPro ? "Open Nudge Coach chat" : "Preview Nudge Coach (Pro)"}
+        className="fixed bottom-24 right-5 z-40 h-14 w-14 rounded-full gradient-primary glow-shadow flex items-center justify-center text-primary-foreground transition-transform active:scale-95 hover:scale-105"
+      >
+        <MessageCircle className="h-6 w-6" />
+        {!isPro && (
+          <span className="absolute -top-1 -right-1 rounded-full bg-card text-foreground text-[9px] font-semibold px-1.5 py-0.5 soft-shadow">
+            Pro
+          </span>
+        )}
+      </button>
+
       <BottomNav streak={streak} />
 
       <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={handleUpgrade} />
@@ -306,6 +323,15 @@ const Index = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
+      <CoachChat
+        open={showCoach}
+        onOpenChange={setShowCoach}
+        isPro={isPro}
+        onUpgrade={() => {
+          setShowCoach(false);
+          setShowUpgrade(true);
+        }}
+      />
     </main>
   );
 };
