@@ -35,7 +35,7 @@ const plans: Plan[] = [
     features: [
       "Unlimited dice rolls",
       "Unlimited custom nudges",
-      "Milestone celebrations",
+      "💬 Chat with your Nudge Coach",
       "Cancel anytime",
     ],
   },
@@ -49,7 +49,7 @@ const plans: Plan[] = [
     highlight: true,
     features: [
       "Everything in Weekly",
-      "Priority new categories",
+      "💬 Unlimited Nudge Coach chats",
       "Reroll without limits",
       "Support a tiny indie app",
     ],
