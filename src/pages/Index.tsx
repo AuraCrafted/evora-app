@@ -8,11 +8,12 @@ import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { PlansSection } from "@/components/PlansSection";
+import { CoachChat } from "@/components/CoachChat";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
-import { Sparkles, Infinity as InfinityIcon, Plus } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Plus, MessageCircle } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 
@@ -57,6 +58,7 @@ const Index = () => {
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -295,6 +297,23 @@ const Index = () => {
 
       <div className="pb-24" />
 
+      {/* Floating coach launcher */}
+      <button
+        onClick={() => {
+          sfx.tap();
+          setShowCoach(true);
+        }}
+        aria-label={isPro ? "Open Nudge Coach chat" : "Preview Nudge Coach (Pro)"}
+        className="fixed bottom-24 right-5 z-40 h-14 w-14 rounded-full gradient-primary glow-shadow flex items-center justify-center text-primary-foreground transition-transform active:scale-95 hover:scale-105"
+      >
+        <MessageCircle className="h-6 w-6" />
+        {!isPro && (
+          <span className="absolute -top-1 -right-1 rounded-full bg-card text-foreground text-[9px] font-semibold px-1.5 py-0.5 soft-shadow">
+            Pro
+          </span>
+        )}
+      </button>
+
       <BottomNav streak={streak} />
 
       <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={handleUpgrade} />
@@ -304,6 +323,15 @@ const Index = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
+      <CoachChat
+        open={showCoach}
+        onOpenChange={setShowCoach}
+        isPro={isPro}
+        onUpgrade={() => {
+          setShowCoach(false);
+          setShowUpgrade(true);
+        }}
+      />
     </main>
   );
 };
