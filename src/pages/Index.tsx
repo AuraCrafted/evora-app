@@ -8,11 +8,12 @@ import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { PlansSection } from "@/components/PlansSection";
+import { CoachChat } from "@/components/CoachChat";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
-import { Sparkles, Infinity as InfinityIcon, Plus } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Plus, MessageCircle } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 
@@ -57,6 +58,7 @@ const Index = () => {
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
