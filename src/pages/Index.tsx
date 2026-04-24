@@ -7,6 +7,7 @@ import { InstallBanner } from "@/components/InstallBanner";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
+import { PlansSection } from "@/components/PlansSection";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
@@ -283,6 +284,16 @@ const Index = () => {
           </div>
         )}
       </section>
+
+      <PlansSection
+        isPro={isPro}
+        onChoosePlan={() => {
+          sfx.tap();
+          setShowUpgrade(true);
+        }}
+      />
+
+      <div className="pb-24" />
 
       <BottomNav streak={streak} />
 
