@@ -56,18 +56,18 @@ export function contextFilter(pool: Suggestion[], opts: FilterOptions = {}): Sug
   let result = pool;
 
   if (quickStart) {
-    result = result.filter((s) => s.minutes <= 5 && s.effort === "low");
+    result = result.filter((s) => (s.minutes ?? 99) <= 5 && s.effort === "low");
   }
 
   if (useTimeOfDay) {
     const tod = currentTimeOfDay(now);
-    const filtered = result.filter((s) => s.timeOfDay.includes(tod));
+    const filtered = result.filter((s) => Array.isArray(s.timeOfDay) && s.timeOfDay.includes(tod));
     if (filtered.length > 0) result = filtered;
   }
 
   if (energy) {
     const allowed = energyEffortAllowed[energy];
-    const filtered = result.filter((s) => allowed.includes(s.effort));
+    const filtered = result.filter((s) => s.effort && allowed.includes(s.effort));
     if (filtered.length > 0) result = filtered;
   }
 

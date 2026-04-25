@@ -31,20 +31,57 @@ export const customSuggestionSchema = z.object({
 
 export type CustomSuggestionInput = z.infer<typeof customSuggestionSchema>;
 
+function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion | null {
+  if (
+    !s ||
+    typeof s.id !== "string" ||
+    typeof s.title !== "string" ||
+    typeof s.emoji !== "string" ||
+    typeof s.duration !== "string"
+  ) {
+    return null;
+  }
+  const minutes =
+    typeof s.minutes === "number" && Number.isFinite(s.minutes)
+      ? s.minutes
+      : parseInt(String(s.duration), 10) || 5;
+  const effort: Suggestion["effort"] =
+    s.effort === "low" || s.effort === "medium" || s.effort === "high"
+      ? s.effort
+      : minutes <= 5
+        ? "low"
+        : minutes <= 15
+          ? "medium"
+          : "high";
+  const timeOfDay: Suggestion["timeOfDay"] =
+    Array.isArray(s.timeOfDay) && s.timeOfDay.length > 0
+      ? (s.timeOfDay as Suggestion["timeOfDay"])
+      : ["morning", "midday", "evening", "night"];
+  const tags: Suggestion["tags"] =
+    Array.isArray(s.tags) && s.tags.length > 0 ? (s.tags as Suggestion["tags"]) : ["quick"];
+  return {
+    id: s.id,
+    emoji: s.emoji,
+    title: s.title,
+    description: typeof s.description === "string" ? s.description : "Your own nudge.",
+    duration: s.duration,
+    minutes,
+    effort,
+    timeOfDay,
+    tags,
+    category: "custom",
+  };
+}
+
 function load(): Suggestion[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (s): s is Suggestion =>
-        s &&
-        typeof s.id === "string" &&
-        typeof s.title === "string" &&
-        typeof s.emoji === "string" &&
-        typeof s.duration === "string",
-    );
+    return parsed
+      .map((s) => migrate(s as Partial<Suggestion> & Record<string, unknown>))
+      .filter((s): s is Suggestion => s !== null);
   } catch {
     return [];
   }
