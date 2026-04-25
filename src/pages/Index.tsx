@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Dice } from "@/components/Dice";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
-import { InstallBanner } from "@/components/InstallBanner";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
-import { PlansSection } from "@/components/PlansSection";
-import { CoachChat } from "@/components/CoachChat";
+import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
+import { useEnergy } from "@/hooks/useEnergy";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
-import { Sparkles, Infinity as InfinityIcon, Plus, MessageCircle } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
+import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 
 const MILESTONES = [3, 7, 14, 30] as const;
-
 const ROLL_DURATION = 1100;
 
 function pickRandom(pool: Suggestion[], excludeId?: string): Suggestion {
@@ -28,14 +28,13 @@ function pickRandom(pool: Suggestion[], excludeId?: string): Suggestion {
 
 function formatTimeLeft(ms: number): string {
   if (ms <= 0) return "soon";
-  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  if (days > 0) return `${days}d ${hours}h`;
+  const hours = Math.floor(ms / (60 * 60 * 1000));
   const mins = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-  return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
 }
 
-const Index = () => {
+const Roll = () => {
   const {
     used,
     total,
@@ -48,6 +47,7 @@ const Index = () => {
     recordDecision,
     upgrade,
   } = useSpins();
+  const { energy } = useEnergy();
   const { items: customSuggestions } = useCustomSuggestions();
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
@@ -58,11 +58,10 @@ const Index = () => {
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
-  const [showCoach, setShowCoach] = useState(false);
+  const [quickStart, setQuickStart] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
-  // Detect when streak crosses a milestone
   useEffect(() => {
     const prev = prevStreakRef.current;
     if (streak > prev) {
@@ -76,18 +75,25 @@ const Index = () => {
     prevStreakRef.current = streak;
   }, [streak]);
 
-  const usageDots = useMemo(() => Array.from({ length: total }), [total]);
+  const tod = currentTimeOfDay();
 
-  const filteredPool = useMemo(() => {
+  const basePool = useMemo(() => {
     if (category === "custom") return customSuggestions;
     if (category === "any") return [...suggestions, ...customSuggestions];
     return suggestions.filter((s) => s.category === category);
   }, [category, customSuggestions]);
 
+  const filteredPool = useMemo(() => {
+    return contextFilter(basePool, {
+      useTimeOfDay: isPro,
+      energy: isPro ? energy : undefined,
+      quickStart,
+    });
+  }, [basePool, isPro, energy, quickStart]);
+
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
     sfx.rollStart();
-
     const interval = window.setInterval(() => {
       setFace(Math.floor(Math.random() * 6) + 1);
     }, 110);
@@ -148,15 +154,20 @@ const Index = () => {
     upgrade();
   };
 
+  const usageDots = useMemo(() => Array.from({ length: Math.min(total, 10) }), [total]);
+
   return (
     <main className="min-h-screen flex flex-col">
       <header className="px-5 pt-6 pb-3 flex items-center justify-between max-w-2xl mx-auto w-full">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-display text-xl font-semibold">Nudge</span>
-        </div>
+        <Link
+          to="/"
+          onClick={() => sfx.tap()}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Back to home"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-display text-sm font-medium">Home</span>
+        </Link>
 
         <div className="flex items-center gap-2">
           {isPro ? (
@@ -166,66 +177,72 @@ const Index = () => {
           ) : (
             <div
               className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 soft-shadow"
-              aria-label={`${remaining} of ${total} rolls left this week`}
+              aria-label={`${remaining} of ${total} rolls left today`}
             >
-              {usageDots.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    i < (total - used) ? "gradient-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-              <span className="text-[11px] font-medium text-muted-foreground ml-1">
-                {remaining}/{total}
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {remaining}/{total} today
               </span>
             </div>
           )}
         </div>
       </header>
 
-      <InstallBanner />
+      {/* Context badge */}
+      {isPro && !current && !rolling && (
+        <div className="max-w-2xl mx-auto w-full px-5 mb-2">
+          <div className="text-center text-[11px] text-muted-foreground">
+            Filtering for <span className="font-medium text-foreground">{timeOfDayLabel[tod].toLowerCase()}</span>
+            {" · "}
+            <Link to="/" className="underline-offset-2 hover:underline">change energy</Link>
+          </div>
+        </div>
+      )}
 
       {/* Category tabs */}
       <div className="max-w-2xl mx-auto w-full">
         <CategoryTabs value={category} onChange={setCategory} />
       </div>
 
-      {/* Main content */}
+      {/* Quick start toggle (Weekly+) */}
+      {!current && !rolling && (
+        <div className="max-w-2xl mx-auto w-full px-5 mt-3">
+          <button
+            onClick={() => {
+              if (!isPro) {
+                setShowUpgrade(true);
+                return;
+              }
+              sfx.tap();
+              setQuickStart((q) => !q);
+            }}
+            className={`w-full rounded-2xl px-4 py-2.5 text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+              quickStart && isPro
+                ? "gradient-primary text-primary-foreground soft-shadow"
+                : "bg-card text-muted-foreground border border-border hover:text-foreground"
+            }`}
+          >
+            <Zap className="h-4 w-4" />
+            Quick Start Mode
+            {quickStart && isPro && <span className="text-[10px] opacity-80">· low effort only</span>}
+            {!isPro && <span className="text-[10px] opacity-70">· Weekly+</span>}
+          </button>
+        </div>
+      )}
+
       <section className="flex-1 flex flex-col items-center justify-center px-5 py-4 max-w-2xl mx-auto w-full">
         {!current && !rolling && (
           <div className="text-center mb-6 animate-fade-in-up">
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight tracking-tight text-foreground">
-              {category === "any" ? (
-                <>
-                  Stuck? Let the dice
-                  <br />
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
-                    pick something kind.
-                  </span>
-                </>
-              ) : category === "custom" ? (
-                <>
-                  Roll one of
-                  <br />
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
-                    your own nudges.
-                  </span>
-                </>
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-tight tracking-tight text-foreground">
+              {category === "custom" ? (
+                <>Roll one of <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">your own.</span></>
               ) : (
-                <>
-                  Roll for a
-                  <br />
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">
-                    {categoryLabels[category].toLowerCase()} nudge.
-                  </span>
-                </>
+                <>Try this <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(14_80%_55%)] to-[hsl(22_90%_65%)]">right now.</span></>
               )}
             </h1>
-            <p className="mt-3 text-muted-foreground text-[15px] max-w-sm mx-auto">
+            <p className="mt-3 text-muted-foreground text-[14px] max-w-sm mx-auto">
               {category === "custom"
-                ? `${customSuggestions.length} saved. Add more anytime.`
-                : "One small action. Two minutes or twenty. You decide if you do it."}
+                ? `${customSuggestions.length} saved.`
+                : "Small action. Two minutes or twenty. Your call."}
             </p>
           </div>
         )}
@@ -247,7 +264,7 @@ const Index = () => {
               disabled={rolling}
               className="min-w-[220px]"
             >
-              {rolling ? "Rolling…" : canSpin ? "Roll the dice" : "Get more rolls"}
+              {rolling ? "Rolling…" : canSpin ? "Roll" : "Out of rolls"}
             </Button>
             {category === "custom" && (
               <div className="flex flex-col items-center gap-2">
@@ -274,12 +291,12 @@ const Index = () => {
               <p className="text-xs text-muted-foreground text-center max-w-xs">
                 {remaining > 0 ? (
                   <>
-                    {remaining} free roll{remaining === 1 ? "" : "s"} left this week.
+                    {remaining} roll{remaining === 1 ? "" : "s"} left today.
                     <br />
                     Resets in {formatTimeLeft(nextResetMs)}.
                   </>
                 ) : (
-                  <>You've used all 3 free rolls. Upgrade for unlimited.</>
+                  <>You've used all 10 rolls today. Upgrade for unlimited.</>
                 )}
               </p>
             )}
@@ -287,33 +304,7 @@ const Index = () => {
         )}
       </section>
 
-      <PlansSection
-        isPro={isPro}
-        onChoosePlan={() => {
-          sfx.tap();
-          setShowUpgrade(true);
-        }}
-      />
-
       <div className="pb-24" />
-
-      {/* Floating coach launcher */}
-      <button
-        onClick={() => {
-          sfx.tap();
-          setShowCoach(true);
-        }}
-        aria-label={isPro ? "Open Nudge Coach chat" : "Preview Nudge Coach (Pro)"}
-        className="fixed bottom-24 right-5 z-40 h-14 w-14 rounded-full gradient-primary glow-shadow flex items-center justify-center text-primary-foreground transition-transform active:scale-95 hover:scale-105"
-      >
-        <MessageCircle className="h-6 w-6" />
-        {!isPro && (
-          <span className="absolute -top-1 -right-1 rounded-full bg-card text-foreground text-[9px] font-semibold px-1.5 py-0.5 soft-shadow">
-            Pro
-          </span>
-        )}
-      </button>
-
       <BottomNav streak={streak} />
 
       <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} onUpgrade={handleUpgrade} />
@@ -323,17 +314,8 @@ const Index = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
-      <CoachChat
-        open={showCoach}
-        onOpenChange={setShowCoach}
-        isPro={isPro}
-        onUpgrade={() => {
-          setShowCoach(false);
-          setShowUpgrade(true);
-        }}
-      />
     </main>
   );
 };
 
-export default Index;
+export default Roll;
