@@ -69,12 +69,17 @@ export function useCustomSuggestions() {
         return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
       }
       const id = `cu-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const minutes = parseInt(parsed.data.duration, 10) || 5;
       const next: Suggestion = {
         id,
         emoji: parsed.data.emoji,
         title: parsed.data.title,
         description: parsed.data.description?.trim() || "Your own nudge.",
         duration: parsed.data.duration,
+        minutes,
+        effort: minutes <= 5 ? "low" : minutes <= 15 ? "medium" : "high",
+        timeOfDay: ["morning", "midday", "evening", "night"],
+        tags: ["quick"],
         category: "custom",
       };
       setItems((prev) => [next, ...prev]);
