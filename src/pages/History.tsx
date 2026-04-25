@@ -129,7 +129,7 @@ const HistoryPage = () => {
               variant="hero"
               onClick={() => {
                 sfx.tap();
-                navigate("/");
+                navigate("/roll");
               }}
             >
               Roll your first dice
