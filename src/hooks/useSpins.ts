@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { Suggestion } from "@/data/suggestions";
 
-const STORAGE_KEY = "nudge.spins.v2";
-const FREE_SPINS_PER_WEEK = 3;
+const STORAGE_KEY = "nudge.spins.v3";
+const FREE_ROLLS_PER_DAY = 10;
 const PRO_KEY = "nudge.pro.v1";
 
 export interface HistoryEntry {
@@ -16,21 +16,12 @@ export interface HistoryEntry {
 }
 
 interface SpinState {
-  weekStart: number;
+  dayStart: number;
   used: number;
   history: HistoryEntry[];
 }
 
-function startOfWeek(date = new Date()): number {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
-
-function startOfDay(ts: number): number {
+function startOfDay(ts: number = Date.now()): number {
   const d = new Date(ts);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -41,24 +32,22 @@ function load(): SpinState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) throw new Error("empty");
     const parsed = JSON.parse(raw) as SpinState;
-    const currentWeek = startOfWeek();
-    if (parsed.weekStart !== currentWeek) {
-      return { weekStart: currentWeek, used: 0, history: parsed.history ?? [] };
+    const today = startOfDay();
+    if (parsed.dayStart !== today) {
+      return { dayStart: today, used: 0, history: parsed.history ?? [] };
     }
     return parsed;
   } catch {
-    return { weekStart: startOfWeek(), used: 0, history: [] };
+    return { dayStart: startOfDay(), used: 0, history: [] };
   }
 }
 
 function calcStreak(history: HistoryEntry[]): number {
-  // Streak = consecutive days (including today or yesterday) with at least one accepted nudge
   const acceptedDays = new Set(
     history.filter((h) => h.accepted).map((h) => startOfDay(h.ts)),
   );
   if (acceptedDays.size === 0) return 0;
-
-  const today = startOfDay(Date.now());
+  const today = startOfDay();
   const dayMs = 24 * 60 * 60 * 1000;
   let streak = 0;
   let cursor = acceptedDays.has(today) ? today : today - dayMs;
@@ -80,7 +69,7 @@ export function useSpins() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const remaining = isPro ? Infinity : Math.max(0, FREE_SPINS_PER_WEEK - state.used);
+  const remaining = isPro ? Infinity : Math.max(0, FREE_ROLLS_PER_DAY - state.used);
   const canSpin = isPro || remaining > 0;
 
   const recordSpin = useCallback((suggestion: Suggestion) => {
@@ -96,7 +85,7 @@ export function useSpins() {
     setState((s) => ({
       ...s,
       used: s.used + 1,
-      history: [entry, ...s.history].slice(0, 100),
+      history: [entry, ...s.history].slice(0, 200),
     }));
     return entry.id;
   }, []);
@@ -119,15 +108,15 @@ export function useSpins() {
 
   const streak = useMemo(() => calcStreak(state.history), [state.history]);
   const completed = useMemo(() => state.history.filter((h) => h.accepted).length, [state.history]);
-  const nextResetMs = state.weekStart + 7 * 24 * 60 * 60 * 1000 - Date.now();
+  const nextResetMs = state.dayStart + 24 * 60 * 60 * 1000 - Date.now();
   const hasNudgedToday = useMemo(() => {
-    const today = startOfDay(Date.now());
+    const today = startOfDay();
     return state.history.some((h) => h.accepted && startOfDay(h.ts) === today);
   }, [state.history]);
 
   return {
     used: state.used,
-    total: FREE_SPINS_PER_WEEK,
+    total: FREE_ROLLS_PER_DAY,
     remaining,
     canSpin,
     isPro,
