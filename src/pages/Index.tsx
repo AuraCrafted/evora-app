@@ -200,7 +200,12 @@ const Roll = () => {
 
       {/* Category tabs */}
       <div className="max-w-2xl mx-auto w-full">
-        <CategoryTabs value={category} onChange={setCategory} />
+        <CategoryTabs
+          value={category}
+          onChange={setCategory}
+          lockedCategories={isPro ? [] : ["custom"]}
+          onLockedClick={() => setShowUpgrade(true)}
+        />
       </div>
 
       {/* Quick start toggle (Weekly+) */}
