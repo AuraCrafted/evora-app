@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Dices, Flame, Home, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Dices, Flame, Home, MessageCircle, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { isMuted, setMuted, sfx } from "@/lib/feedback";
@@ -20,6 +20,7 @@ const items: NavItem[] = [
   { to: "/roll", label: "Roll", icon: Dices },
   { to: "/history", label: "Streak", icon: Flame },
   { to: "/plans", label: "Plans", icon: Sparkles },
+  { to: "/feedback", label: "Ideas", icon: MessageCircle },
 ];
 
 export const BottomNav = ({ streak }: Props) => {
