@@ -53,7 +53,7 @@ export function useFeedback() {
     setItems(load());
   }, []);
 
-  const add = (input: FeedbackInput): { ok: true } | { ok: false; error: string } => {
+  const add = (input: FeedbackInput): { ok: boolean; error?: string } => {
     if (items.length >= MAX_ITEMS) {
       return { ok: false, error: "Feedback log is full. Clear some entries first." };
     }
