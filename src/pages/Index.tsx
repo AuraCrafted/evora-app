@@ -113,6 +113,12 @@ const Roll = () => {
       sfx.rollLand();
       const entryId = recordSpin(next);
       setCurrentEntryId(entryId);
+      if (!isPro) {
+        const spinsAfter = used + 1;
+        if (spinsAfter > 0 && spinsAfter % 3 === 0) {
+          window.setTimeout(() => setShowAd(true), 600);
+        }
+      }
     }, ROLL_DURATION);
   };
 
