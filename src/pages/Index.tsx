@@ -7,6 +7,7 @@ import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
+import { AdDialog } from "@/components/AdDialog";
 import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
@@ -58,6 +59,7 @@ const Roll = () => {
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [showAd, setShowAd] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
@@ -111,6 +113,12 @@ const Roll = () => {
       sfx.rollLand();
       const entryId = recordSpin(next);
       setCurrentEntryId(entryId);
+      if (!isPro) {
+        const spinsAfter = used + 1;
+        if (spinsAfter > 0 && spinsAfter % 3 === 0) {
+          window.setTimeout(() => setShowAd(true), 600);
+        }
+      }
     }, ROLL_DURATION);
   };
 
@@ -319,6 +327,7 @@ const Roll = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
+      <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
     </main>
   );
 };
