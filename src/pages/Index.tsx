@@ -7,6 +7,7 @@ import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
+import { AdDialog } from "@/components/AdDialog";
 import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
