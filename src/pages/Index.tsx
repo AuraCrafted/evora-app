@@ -59,6 +59,7 @@ const Roll = () => {
   const [category, setCategory] = useState<Category>("any");
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [showAd, setShowAd] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
