@@ -327,6 +327,7 @@ const Roll = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
+      <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
     </main>
   );
 };
