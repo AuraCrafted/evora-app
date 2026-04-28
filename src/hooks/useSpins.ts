@@ -78,7 +78,8 @@ export function useSpins() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const remaining = isPro ? Infinity : Math.max(0, FREE_ROLLS_PER_DAY - state.used);
+  const baseRemaining = Math.max(0, FREE_ROLLS_PER_DAY - state.used);
+  const remaining = isPro ? Infinity : baseRemaining + state.bonus;
   const canSpin = isPro || remaining > 0;
 
   const recordSpin = useCallback((suggestion: Suggestion) => {
