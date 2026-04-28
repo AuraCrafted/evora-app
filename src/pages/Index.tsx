@@ -174,7 +174,7 @@ const Roll = () => {
     if (!current) return;
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
-    if (hasRerolled || !canSpin) {
+    if ((hasRerolled && !isPro) || !canSpin) {
       if (!canSpin) {
         if (!isPro) {
           setAutoRollAfterReward(false);
@@ -297,7 +297,7 @@ const Roll = () => {
             suggestion={current}
             onAccept={handleAccept}
             onReject={handleReject}
-            canReroll={!hasRerolled && canSpin}
+            canReroll={(isPro || !hasRerolled) && canSpin}
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
