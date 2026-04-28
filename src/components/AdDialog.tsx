@@ -179,6 +179,95 @@ export function AdDialog({
       ? "Close"
       : `Continue in ${seconds}s`;
 
+  // Rewarded playback: promote Pro benefits persuasively.
+  if (mode === "rewarded") {
+    const perks = [
+      { icon: InfinityIcon, title: "Unlimited rolls", desc: "Never hit a daily cap again." },
+      { icon: Wand2, title: "Custom nudges", desc: "Build your own personal task library." },
+      { icon: Clock, title: "Smart timing", desc: "Nudges tuned to your time & energy." },
+      { icon: ShieldOff, title: "Zero ads", desc: "Clean, distraction-free momentum." },
+    ];
+
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={(v) => (!v && canClose ? onOpenChange(false) : v && onOpenChange(true))}
+      >
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden [&>button]:hidden">
+          <div className="relative gradient-primary px-6 pt-8 pb-6 text-center text-primary-foreground">
+            <div className="absolute top-3 right-3 text-[11px] font-medium opacity-80 uppercase tracking-wide">
+              Ad
+            </div>
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm mb-3">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <DialogHeader className="space-y-1.5">
+              <DialogTitle className="font-display text-xl font-semibold text-primary-foreground">
+                Skip the wait. Go Pro.
+              </DialogTitle>
+              <DialogDescription className="text-primary-foreground/90 text-sm">
+                One roll isn't enough when momentum is building. Here's everything Pro unlocks — instantly.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="px-6 py-5 space-y-4">
+            <ul className="space-y-2.5">
+              {perks.map(({ icon: Icon, title, desc }) => (
+                <li key={title} className="flex items-start gap-3">
+                  <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      {title}
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="text-xs text-muted-foreground leading-snug">{desc}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {onUpgrade && (
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  sfx.tap();
+                  onUpgrade();
+                  onOpenChange(false);
+                }}
+              >
+                Unlock Pro — skip the ad
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="lg"
+              className="w-full"
+              disabled={!canClose}
+              onClick={() => {
+                sfx.tap();
+                onOpenChange(false);
+              }}
+            >
+              {canClose ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="h-4 w-4" /> Claim +1 roll
+                </span>
+              ) : (
+                <>Reward in {seconds}s</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ------- Interstitial playback -------
   return (
     <Dialog
       open={open}
@@ -194,18 +283,16 @@ export function AdDialog({
           </div>
           <DialogHeader className="space-y-2">
             <DialogTitle className="font-display text-xl font-semibold text-primary-foreground">
-              {mode === "rewarded" ? "Earning your bonus roll…" : "Enjoying Nudge?"}
+              Enjoying Nudge?
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/90 text-sm">
-              {mode === "rewarded"
-                ? "Keep this open until the timer ends to claim your extra roll."
-                : "Go Pro to remove ads, unlock unlimited rolls, custom nudges, and smart filters."}
+              Go Pro to remove ads, unlock unlimited rolls, custom nudges, and smart filters.
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <div className="px-6 py-5 space-y-3">
-          {onUpgrade && mode === "interstitial" && (
+          {onUpgrade && (
             <Button
               variant="hero"
               size="lg"
@@ -231,10 +318,10 @@ export function AdDialog({
           >
             {canClose ? (
               <span className="inline-flex items-center gap-1.5">
-                <X className="h-4 w-4" /> {mode === "rewarded" ? "Close" : "Close"}
+                <X className="h-4 w-4" /> Close
               </span>
             ) : (
-              <>{label}</>
+              <>Continue in {seconds}s</>
             )}
           </Button>
         </div>
