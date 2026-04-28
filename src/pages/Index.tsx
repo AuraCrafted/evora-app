@@ -341,7 +341,7 @@ const Roll = () => {
                     Resets in {formatTimeLeft(nextResetMs)}.
                   </>
                 ) : (
-                  <>You've used all 10 rolls today. Watch a short ad for +1 roll, or upgrade for unlimited.</>
+                  <>You've used all {total} rolls today. Watch a short ad for +1 roll, or upgrade for unlimited.</>
                 )}
               </p>
             )}
