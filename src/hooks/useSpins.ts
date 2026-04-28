@@ -43,11 +43,11 @@ function load(): SpinState {
     const parsed = JSON.parse(raw) as SpinState;
     const today = startOfDay();
     if (parsed.dayStart !== today) {
-      return { dayStart: today, used: 0, history: parsed.history ?? [] };
+      return { dayStart: today, used: 0, bonus: 0, history: parsed.history ?? [] };
     }
-    return parsed;
+    return { bonus: 0, ...parsed };
   } catch {
-    return { dayStart: startOfDay(), used: 0, history: [] };
+    return { dayStart: startOfDay(), used: 0, bonus: 0, history: [] };
   }
 }
 
