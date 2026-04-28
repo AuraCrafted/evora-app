@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X, Gift, PlayCircle } from "lucide-react";
+import { Sparkles, X, Gift, PlayCircle, Infinity as InfinityIcon, Wand2, Clock, ShieldOff, Check } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 
 export type AdMode = "interstitial" | "rewarded";
