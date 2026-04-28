@@ -360,6 +360,13 @@ const Roll = () => {
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
       <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
+      <AdDialog
+        mode="rewarded"
+        open={showRewardedAd}
+        onOpenChange={setShowRewardedAd}
+        onUpgrade={handleUpgrade}
+        onReward={handleRewardEarned}
+      />
     </main>
   );
 };
