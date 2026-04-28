@@ -46,6 +46,7 @@ const Roll = () => {
     nextResetMs,
     recordSpin,
     recordDecision,
+    grantBonusSpin,
     upgrade,
   } = useSpins();
   const { energy } = useEnergy();
@@ -60,6 +61,8 @@ const Roll = () => {
   const [milestone, setMilestone] = useState<number | null>(null);
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [showAd, setShowAd] = useState(false);
+  const [showRewardedAd, setShowRewardedAd] = useState(false);
+  const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
@@ -129,12 +132,34 @@ const Roll = () => {
       return;
     }
     if (!canSpin) {
-      setShowUpgrade(true);
+      // Free user out of rolls → offer rewarded ad (with upgrade as alt).
+      if (!isPro) {
+        setAutoRollAfterReward(true);
+        setShowRewardedAd(true);
+      } else {
+        setShowUpgrade(true);
+      }
       return;
     }
     setHasRerolled(false);
     triggerRoll();
   };
+
+  const handleRewardEarned = () => {
+    grantBonusSpin();
+  };
+
+  // After a bonus roll is granted and the rewarded dialog closes, auto-roll.
+  useEffect(() => {
+    if (showRewardedAd) return;
+    if (!autoRollAfterReward) return;
+    setAutoRollAfterReward(false);
+    if (canSpin && filteredPool.length > 0) {
+      setHasRerolled(false);
+      triggerRoll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRewardedAd]);
 
   const handleAccept = () => {
     sfx.accept();
@@ -150,7 +175,14 @@ const Roll = () => {
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
     if (hasRerolled || !canSpin) {
-      if (!canSpin) setShowUpgrade(true);
+      if (!canSpin) {
+        if (!isPro) {
+          setAutoRollAfterReward(false);
+          setShowRewardedAd(true);
+        } else {
+          setShowUpgrade(true);
+        }
+      }
       return;
     }
     setHasRerolled(true);
@@ -277,7 +309,7 @@ const Roll = () => {
               disabled={rolling}
               className="min-w-[220px]"
             >
-              {rolling ? "Rolling…" : canSpin ? "Roll" : "Out of rolls"}
+              {rolling ? "Rolling…" : canSpin ? "Roll" : "Watch ad for +1 roll"}
             </Button>
             {category === "custom" && (
               <div className="flex flex-col items-center gap-2">
@@ -309,7 +341,7 @@ const Roll = () => {
                     Resets in {formatTimeLeft(nextResetMs)}.
                   </>
                 ) : (
-                  <>You've used all 10 rolls today. Upgrade for unlimited.</>
+                  <>You've used all 10 rolls today. Watch a short ad for +1 roll, or upgrade for unlimited.</>
                 )}
               </p>
             )}
@@ -328,6 +360,13 @@ const Roll = () => {
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
       <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
+      <AdDialog
+        mode="rewarded"
+        open={showRewardedAd}
+        onOpenChange={setShowRewardedAd}
+        onUpgrade={handleUpgrade}
+        onReward={handleRewardEarned}
+      />
     </main>
   );
 };

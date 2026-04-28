@@ -26,6 +26,7 @@ export interface HistoryEntry {
 interface SpinState {
   dayStart: number;
   used: number;
+  bonus: number;
   history: HistoryEntry[];
 }
 
@@ -42,11 +43,11 @@ function load(): SpinState {
     const parsed = JSON.parse(raw) as SpinState;
     const today = startOfDay();
     if (parsed.dayStart !== today) {
-      return { dayStart: today, used: 0, history: parsed.history ?? [] };
+      return { dayStart: today, used: 0, bonus: 0, history: parsed.history ?? [] };
     }
-    return parsed;
+    return { bonus: 0, ...parsed };
   } catch {
-    return { dayStart: startOfDay(), used: 0, history: [] };
+    return { dayStart: startOfDay(), used: 0, bonus: 0, history: [] };
   }
 }
 
@@ -77,7 +78,8 @@ export function useSpins() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const remaining = isPro ? Infinity : Math.max(0, FREE_ROLLS_PER_DAY - state.used);
+  const baseRemaining = Math.max(0, FREE_ROLLS_PER_DAY - state.used);
+  const remaining = isPro ? Infinity : baseRemaining + state.bonus;
   const canSpin = isPro || remaining > 0;
 
   const recordSpin = useCallback((suggestion: Suggestion) => {
@@ -90,12 +92,18 @@ export function useSpins() {
       ts: Date.now(),
       accepted: null,
     };
-    setState((s) => ({
-      ...s,
-      used: s.used + 1,
-      history: [entry, ...s.history].slice(0, 200),
-    }));
+    setState((s) => {
+      // Consume bonus spins before the daily quota.
+      if (s.bonus > 0) {
+        return { ...s, bonus: s.bonus - 1, history: [entry, ...s.history].slice(0, 200) };
+      }
+      return { ...s, used: s.used + 1, history: [entry, ...s.history].slice(0, 200) };
+    });
     return entry.id;
+  }, []);
+
+  const grantBonusSpin = useCallback(() => {
+    setState((s) => ({ ...s, bonus: s.bonus + 1 }));
   }, []);
 
   const recordDecision = useCallback((entryId: string, accepted: boolean) => {
@@ -126,6 +134,7 @@ export function useSpins() {
     used: state.used,
     total: FREE_ROLLS_PER_DAY,
     remaining,
+    bonus: state.bonus,
     canSpin,
     isPro,
     history: state.history,
@@ -135,6 +144,7 @@ export function useSpins() {
     hasNudgedToday,
     recordSpin,
     recordDecision,
+    grantBonusSpin,
     upgrade,
     clearHistory,
   };
