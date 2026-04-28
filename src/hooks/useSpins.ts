@@ -134,6 +134,7 @@ export function useSpins() {
     used: state.used,
     total: FREE_ROLLS_PER_DAY,
     remaining,
+    bonus: state.bonus,
     canSpin,
     isPro,
     history: state.history,
@@ -143,6 +144,7 @@ export function useSpins() {
     hasNudgedToday,
     recordSpin,
     recordDecision,
+    grantBonusSpin,
     upgrade,
     clearHistory,
   };
