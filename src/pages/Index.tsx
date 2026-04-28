@@ -132,12 +132,34 @@ const Roll = () => {
       return;
     }
     if (!canSpin) {
-      setShowUpgrade(true);
+      // Free user out of rolls → offer rewarded ad (with upgrade as alt).
+      if (!isPro) {
+        setAutoRollAfterReward(true);
+        setShowRewardedAd(true);
+      } else {
+        setShowUpgrade(true);
+      }
       return;
     }
     setHasRerolled(false);
     triggerRoll();
   };
+
+  const handleRewardEarned = () => {
+    grantBonusSpin();
+  };
+
+  // After a bonus roll is granted and the rewarded dialog closes, auto-roll.
+  useEffect(() => {
+    if (showRewardedAd) return;
+    if (!autoRollAfterReward) return;
+    setAutoRollAfterReward(false);
+    if (canSpin && filteredPool.length > 0) {
+      setHasRerolled(false);
+      triggerRoll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRewardedAd]);
 
   const handleAccept = () => {
     sfx.accept();
