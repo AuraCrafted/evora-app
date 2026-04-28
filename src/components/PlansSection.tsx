@@ -50,7 +50,7 @@ const plans: Plan[] = [
     features: [
       "Everything in Weekly",
       "💬 Unlimited Nudge Coach chats",
-      "Reroll without limits",
+      "Unlimited skips & rerolls",
       "Support a tiny indie app",
     ],
   },
