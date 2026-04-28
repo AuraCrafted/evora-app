@@ -309,7 +309,7 @@ const Roll = () => {
               disabled={rolling}
               className="min-w-[220px]"
             >
-              {rolling ? "Rolling…" : canSpin ? "Roll" : "Out of rolls"}
+              {rolling ? "Rolling…" : canSpin ? "Roll" : "Watch ad for +1 roll"}
             </Button>
             {category === "custom" && (
               <div className="flex flex-col items-center gap-2">
