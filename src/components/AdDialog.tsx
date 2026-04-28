@@ -170,14 +170,6 @@ export function AdDialog({
   }
 
   // ------- Playing stage (interstitial OR rewarded playback) -------
-  const label =
-    mode === "rewarded"
-      ? canClose
-        ? "Reward ready"
-        : `Reward in ${seconds}s`
-      : canClose
-      ? "Close"
-      : `Continue in ${seconds}s`;
 
   // Rewarded playback: promote Pro benefits persuasively.
   if (mode === "rewarded") {
