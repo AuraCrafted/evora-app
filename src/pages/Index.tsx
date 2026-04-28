@@ -298,7 +298,7 @@ const Roll = () => {
             suggestion={current}
             onAccept={handleAccept}
             onReject={handleReject}
-            canReroll={!hasRerolled && canSpin}
+            canReroll={(isPro || !hasRerolled) && canSpin}
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
