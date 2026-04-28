@@ -175,7 +175,14 @@ const Roll = () => {
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
     if (hasRerolled || !canSpin) {
-      if (!canSpin) setShowUpgrade(true);
+      if (!canSpin) {
+        if (!isPro) {
+          setAutoRollAfterReward(false);
+          setShowRewardedAd(true);
+        } else {
+          setShowUpgrade(true);
+        }
+      }
       return;
     }
     setHasRerolled(true);
