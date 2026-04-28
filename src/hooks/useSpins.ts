@@ -92,12 +92,18 @@ export function useSpins() {
       ts: Date.now(),
       accepted: null,
     };
-    setState((s) => ({
-      ...s,
-      used: s.used + 1,
-      history: [entry, ...s.history].slice(0, 200),
-    }));
+    setState((s) => {
+      // Consume bonus spins before the daily quota.
+      if (s.bonus > 0) {
+        return { ...s, bonus: s.bonus - 1, history: [entry, ...s.history].slice(0, 200) };
+      }
+      return { ...s, used: s.used + 1, history: [entry, ...s.history].slice(0, 200) };
+    });
     return entry.id;
+  }, []);
+
+  const grantBonusSpin = useCallback(() => {
+    setState((s) => ({ ...s, bonus: s.bonus + 1 }));
   }, []);
 
   const recordDecision = useCallback((entryId: string, accepted: boolean) => {
