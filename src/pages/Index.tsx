@@ -46,6 +46,7 @@ const Roll = () => {
     nextResetMs,
     recordSpin,
     recordDecision,
+    grantBonusSpin,
     upgrade,
   } = useSpins();
   const { energy } = useEnergy();
