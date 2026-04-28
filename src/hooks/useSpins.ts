@@ -26,6 +26,7 @@ export interface HistoryEntry {
 interface SpinState {
   dayStart: number;
   used: number;
+  bonus: number;
   history: HistoryEntry[];
 }
 
