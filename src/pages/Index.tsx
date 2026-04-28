@@ -174,7 +174,8 @@ const Roll = () => {
     if (!current) return;
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
-    if (hasRerolled || !canSpin) {
+    // Pro users get unlimited skips; free users still capped at one reroll per spin.
+    if ((!isPro && hasRerolled) || !canSpin) {
       if (!canSpin) {
         if (!isPro) {
           setAutoRollAfterReward(false);
@@ -185,7 +186,7 @@ const Roll = () => {
       }
       return;
     }
-    setHasRerolled(true);
+    if (!isPro) setHasRerolled(true);
     triggerRoll(current.id);
   };
 
