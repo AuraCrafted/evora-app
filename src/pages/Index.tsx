@@ -66,7 +66,6 @@ const Roll = () => {
   const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
   const [cardExit, setCardExit] = useState<"accept" | "reject" | null>(null);
-  const [diceExit, setDiceExit] = useState<"accept" | "reject" | null>(null);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -322,12 +321,7 @@ const Roll = () => {
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
             <SwipeToRoll rolling={rolling} onRoll={handleRoll}>
-              <Dice
-                key={diceExit ? "exit" : "idle"}
-                rolling={rolling}
-                face={face}
-                entrance={diceExit ? null : "spin"}
-              />
+              <Dice rolling={rolling} face={face} entrance="spin" />
             </SwipeToRoll>
             <p
               className="text-sm font-display font-medium text-muted-foreground select-none"
