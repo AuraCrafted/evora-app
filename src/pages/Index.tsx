@@ -65,6 +65,8 @@ const Roll = () => {
   const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
+  const [cardExit, setCardExit] = useState<"accept" | "reject" | null>(null);
+  const [diceExit, setDiceExit] = useState<"accept" | "reject" | null>(null);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -163,31 +165,47 @@ const Roll = () => {
   }, [showRewardedAd]);
 
   const handleAccept = () => {
+    if (!current || cardExit) return;
     sfx.accept();
     celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
-    setCurrent(null);
-    setCurrentEntryId(null);
-    setHasRerolled(false);
+    setCardExit("accept");
+    setDiceExit("accept");
+    window.setTimeout(() => {
+      setCurrent(null);
+      setCurrentEntryId(null);
+      setHasRerolled(false);
+      setCardExit(null);
+      setDiceExit(null);
+    }, 520);
   };
 
   const handleReject = () => {
-    if (!current) return;
+    if (!current || cardExit) return;
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
-    if ((hasRerolled && !isPro) || !canSpin) {
-      if (!canSpin) {
-        if (!isPro) {
-          setAutoRollAfterReward(false);
-          setShowRewardedAd(true);
-        } else {
-          setShowUpgrade(true);
+    const blocked = (hasRerolled && !isPro) || !canSpin;
+    setCardExit("reject");
+    setDiceExit("reject");
+    window.setTimeout(() => {
+      setCardExit(null);
+      setDiceExit(null);
+      if (blocked) {
+        setCurrent(null);
+        setCurrentEntryId(null);
+        if (!canSpin) {
+          if (!isPro) {
+            setAutoRollAfterReward(false);
+            setShowRewardedAd(true);
+          } else {
+            setShowUpgrade(true);
+          }
         }
+        return;
       }
-      return;
-    }
-    setHasRerolled(true);
-    triggerRoll(current.id);
+      setHasRerolled(true);
+      triggerRoll(current!.id);
+    }, 560);
   };
 
   const handleUpgrade = () => {
