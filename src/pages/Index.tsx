@@ -65,7 +65,6 @@ const Roll = () => {
   const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
-  const [cardExit, setCardExit] = useState<"accept" | "reject" | null>(null);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -164,43 +163,31 @@ const Roll = () => {
   }, [showRewardedAd]);
 
   const handleAccept = () => {
-    if (!current || cardExit) return;
     sfx.accept();
     celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
-    setCardExit("accept");
-    window.setTimeout(() => {
-      setCurrent(null);
-      setCurrentEntryId(null);
-      setHasRerolled(false);
-      setCardExit(null);
-    }, 520);
+    setCurrent(null);
+    setCurrentEntryId(null);
+    setHasRerolled(false);
   };
 
   const handleReject = () => {
-    if (!current || cardExit) return;
+    if (!current) return;
     sfx.reject();
     if (currentEntryId) recordDecision(currentEntryId, false);
-    const blocked = (hasRerolled && !isPro) || !canSpin;
-    setCardExit("reject");
-    window.setTimeout(() => {
-      setCardExit(null);
-      if (blocked) {
-        setCurrent(null);
-        setCurrentEntryId(null);
-        if (!canSpin) {
-          if (!isPro) {
-            setAutoRollAfterReward(false);
-            setShowRewardedAd(true);
-          } else {
-            setShowUpgrade(true);
-          }
+    if ((hasRerolled && !isPro) || !canSpin) {
+      if (!canSpin) {
+        if (!isPro) {
+          setAutoRollAfterReward(false);
+          setShowRewardedAd(true);
+        } else {
+          setShowUpgrade(true);
         }
-        return;
       }
-      setHasRerolled(true);
-      triggerRoll(current!.id);
-    }, 560);
+      return;
+    }
+    setHasRerolled(true);
+    triggerRoll(current.id);
   };
 
   const handleUpgrade = () => {
@@ -312,12 +299,11 @@ const Roll = () => {
             onAccept={handleAccept}
             onReject={handleReject}
             canReroll={(isPro || !hasRerolled) && canSpin}
-            exit={cardExit}
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
             <SwipeToRoll rolling={rolling} onRoll={handleRoll}>
-              <Dice rolling={rolling} face={face} entrance="spin" />
+              <Dice rolling={rolling} face={face} />
             </SwipeToRoll>
             <p
               className="text-sm font-display font-medium text-muted-foreground select-none"

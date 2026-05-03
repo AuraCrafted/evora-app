@@ -1,26 +1,17 @@
 import { Suggestion, categoryLabels } from "@/data/suggestions";
 import { Button } from "@/components/ui/button";
 import { Check, RotateCcw, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Props {
   suggestion: Suggestion;
   onAccept: () => void;
   onReject: () => void;
   canReroll: boolean;
-  exit?: "accept" | "reject" | null;
 }
 
-export const SuggestionCard = ({ suggestion, onAccept, onReject, canReroll, exit }: Props) => {
+export const SuggestionCard = ({ suggestion, onAccept, onReject, canReroll }: Props) => {
   return (
-    <div
-      className={cn(
-        "w-full max-w-md rounded-3xl bg-card p-7 soft-shadow",
-        !exit && "animate-scale-in",
-        exit === "accept" && "animate-card-accept",
-        exit === "reject" && "animate-card-reject",
-      )}
-    >
+    <div className="w-full max-w-md rounded-3xl bg-card p-7 soft-shadow animate-scale-in">
       <div className="flex items-center justify-between mb-5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
           {categoryLabels[suggestion.category]}
