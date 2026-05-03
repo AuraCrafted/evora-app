@@ -143,6 +143,7 @@ export default {
         "card-reject": "card-reject 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards",
         "dice-spin-fast": "dice-spin-fast 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards",
         "dice-shake-out": "dice-shake-out 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards",
+        "dice-entrance": "dice-roll 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       fontFamily: {
         display: ["'Fraunces'", "Georgia", "serif"],
