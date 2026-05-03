@@ -322,7 +322,12 @@ const Roll = () => {
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
             <SwipeToRoll rolling={rolling} onRoll={handleRoll}>
-              <Dice rolling={rolling} face={face} />
+              <Dice
+                key={diceExit ? "exit" : "idle"}
+                rolling={rolling}
+                face={face}
+                entrance={diceExit ? null : "spin"}
+              />
             </SwipeToRoll>
             <p
               className="text-sm font-display font-medium text-muted-foreground select-none"
