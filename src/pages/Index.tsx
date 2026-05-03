@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Dice } from "@/components/Dice";
+import { SwipeToRoll } from "@/components/SwipeToRoll";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
@@ -301,16 +302,19 @@ const Roll = () => {
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
-            <Dice rolling={rolling} face={face} />
-            <Button
-              onClick={handleRoll}
-              variant="hero"
-              size="xl"
-              disabled={rolling}
-              className="min-w-[220px]"
+            <SwipeToRoll rolling={rolling} onRoll={handleRoll}>
+              <Dice rolling={rolling} face={face} />
+            </SwipeToRoll>
+            <p
+              className="text-sm font-display font-medium text-muted-foreground select-none"
+              aria-live="polite"
             >
-              {rolling ? "Rolling…" : canSpin ? "Roll" : "Watch ad for +1 roll"}
-            </Button>
+              {rolling
+                ? "Rolling…"
+                : canSpin
+                ? "Swipe to Roll"
+                : "Swipe to watch ad for +1 roll"}
+            </p>
             {category === "custom" && (
               <div className="flex flex-col items-center gap-2">
                 {customSuggestions.length === 0 && (
