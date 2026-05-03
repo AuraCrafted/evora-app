@@ -169,13 +169,11 @@ const Roll = () => {
     celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
     setCardExit("accept");
-    setDiceExit("accept");
     window.setTimeout(() => {
       setCurrent(null);
       setCurrentEntryId(null);
       setHasRerolled(false);
       setCardExit(null);
-      setDiceExit(null);
     }, 520);
   };
 
@@ -185,10 +183,8 @@ const Roll = () => {
     if (currentEntryId) recordDecision(currentEntryId, false);
     const blocked = (hasRerolled && !isPro) || !canSpin;
     setCardExit("reject");
-    setDiceExit("reject");
     window.setTimeout(() => {
       setCardExit(null);
-      setDiceExit(null);
       if (blocked) {
         setCurrent(null);
         setCurrentEntryId(null);
