@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Dice } from "@/components/Dice";
+import { SwipeToRoll } from "@/components/SwipeToRoll";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
@@ -301,7 +302,7 @@ const Roll = () => {
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
-            <SwipeToRoll rolling={rolling} onRoll={handleRoll} dragOffset={dragOffset}>
+            <SwipeToRoll rolling={rolling} onRoll={handleRoll}>
               <Dice rolling={rolling} face={face} />
             </SwipeToRoll>
             <p
