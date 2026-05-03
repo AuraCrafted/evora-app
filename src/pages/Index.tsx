@@ -317,6 +317,7 @@ const Roll = () => {
             onAccept={handleAccept}
             onReject={handleReject}
             canReroll={(isPro || !hasRerolled) && canSpin}
+            exit={cardExit}
           />
         ) : (
           <div className="flex flex-col items-center gap-7 w-full">
