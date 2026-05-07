@@ -19,6 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <WelcomeTutorial />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/roll" element={<Roll />} />
