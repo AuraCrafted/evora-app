@@ -66,6 +66,7 @@ const Roll = () => {
   const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
+  const [activeTask, setActiveTask] = useState<Suggestion | null>(null);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
