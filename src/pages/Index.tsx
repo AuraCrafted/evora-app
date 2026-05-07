@@ -306,7 +306,13 @@ const Roll = () => {
           </div>
         )}
 
-        {current && !rolling ? (
+        {activeTask ? (
+          <TaskTimer
+            suggestion={activeTask}
+            onComplete={handleTimerComplete}
+            onCancel={handleTimerCancel}
+          />
+        ) : current && !rolling ? (
           <SuggestionCard
             suggestion={current}
             onAccept={handleAccept}
