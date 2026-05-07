@@ -165,12 +165,23 @@ const Roll = () => {
   }, [showRewardedAd]);
 
   const handleAccept = () => {
+    if (!current) return;
     sfx.accept();
-    celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
+    setActiveTask(current);
     setCurrent(null);
     setCurrentEntryId(null);
     setHasRerolled(false);
+  };
+
+  const handleTimerComplete = () => {
+    celebrateAccept();
+    sfx.celebrate();
+    setActiveTask(null);
+  };
+
+  const handleTimerCancel = () => {
+    setActiveTask(null);
   };
 
   const handleReject = () => {
