@@ -9,6 +9,7 @@ import History from "./pages/History.tsx";
 import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { WelcomeTutorial } from "./components/WelcomeTutorial";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <WelcomeTutorial />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/roll" element={<Roll />} />
