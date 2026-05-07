@@ -171,7 +171,7 @@ export const WelcomeTutorial = () => {
             size="lg"
             onClick={() => {
               sfx.tap();
-              if (isLast) finish();
+              if (isLast) finish({ completed: true });
               else setStep((s) => s + 1);
             }}
           >
