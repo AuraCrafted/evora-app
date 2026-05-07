@@ -6,6 +6,7 @@ import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { CategoryTabs } from "@/components/CategoryTabs";
+import { TaskTimer } from "@/components/TaskTimer";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { AdDialog } from "@/components/AdDialog";
