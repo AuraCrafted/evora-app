@@ -35,6 +35,7 @@ const steps = [
 export const WelcomeTutorial = () => {
   const [phase, setPhase] = useState<Phase>("done");
   const [step, setStep] = useState(0);
+  const { grantBonusSpin } = useSpins();
 
   useEffect(() => {
     try {
@@ -45,11 +46,18 @@ export const WelcomeTutorial = () => {
     }
   }, []);
 
-  const finish = () => {
+  const finish = (opts?: { completed?: boolean }) => {
     try {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // ignore
+    }
+    if (opts?.completed) {
+      grantBonusSpin();
+      sfx.celebrate();
+      toast("🎁 Bonus roll unlocked!", {
+        description: "Thanks for taking the tour — enjoy a free roll on us.",
+      });
     }
     setPhase("done");
   };
