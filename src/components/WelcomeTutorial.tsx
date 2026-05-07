@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, ArrowLeft, X } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, X, Gift } from "lucide-react";
 import { sfx } from "@/lib/feedback";
+import { useSpins } from "@/hooks/useSpins";
+import { toast } from "@/components/ui/sonner";
 
 const STORAGE_KEY = "nudge:tutorial-seen-v1";
 
@@ -26,13 +28,14 @@ const steps = [
   },
   {
     title: "Go further with Plans",
-    body: "Upgrade for unlimited rolls, unlimited skips, custom nudges, and right-time matching.",
+    body: "Upgrade for unlimited rolls, unlimited skips, custom nudges, and right-time matching. Finish the tour to claim a free bonus roll 🎁",
   },
 ];
 
 export const WelcomeTutorial = () => {
   const [phase, setPhase] = useState<Phase>("done");
   const [step, setStep] = useState(0);
+  const { grantBonusSpin } = useSpins();
 
   useEffect(() => {
     try {
@@ -43,11 +46,18 @@ export const WelcomeTutorial = () => {
     }
   }, []);
 
-  const finish = () => {
+  const finish = (opts?: { completed?: boolean }) => {
     try {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // ignore
+    }
+    if (opts?.completed) {
+      grantBonusSpin();
+      sfx.celebrate();
+      toast("🎁 Bonus roll unlocked!", {
+        description: "Thanks for taking the tour — enjoy a free roll on us.",
+      });
     }
     setPhase("done");
   };
@@ -161,7 +171,7 @@ export const WelcomeTutorial = () => {
             size="lg"
             onClick={() => {
               sfx.tap();
-              if (isLast) finish();
+              if (isLast) finish({ completed: true });
               else setStep((s) => s + 1);
             }}
           >
