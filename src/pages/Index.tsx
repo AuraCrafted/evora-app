@@ -6,6 +6,7 @@ import { SuggestionCard } from "@/components/SuggestionCard";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { CategoryTabs } from "@/components/CategoryTabs";
+import { TaskTimer } from "@/components/TaskTimer";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { AdDialog } from "@/components/AdDialog";
@@ -65,6 +66,7 @@ const Roll = () => {
   const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [autoRollAfterReward, setAutoRollAfterReward] = useState(false);
   const [quickStart, setQuickStart] = useState(false);
+  const [activeTask, setActiveTask] = useState<Suggestion | null>(null);
   const prevStreakRef = useRef(streak);
   const tickRef = useRef<number | null>(null);
 
@@ -163,12 +165,23 @@ const Roll = () => {
   }, [showRewardedAd]);
 
   const handleAccept = () => {
+    if (!current) return;
     sfx.accept();
-    celebrateAccept();
     if (currentEntryId) recordDecision(currentEntryId, true);
+    setActiveTask(current);
     setCurrent(null);
     setCurrentEntryId(null);
     setHasRerolled(false);
+  };
+
+  const handleTimerComplete = () => {
+    celebrateAccept();
+    sfx.celebrate();
+    setActiveTask(null);
+  };
+
+  const handleTimerCancel = () => {
+    setActiveTask(null);
   };
 
   const handleReject = () => {
@@ -229,7 +242,7 @@ const Roll = () => {
       </header>
 
       {/* Context badge */}
-      {isPro && !current && !rolling && (
+      {isPro && !current && !rolling && !activeTask && (
         <div className="max-w-2xl mx-auto w-full px-5 mb-2">
           <div className="text-center text-[11px] text-muted-foreground">
             Filtering for <span className="font-medium text-foreground">{timeOfDayLabel[tod].toLowerCase()}</span>
@@ -250,7 +263,7 @@ const Roll = () => {
       </div>
 
       {/* Quick start toggle (Weekly+) */}
-      {!current && !rolling && (
+      {!current && !rolling && !activeTask && (
         <div className="max-w-2xl mx-auto w-full px-5 mt-3">
           <button
             onClick={() => {
@@ -276,7 +289,7 @@ const Roll = () => {
       )}
 
       <section className="flex-1 flex flex-col items-center justify-center px-5 py-4 max-w-2xl mx-auto w-full">
-        {!current && !rolling && (
+        {!current && !rolling && !activeTask && (
           <div className="text-center mb-6 animate-fade-in-up">
             <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-tight tracking-tight text-foreground">
               {category === "custom" ? (
@@ -293,7 +306,13 @@ const Roll = () => {
           </div>
         )}
 
-        {current && !rolling ? (
+        {activeTask ? (
+          <TaskTimer
+            suggestion={activeTask}
+            onComplete={handleTimerComplete}
+            onCancel={handleTimerCancel}
+          />
+        ) : current && !rolling ? (
           <SuggestionCard
             suggestion={current}
             onAccept={handleAccept}
