@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, ArrowLeft, X } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, X, Gift } from "lucide-react";
 import { sfx } from "@/lib/feedback";
+import { useSpins } from "@/hooks/useSpins";
+import { toast } from "@/components/ui/sonner";
 
 const STORAGE_KEY = "nudge:tutorial-seen-v1";
 
