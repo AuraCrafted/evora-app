@@ -28,7 +28,7 @@ const steps = [
   },
   {
     title: "Go further with Plans",
-    body: "Upgrade for unlimited rolls, unlimited skips, custom nudges, and right-time matching.",
+    body: "Upgrade for unlimited rolls, unlimited skips, custom nudges, and right-time matching. Finish the tour to claim a free bonus roll 🎁",
   },
 ];
 
