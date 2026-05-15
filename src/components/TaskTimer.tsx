@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Suggestion, categoryLabels } from "@/data/suggestions";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, Check, X } from "lucide-react";
-import { sfx } from "@/lib/feedback";
+import { Pause, Play, Check, X, Volume2, VolumeX } from "lucide-react";
+import { sfx, isTimerSoundEnabled, setTimerSoundEnabled, playTimerComplete } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -26,6 +26,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
   const [running, setRunning] = useState(true);
   const [done, setDone] = useState(false);
   const completedRef = useRef(false);
+  const [soundOn, setSoundOn] = useState<boolean>(() => isTimerSoundEnabled());
 
   useEffect(() => {
     setRemaining(totalSeconds);
@@ -45,6 +46,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
             setDone(true);
             setRunning(false);
             sfx.celebrate();
+            playTimerComplete();
           }
           return 0;
         }
@@ -71,6 +73,22 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
           {suggestion.emoji} {suggestion.title}
         </h2>
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          sfx.tap();
+          const next = !soundOn;
+          setSoundOn(next);
+          setTimerSoundEnabled(next);
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+        aria-pressed={soundOn}
+        aria-label={soundOn ? "Turn off completion sound" : "Turn on completion sound"}
+      >
+        {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+        Completion sound: {soundOn ? "On" : "Off"}
+      </button>
 
       <div
         className={cn(
