@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Suggestion, categoryLabels } from "@/data/suggestions";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, Check, X } from "lucide-react";
-import { sfx } from "@/lib/feedback";
+import { Pause, Play, Check, X, Volume2, VolumeX } from "lucide-react";
+import { sfx, isTimerSoundEnabled, setTimerSoundEnabled, playTimerComplete } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
 
 interface Props {
