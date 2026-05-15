@@ -26,6 +26,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
   const [running, setRunning] = useState(true);
   const [done, setDone] = useState(false);
   const completedRef = useRef(false);
+  const [soundOn, setSoundOn] = useState<boolean>(() => isTimerSoundEnabled());
 
   useEffect(() => {
     setRemaining(totalSeconds);
