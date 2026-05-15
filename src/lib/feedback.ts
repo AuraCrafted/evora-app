@@ -145,4 +145,41 @@ export const sfx = {
     });
     vibrate([20, 30, 20, 30, 20, 60]);
   },
+
+  // Timer complete — repeating alarm chime
+  timerDone() {
+    for (let i = 0; i < 3; i++) {
+      const base = i * 0.45;
+      tone({ freq: 880, duration: 0.18, type: "sine", volume: 0.22, delay: base });
+      tone({ freq: 1318.51, duration: 0.22, type: "sine", volume: 0.2, delay: base + 0.18 });
+    }
+    vibrate([120, 80, 120, 80, 200]);
+  },
 };
+
+// === Timer-complete sound preference ===
+const TIMER_SOUND_KEY = "nudge.timerSound.v1";
+let timerSoundEnabled = true;
+if (typeof window !== "undefined") {
+  const stored = localStorage.getItem(TIMER_SOUND_KEY);
+  if (stored !== null) timerSoundEnabled = stored !== "false";
+}
+
+export function isTimerSoundEnabled() {
+  return timerSoundEnabled;
+}
+
+export function setTimerSoundEnabled(value: boolean) {
+  timerSoundEnabled = value;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(TIMER_SOUND_KEY, String(value));
+  }
+}
+
+export function playTimerComplete() {
+  if (!timerSoundEnabled) {
+    vibrate([120, 80, 120, 80, 200]);
+    return;
+  }
+  sfx.timerDone();
+}
