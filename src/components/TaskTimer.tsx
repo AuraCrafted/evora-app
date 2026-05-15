@@ -46,6 +46,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
             setDone(true);
             setRunning(false);
             sfx.celebrate();
+            playTimerComplete();
           }
           return 0;
         }
