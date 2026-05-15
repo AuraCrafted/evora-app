@@ -74,6 +74,22 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
         </h2>
       </div>
 
+      <button
+        type="button"
+        onClick={() => {
+          sfx.tap();
+          const next = !soundOn;
+          setSoundOn(next);
+          setTimerSoundEnabled(next);
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+        aria-pressed={soundOn}
+        aria-label={soundOn ? "Turn off completion sound" : "Turn on completion sound"}
+      >
+        {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+        Completion sound: {soundOn ? "On" : "Off"}
+      </button>
+
       <div
         className={cn(
           "relative flex items-center justify-center",
