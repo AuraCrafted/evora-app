@@ -128,7 +128,7 @@ const Home = () => {
 
         {/* How it works */}
         <div className="mt-8 rounded-3xl bg-card p-5 soft-shadow">
-          <h2 className="font-display text-base font-semibold mb-3">How Nudge works</h2>
+          <h2 className="font-display text-base font-semibold mb-3">How Evora works</h2>
           <ul className="space-y-2.5">
             {[
               "Tell us your energy (optional).",
