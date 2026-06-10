@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -23,6 +24,15 @@ Style:
 
 You're here to help them move, gently. That's it.`;
 
+const YEARLY_PRICE_IDS = ["evora_yearly"];
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -31,19 +41,60 @@ Deno.serve(async (req) => {
   try {
     const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) {
-      return new Response(
-        JSON.stringify({ error: "Missing LOVABLE_API_KEY" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      console.error("Missing LOVABLE_API_KEY");
+      return json({ error: "server_misconfiguration" }, 500);
+    }
+
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "unauthorized" }, 401);
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return json({ error: "unauthorized" }, 401);
+    }
+    const userId = claimsData.claims.sub;
+
+    // Subscription check: must have active yearly plan
+    const serviceClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: sub } = await serviceClient
+      .from("subscriptions")
+      .select("status, price_id, current_period_end")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const hasYearly = (() => {
+      if (!sub) return false;
+      if (!YEARLY_PRICE_IDS.includes(sub.price_id)) return false;
+      const end = sub.current_period_end ? new Date(sub.current_period_end).getTime() : null;
+      const inWindow = end === null || end > Date.now();
+      if (["active", "trialing", "past_due"].includes(sub.status) && inWindow) return true;
+      if (sub.status === "canceled" && end !== null && end > Date.now()) return true;
+      return false;
+    })();
+
+    if (!hasYearly) {
+      return json({ error: "forbidden" }, 403);
     }
 
     const body = await req.json().catch(() => ({}));
     const messages = Array.isArray(body?.messages) ? (body.messages as ChatMessage[]) : null;
     if (!messages || messages.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "messages array required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return json({ error: "messages array required" }, 400);
     }
 
     const cleaned = messages
@@ -65,22 +116,17 @@ Deno.serve(async (req) => {
 
     if (!res.ok) {
       const text = await res.text();
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${res.status})`, detail: text.slice(0, 500) }),
-        { status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      console.error("AI gateway error", res.status, text);
+      if (res.status === 429) return json({ error: "rate_limited" }, 429);
+      if (res.status === 402) return json({ error: "credits_exhausted" }, 402);
+      return json({ error: "ai_gateway_error" }, 502);
     }
 
     const data = await res.json();
     const content: string = data?.choices?.[0]?.message?.content ?? "";
-    return new Response(
-      JSON.stringify({ content }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({ content });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: (err as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    console.error("coach-chat unexpected error", err);
+    return json({ error: "internal_error" }, 500);
   }
 });
