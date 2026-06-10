@@ -10,8 +10,10 @@ import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
 import Coach from "./pages/Coach.tsx";
 import Auth from "./pages/Auth.tsx";
+import Privacy from "./pages/Privacy.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
+import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 
@@ -25,6 +27,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PaymentTestModeBanner />
+          <PrivacyConsent />
           <WelcomeTutorial />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -35,6 +38,7 @@ const App = () => (
             <Route path="/coach" element={<Coach />} />
             <Route path="/coach/:threadId" element={<Coach />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

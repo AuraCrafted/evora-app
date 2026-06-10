@@ -38,12 +38,18 @@ export const WelcomeTutorial = () => {
   const { grantBonusSpin } = useSpins();
 
   useEffect(() => {
-    try {
-      const seen = localStorage.getItem(STORAGE_KEY);
-      if (!seen) setPhase("welcome");
-    } catch {
-      // ignore
-    }
+    const check = () => {
+      try {
+        const seen = localStorage.getItem(STORAGE_KEY);
+        const privacyAccepted = localStorage.getItem("nudge:privacy-accepted-v1");
+        if (!seen && privacyAccepted) setPhase("welcome");
+      } catch {
+        // ignore
+      }
+    };
+    check();
+    window.addEventListener("privacy-accepted", check);
+    return () => window.removeEventListener("privacy-accepted", check);
   }, []);
 
   const finish = (opts?: { completed?: boolean }) => {
