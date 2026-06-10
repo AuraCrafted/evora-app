@@ -80,7 +80,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         return;
       }
       sfx.accept();
-      toast({ title: "Nudge updated" });
+      toast({ title: "Evora updated" });
     } else {
       const res = add(parsed.data);
       if (!res.ok) {
