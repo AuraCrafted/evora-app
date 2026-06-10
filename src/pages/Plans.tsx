@@ -28,51 +28,39 @@ const plans: Plan[] = [
     tagline: "Get unstuck, occasionally.",
     features: [
       "10 rolls per day",
-      "Fully random tasks",
+      "🔋 1 energy-aware roll per day (taste it)",
       "Mixed categories",
       "Skip freely",
       "Visual streak",
     ],
   },
   {
-    id: "week",
-    name: "Weekly",
-    price: "$5",
-    period: "/ week",
-    perDay: "$0.71/day",
-    tagline: "Light upgrade. Less friction.",
-    features: [
-      "Unlimited rolls",
-      "Choose your category",
-      "Custom nudges",
-      "Quick Start Mode (low-effort tasks)",
-      "Ad-free",
-    ],
-  },
-  {
     id: "month",
     name: "Monthly",
-    price: "$25",
+    price: "$8.99",
     period: "/ month",
-    perDay: "$0.83/day",
+    perDay: "$0.30/day",
     badge: "Most useful",
     highlight: true,
     tagline: "Right-Time Rolls — context-aware.",
     features: [
-      "Everything in Weekly",
+      "Unlimited rolls",
+      "Choose your category",
+      "Custom nudges",
       "⏰ Time-of-day filtering",
       "🔋 Energy-aware tasks (low / normal / push)",
       "🏷️ Tag your custom nudges",
       "✋ Commit Mode (soft accountability)",
       "📊 Activity patterns",
+      "Ad-free",
     ],
   },
   {
     id: "year",
     name: "Yearly",
-    price: "$49",
+    price: "$49.99",
     period: "/ year",
-    perDay: "$0.13/day",
+    perDay: "$0.14/day",
     badge: "Best value",
     tagline: "A long-term action system.",
     features: [
@@ -81,7 +69,7 @@ const plans: Plan[] = [
       "🛤️ Guided Paths (slump, focus, less scrolling)",
       "🪞 Reflection layer after tasks",
       "📈 Insights dashboard",
-      "Save over 80% vs weekly",
+      "Save 54% vs monthly",
     ],
   },
 ];
@@ -114,6 +102,16 @@ const Plans = () => {
         <p className="mt-3 text-muted-foreground text-[15px] max-w-md">
           Start free. Upgrade when randomness stops being enough — cancel anytime.
         </p>
+
+        {isPro && (
+          <div className="mt-5 rounded-2xl border border-primary/40 bg-accent/40 px-4 py-3 flex items-center gap-3 soft-shadow">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <div className="text-sm">
+              <span className="font-semibold text-foreground">You're on Pro.</span>{" "}
+              <span className="text-muted-foreground">All features below are unlocked.</span>
+            </div>
+          </div>
+        )}
       </header>
 
       <section className="px-5 pt-4 pb-32 max-w-2xl mx-auto w-full">
@@ -161,17 +159,16 @@ const Plans = () => {
 
               {plan.id === "free" ? (
                 <Button variant="ghost" size="sm" disabled className="mt-5 w-full">
-                  {isPro ? "Included" : "You're on Free"}
+                  {isPro ? "Included with Pro" : "You're on Free"}
                 </Button>
-              ) : (
+              ) : isPro ? null : (
                 <Button
                   onClick={handleChoose}
                   variant={plan.highlight ? "hero" : "outline"}
                   size="sm"
                   className="mt-5 w-full"
-                  disabled={isPro}
                 >
-                  {isPro ? "Already Pro" : `Choose ${plan.name}`}
+                  {`Choose ${plan.name}`}
                 </Button>
               )}
             </div>
