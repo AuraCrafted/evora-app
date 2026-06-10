@@ -70,11 +70,16 @@ const Home = () => {
           <EnergySelector
             value={energy}
             onChange={setEnergy}
-            locked={!isPro}
+            locked={!sliderUnlocked}
             onLockedClick={() => sfx.tap()}
           />
           {!isPro && (
             <p className="text-[11px] text-muted-foreground text-center mt-3">
+              {tasteAvailable ? (
+                <>Try the energy slider — your free taste for today. </>
+              ) : (
+                <>You've used today's free taste. </>
+              )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
                 See Monthly →
               </Link>
