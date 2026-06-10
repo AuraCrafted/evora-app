@@ -74,9 +74,14 @@ function calcStreak(history: HistoryEntry[]): number {
 
 export function useSpins() {
   const [state, setState] = useState<SpinState>(() => load());
-  const [isPro, setIsPro] = useState<boolean>(
-    () => typeof window !== "undefined" && localStorage.getItem(PRO_KEY) === "true",
-  );
+  const [tier, setTierState] = useState<PlanTier>(() => {
+    if (typeof window === "undefined") return "free";
+    const stored = localStorage.getItem(TIER_KEY) as PlanTier | null;
+    if (stored === "month" || stored === "year") return stored;
+    // Back-compat with old pro flag
+    return localStorage.getItem(PRO_KEY) === "true" ? "month" : "free";
+  });
+  const isPro = tier !== "free";
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
