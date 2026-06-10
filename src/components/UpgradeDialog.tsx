@@ -47,7 +47,7 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
             You've used your free rolls
           </DialogTitle>
           <DialogDescription className="text-center">
-            Keep the momentum going with unlimited nudges.
+            Keep the momentum going with unlimited evoras.
           </DialogDescription>
         </DialogHeader>
 
