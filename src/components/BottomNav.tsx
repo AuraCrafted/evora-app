@@ -18,6 +18,7 @@ interface NavItem {
 const items: NavItem[] = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/roll", label: "Roll", icon: Dices },
+  { to: "/coach", label: "Coach", icon: Heart },
   { to: "/history", label: "Streak", icon: Flame },
   { to: "/plans", label: "Plans", icon: Sparkles },
   { to: "/feedback", label: "Ideas", icon: MessageCircle },
