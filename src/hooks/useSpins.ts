@@ -122,15 +122,27 @@ export function useSpins() {
     }));
   }, []);
 
-  const upgrade = useCallback(() => {
-    localStorage.setItem(PRO_KEY, "true");
-    setIsPro(true);
+  const setTier = useCallback((next: PlanTier) => {
+    if (next === "free") {
+      localStorage.removeItem(PRO_KEY);
+      localStorage.removeItem(TIER_KEY);
+    } else {
+      localStorage.setItem(PRO_KEY, "true");
+      localStorage.setItem(TIER_KEY, next);
+    }
+    setTierState(next);
   }, []);
 
+  const upgrade = useCallback(
+    (next: PlanTier = "month") => {
+      setTier(next === "free" ? "month" : next);
+    },
+    [setTier],
+  );
+
   const downgrade = useCallback(() => {
-    localStorage.removeItem(PRO_KEY);
-    setIsPro(false);
-  }, []);
+    setTier("free");
+  }, [setTier]);
 
   const clearHistory = useCallback(() => {
     setState((s) => ({ ...s, history: [] }));
