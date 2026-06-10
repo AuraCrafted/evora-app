@@ -76,12 +76,12 @@ const Home = () => {
           {!isPro && (
             <p className="text-[11px] text-muted-foreground text-center mt-3">
               {tasteAvailable ? (
-                <>Try the energy slider — your free taste for today. </>
+                <>Try the energy slider!{"\n\n\n"}&nbsp;&nbsp;</>
               ) : (
-                <>You've used today's free taste. </>
+                <>You've used today's free taste.{"\n\n\n"}&nbsp;&nbsp;</>
               )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
-                See Monthly →
+                See Monthly To Get full Access →
               </Link>
             </p>
           )}
