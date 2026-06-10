@@ -88,7 +88,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         return;
       }
       sfx.accept();
-      toast({ title: "Nudge saved", description: "It's now in your custom pool." });
+      toast({ title: "Evora saved", description: "It's now in your custom pool." });
     }
     setEditingId(null);
     setForm(EMPTY);
