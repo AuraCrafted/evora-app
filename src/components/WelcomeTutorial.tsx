@@ -42,7 +42,10 @@ export const WelcomeTutorial = () => {
       try {
         const seen = localStorage.getItem(STORAGE_KEY);
         const privacyAccepted = localStorage.getItem("nudge:privacy-accepted-v1");
-        if (!seen && privacyAccepted) setPhase("welcome");
+        if (!seen && privacyAccepted) {
+          setStep(0);
+          setPhase("tutorial");
+        }
       } catch {
         // ignore
       }
