@@ -11,10 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSpins, type PlanTier } from "@/hooks/useSpins";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -99,7 +100,7 @@ const Plans = () => {
   const { user, signOut } = useAuth();
   const { streak } = useSpins();
   const { tier, isPro, cancelAtPeriodEnd, periodEnd, refetch } = useSubscription();
-  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+  const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -109,6 +110,7 @@ const Plans = () => {
       toast.success("Payment received — activating your plan…");
       const t = setTimeout(() => refetch(), 2500);
       searchParams.delete("checkout");
+      searchParams.delete("session_id");
       setSearchParams(searchParams, { replace: true });
       return () => clearTimeout(t);
     }
@@ -127,12 +129,18 @@ const Plans = () => {
     requireAuth(() => setPendingPlan(plan));
   };
 
-  const confirmCheckout = async () => {
-    if (!pendingPlan?.priceId) return;
+  const confirmCheckout = () => {
+    if (!pendingPlan?.priceId || !user) return;
     const priceId = pendingPlan.priceId;
     setPendingPlan(null);
     try {
-      await openCheckout(priceId);
+      openCheckout({
+        priceId,
+        quantity: 1,
+        customerEmail: user.email,
+        userId: user.id,
+        returnUrl: `${window.location.origin}/plans?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      });
     } catch (e: any) {
       console.error("Checkout error:", e);
       toast.error(e?.message || "Couldn't open checkout.");
@@ -290,15 +298,8 @@ const Plans = () => {
                     variant={plan.highlight ? "hero" : "outline"}
                     size="sm"
                     className="mt-5 w-full"
-                    disabled={checkoutLoading}
                   >
-                    {checkoutLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : isPro ? (
-                      `Switch to ${plan.name}`
-                    ) : (
-                      `Choose ${plan.name}`
-                    )}
+                    {isPro ? `Switch to ${plan.name}` : `Choose ${plan.name}`}
                   </Button>
                 )}
               </div>
@@ -333,6 +334,17 @@ const Plans = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isOpen} onOpenChange={(v) => !v && closeCheckout()}>
+        <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Complete your purchase</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[80vh] overflow-y-auto px-2 pb-2">
+            {checkoutElement}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showCancel} onOpenChange={setShowCancel}>
         <AlertDialogContent className="rounded-3xl">

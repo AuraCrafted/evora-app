@@ -58,20 +58,9 @@ export default function Terms() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">6. Payments & subscriptions</h2>
           <p>
-            Our order process is conducted by our online reseller Paddle.com. Paddle.com is the
-            Merchant of Record for all our orders. Paddle provides all customer service inquiries
-            and handles returns. Payment, billing, tax, cancellation, and refund mechanics are
-            governed by Paddle's{" "}
-            <a
-              href="https://www.paddle.com/legal/checkout-buyer-terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              Buyer Terms
-            </a>
-            . Subscriptions renew automatically until cancelled. You can cancel any time from the
-            Plans page; access continues until the end of the current billing period.
+            Payments are processed securely by our payment provider. Subscriptions renew
+            automatically until cancelled. You can cancel any time from the Plans page; access
+            continues until the end of the current billing period.
           </p>
         </section>
 

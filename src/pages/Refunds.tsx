@@ -23,18 +23,9 @@ export default function Refunds() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">How to request a refund</h2>
           <p>
-            Refunds are processed by our payment provider and Merchant of Record, Paddle. To request
-            a refund, visit{" "}
-            <a
-              href="https://paddle.net"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              paddle.net
-            </a>{" "}
-            and look up your order, or contact us via the Feedback page and we'll help you through
-            the process.
+            To request a refund, contact us via the Feedback page and we'll process it through our
+            payment provider. Refunds are typically returned to your original payment method within
+            5–10 business days.
           </p>
         </section>
 
@@ -49,8 +40,7 @@ export default function Refunds() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">Questions</h2>
           <p>
-            For anything related to billing or refunds, reach out via the Feedback page or through
-            Paddle's buyer support at paddle.net.
+            For anything related to billing or refunds, reach out via the Feedback page.
           </p>
         </section>
       </div>
