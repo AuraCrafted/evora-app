@@ -46,7 +46,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
     setForm({
       emoji: s.emoji,
       title: s.title,
-      description: s.description === "Your own nudge." ? "" : s.description,
+      description: s.description === "Your own evora." ? "" : s.description,
       duration: s.duration,
     });
     setErrors({});
