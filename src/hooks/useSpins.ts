@@ -168,6 +168,8 @@ export function useSpins() {
     completed,
     nextResetMs,
     hasNudgedToday,
+    tier,
+    setTier,
     recordSpin,
     recordDecision,
     grantBonusSpin,
