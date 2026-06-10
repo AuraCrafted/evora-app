@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuth } from "@/hooks/useAuth";
 
 export type SubTier = "free" | "month" | "year";
 
 export interface SubscriptionRow {
-  paddle_subscription_id: string;
+  stripe_subscription_id: string | null;
   product_id: string;
   price_id: string;
   status: string;
@@ -41,10 +41,19 @@ export function useSubscription() {
       setLoading(false);
       return;
     }
-    const env = getPaddleEnvironment();
+    let env: string;
+    try {
+      env = getStripeEnvironment();
+    } catch {
+      setRow(null);
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("subscriptions" as any)
-      .select("paddle_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment")
+      .select(
+        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment",
+      )
       .eq("user_id", user.id)
       .eq("environment", env)
       .order("created_at", { ascending: false })
@@ -65,10 +74,14 @@ export function useSubscription() {
       .on(
         "postgres_changes" as any,
         { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${user.id}` },
-        () => { refetch(); },
+        () => {
+          refetch();
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, refetch]);
 
   const active = isActive(row);
