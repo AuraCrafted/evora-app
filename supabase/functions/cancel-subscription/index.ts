@@ -1,6 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { getPaddleClient, type PaddleEnv } from '../_shared/paddle.ts';
+import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -36,8 +36,22 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'no_subscription' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const paddle = getPaddleClient(sub.environment as PaddleEnv);
-    await paddle.subscriptions.cancel(sub.paddle_subscription_id, { effectiveFrom: 'next_billing_period' });
+    const res = await gatewayFetch(
+      sub.environment as PaddleEnv,
+      `/subscriptions/${sub.paddle_subscription_id}/cancel`,
+      { method: 'POST', body: JSON.stringify({ effective_from: 'next_billing_period' }) },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('Paddle cancel failed', res.status, text);
+      return new Response(JSON.stringify({ error: 'paddle_cancel_failed', detail: text }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    await admin
+      .from('subscriptions')
+      .update({ cancel_at_period_end: true, updated_at: new Date().toISOString() })
+      .eq('paddle_subscription_id', sub.paddle_subscription_id)
+      .eq('environment', sub.environment);
 
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
