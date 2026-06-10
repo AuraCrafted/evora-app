@@ -6,6 +6,7 @@ import { EnergySelector } from "@/components/EnergySelector";
 import { InstallBanner } from "@/components/InstallBanner";
 import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
+import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 import { sfx } from "@/lib/feedback";
 
