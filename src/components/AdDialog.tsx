@@ -278,7 +278,7 @@ export function AdDialog({
               Enjoying Evora?
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/90 text-sm">
-              Go Pro to remove ads, unlock unlimited rolls, custom nudges, and smart filters.
+              Go Pro to remove ads, unlock unlimited rolls, custom evoras, and smart filters.
             </DialogDescription>
           </DialogHeader>
         </div>
