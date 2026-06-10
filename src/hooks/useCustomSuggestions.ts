@@ -111,7 +111,7 @@ export function useCustomSuggestions() {
         id,
         emoji: parsed.data.emoji,
         title: parsed.data.title,
-        description: parsed.data.description?.trim() || "Your own nudge.",
+        description: parsed.data.description?.trim() || "Your own evora.",
         duration: parsed.data.duration,
         minutes,
         effort: minutes <= 5 ? "low" : minutes <= 15 ? "medium" : "high",
