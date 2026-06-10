@@ -44,10 +44,10 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">4. Who we share it with</h2>
           <p>
             We share data with: (a) service providers and subprocessors that help us host and
-            operate the app (hosting, analytics, support tooling); (b) Paddle.com, our Merchant of
-            Record, for sale of the product, subscription management, payments, tax compliance,
-            and invoicing; (c) professional advisers (legal, accounting); and (d) authorities
-            where required by law. We never sell your data.
+            operate the app (hosting, analytics, support tooling); (b) our payment processor, for
+            subscription management, payments, tax compliance, and invoicing; (c) professional
+            advisers (legal, accounting); and (d) authorities where required by law. We never sell
+            your data.
           </p>
         </section>
 
