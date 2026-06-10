@@ -75,13 +75,15 @@ function calcStreak(history: HistoryEntry[]): number {
 
 export function useSpins() {
   const [state, setState] = useState<SpinState>(() => load());
-  const [tier, setTierState] = useState<PlanTier>(() => {
+  const sub = useSubscription();
+  const [localTier, setTierState] = useState<PlanTier>(() => {
     if (typeof window === "undefined") return "free";
     const stored = localStorage.getItem(TIER_KEY) as PlanTier | null;
     if (stored === "month" || stored === "year") return stored;
-    // Back-compat with old pro flag
     return localStorage.getItem(PRO_KEY) === "true" ? "month" : "free";
   });
+  // Real subscription (when signed in) takes precedence over local demo state.
+  const tier: PlanTier = sub.isPro ? sub.tier : localTier;
   const isPro = tier !== "free";
 
   useEffect(() => {
