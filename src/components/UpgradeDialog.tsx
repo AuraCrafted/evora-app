@@ -31,7 +31,7 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
     const plan = plans.find((p) => p.id === selected);
     onUpgrade();
     onOpenChange(false);
-    toast.success(`Welcome to Nudge ${plan?.name}!`, {
+    toast.success(`Welcome to Evora ${plan?.name}!`, {
       description: "Unlimited rolls unlocked. Take it gently.",
     });
   };
