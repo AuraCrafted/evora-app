@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Dice } from "@/components/Dice";
 import { SwipeToRoll } from "@/components/SwipeToRoll";
 import { SuggestionCard } from "@/components/SuggestionCard";
@@ -39,6 +39,7 @@ function formatTimeLeft(ms: number): string {
 }
 
 const Roll = () => {
+  const navigate = useNavigate();
   const {
     used,
     total,
@@ -50,7 +51,6 @@ const Roll = () => {
     recordSpin,
     recordDecision,
     grantBonusSpin,
-    upgrade,
   } = useSpins();
   const { energy } = useEnergy();
   const { tasteAvailable, consumeTaste } = useEnergyTaste();
@@ -208,8 +208,9 @@ const Roll = () => {
   };
 
   const handleUpgrade = () => {
-    sfx.celebrate();
-    upgrade();
+    sfx.tap();
+    setShowUpgrade(false);
+    navigate("/plans");
   };
 
   const usageDots = useMemo(() => Array.from({ length: Math.min(total, 10) }), [total]);

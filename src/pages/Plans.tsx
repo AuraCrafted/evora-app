@@ -1,7 +1,6 @@
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, Sparkles, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
-import { UpgradeDialog } from "@/components/UpgradeDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +12,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSpins, type PlanTier } from "@/hooks/useSpins";
-import { useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { sfx } from "@/lib/feedback";
 import { toast } from "sonner";
 
@@ -27,6 +31,7 @@ interface Plan {
   highlight?: boolean;
   tagline: string;
   features: string[];
+  priceId?: "evora_monthly" | "evora_yearly";
 }
 
 const plans: Plan[] = [
@@ -54,6 +59,7 @@ const plans: Plan[] = [
     badge: "Most useful",
     highlight: true,
     tagline: "Right-Time Rolls — context-aware.",
+    priceId: "evora_monthly",
     features: [
       "Unlimited rolls",
       "Choose your category",
@@ -74,6 +80,7 @@ const plans: Plan[] = [
     perDay: "$0.14/day",
     badge: "Best value",
     tagline: "A long-term action system.",
+    priceId: "evora_yearly",
     features: [
       "Everything in Monthly",
       "🤖 AI Coach — your personal guide",
@@ -87,31 +94,67 @@ const plans: Plan[] = [
 ];
 
 const Plans = () => {
-  const { isPro, tier, setTier, streak } = useSpins();
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [pendingSwitch, setPendingSwitch] = useState<PlanTier | null>(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user, signOut } = useAuth();
+  const { streak } = useSpins();
+  const { tier, isPro, cancelAtPeriodEnd, periodEnd, refetch } = useSubscription();
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+  const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
   const [showCancel, setShowCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
-  const handleChoose = () => {
-    sfx.tap();
-    setShowUpgrade(true);
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      toast.success("Payment received — activating your plan…");
+      const t = setTimeout(() => refetch(), 2500);
+      searchParams.delete("checkout");
+      setSearchParams(searchParams, { replace: true });
+      return () => clearTimeout(t);
+    }
+  }, [searchParams, setSearchParams, refetch]);
+
+  const requireAuth = (next: () => void) => {
+    if (!user) {
+      navigate("/auth?mode=signup&redirect=/plans");
+      return;
+    }
+    next();
   };
 
-  const confirmSwitch = () => {
-    if (!pendingSwitch) return;
-    setTier(pendingSwitch);
-    sfx.celebrate();
-    toast.success(`Switched to Evora ${pendingSwitch === "year" ? "Yearly" : "Monthly"}.`);
-    setPendingSwitch(null);
+  const handleChoose = (plan: Plan) => {
+    sfx.tap();
+    requireAuth(() => setPendingPlan(plan));
   };
 
-  const confirmCancel = () => {
-    setTier("free");
-    sfx.tap();
-    toast("Subscription canceled.", {
-      description: "You're back on the Free plan.",
-    });
-    setShowCancel(false);
+  const confirmCheckout = async () => {
+    if (!pendingPlan?.priceId) return;
+    const priceId = pendingPlan.priceId;
+    setPendingPlan(null);
+    try {
+      await openCheckout(priceId);
+    } catch (e: any) {
+      toast.error(e.message || "Couldn't open checkout.");
+    }
+  };
+
+  const confirmCancel = async () => {
+    setCancelling(true);
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription");
+      if (error) throw error;
+      toast.success("Cancellation scheduled.", {
+        description: periodEnd
+          ? `You keep access until ${new Date(periodEnd).toLocaleDateString()}.`
+          : "You keep access until the end of the current billing period.",
+      });
+      setShowCancel(false);
+      setTimeout(() => refetch(), 1500);
+    } catch (e: any) {
+      toast.error(e.message || "Couldn't cancel subscription.");
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -122,6 +165,20 @@ const Plans = () => {
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-semibold">Plans</span>
+          <div className="ml-auto flex items-center gap-2">
+            {user ? (
+              <>
+                <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+                <Button variant="ghost" size="sm" onClick={() => signOut()}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => navigate("/auth?redirect=/plans")}>
+                Sign in
+              </Button>
+            )}
+          </div>
         </div>
         <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">
           Pick what fits
@@ -141,20 +198,23 @@ const Plans = () => {
               <span className="font-semibold text-foreground">
                 You're on {tier === "year" ? "Yearly" : "Monthly"}.
               </span>{" "}
-              <span className="text-muted-foreground">All features below are unlocked.</span>
+              <span className="text-muted-foreground">
+                {cancelAtPeriodEnd && periodEnd
+                  ? `Ends ${new Date(periodEnd).toLocaleDateString()}.`
+                  : "All features unlocked."}
+              </span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                sfx.tap();
-                setShowCancel(true);
-              }}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
+            {!cancelAtPeriodEnd && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { sfx.tap(); setShowCancel(true); }}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            )}
           </div>
         )}
       </header>
@@ -181,13 +241,9 @@ const Plans = () => {
                 )}
 
                 <div className="flex items-baseline justify-between">
-                  <h3 className="font-display text-lg font-semibold text-foreground">
-                    {plan.name}
-                  </h3>
+                  <h3 className="font-display text-lg font-semibold text-foreground">{plan.name}</h3>
                   <div className="text-right">
-                    <div className="font-display text-2xl font-semibold text-foreground">
-                      {plan.price}
-                    </div>
+                    <div className="font-display text-2xl font-semibold text-foreground">{plan.price}</div>
                     <div className="text-[11px] text-muted-foreground">{plan.period}</div>
                   </div>
                 </div>
@@ -217,38 +273,31 @@ const Plans = () => {
                       variant="outline"
                       size="sm"
                       className="mt-5 w-full"
-                      onClick={() => {
-                        sfx.tap();
-                        setShowCancel(true);
-                      }}
+                      disabled={cancelAtPeriodEnd}
+                      onClick={() => { sfx.tap(); setShowCancel(true); }}
                     >
-                      Cancel & downgrade
+                      {cancelAtPeriodEnd ? "Cancellation scheduled" : "Cancel & downgrade"}
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" disabled className="mt-5 w-full">
                       You're on Free
                     </Button>
                   )
-                ) : isPro ? (
-                  <Button
-                    onClick={() => {
-                      sfx.tap();
-                      setPendingSwitch(plan.id);
-                    }}
-                    variant={plan.highlight ? "hero" : "outline"}
-                    size="sm"
-                    className="mt-5 w-full"
-                  >
-                    Switch to {plan.name}
-                  </Button>
                 ) : (
                   <Button
-                    onClick={handleChoose}
+                    onClick={() => handleChoose(plan)}
                     variant={plan.highlight ? "hero" : "outline"}
                     size="sm"
                     className="mt-5 w-full"
+                    disabled={checkoutLoading}
                   >
-                    Choose {plan.name}
+                    {checkoutLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isPro ? (
+                      `Switch to ${plan.name}`
+                    ) : (
+                      `Choose ${plan.name}`
+                    )}
                   </Button>
                 )}
               </div>
@@ -257,35 +306,29 @@ const Plans = () => {
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground mt-6">
-          Demo paywall — no real charge will be made.
+          Secure checkout. Cancel anytime.
         </p>
       </section>
 
       <BottomNav streak={streak} />
-      <UpgradeDialog
-        open={showUpgrade}
-        onOpenChange={setShowUpgrade}
-        onUpgrade={(t) => {
-          sfx.celebrate();
-          setTier(t);
-        }}
-      />
 
-      <AlertDialog open={pendingSwitch !== null} onOpenChange={(v) => !v && setPendingSwitch(null)}>
+      <AlertDialog open={pendingPlan !== null} onOpenChange={(v) => !v && setPendingPlan(null)}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Switch to {pendingSwitch === "year" ? "Yearly" : "Monthly"}?
+              {isPro
+                ? `Switch to ${pendingPlan?.name}?`
+                : `Subscribe to ${pendingPlan?.name}?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingSwitch === "year"
-                ? "You'll unlock the AI Coach and yearly-only features. Demo — no real charge."
-                : "You'll move to the Monthly plan. Demo — no real charge."}
+              {isPro
+                ? "Your current plan will end and the new plan will start at checkout."
+                : `You'll be charged ${pendingPlan?.price} ${pendingPlan?.period}. Cancel anytime.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep current plan</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSwitch}>Yes, switch</AlertDialogAction>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCheckout}>Continue to checkout</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -295,17 +338,17 @@ const Plans = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
             <AlertDialogDescription>
-              You'll go back to the Free plan and lose unlimited rolls
-              {tier === "year" ? ", the AI Coach," : ""} and Pro features.
+              You'll keep access until {periodEnd ? new Date(periodEnd).toLocaleDateString() : "the end of your billing period"}, then move to Free.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep my plan</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmCancel}
+              disabled={cancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Yes, cancel
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, cancel"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

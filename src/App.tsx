@@ -9,8 +9,11 @@ import History from "./pages/History.tsx";
 import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
 import Coach from "./pages/Coach.tsx";
+import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
+import { AuthProvider } from "./hooks/useAuth";
+import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 
 const queryClient = new QueryClient();
 
@@ -20,18 +23,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <WelcomeTutorial />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/roll" element={<Roll />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/plans" element={<Plans />} />
-          <Route path="/feedback" element={<Feedback />} />
-          <Route path="/coach" element={<Coach />} />
-          <Route path="/coach/:threadId" element={<Coach />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <PaymentTestModeBanner />
+          <WelcomeTutorial />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/roll" element={<Roll />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/coach" element={<Coach />} />
+            <Route path="/coach/:threadId" element={<Coach />} />
+            <Route path="/auth" element={<Auth />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
