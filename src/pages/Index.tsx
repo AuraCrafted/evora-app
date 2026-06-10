@@ -355,7 +355,7 @@ const Roll = () => {
                   className="text-muted-foreground"
                 >
                   <Plus className="h-4 w-4" />
-                  {customSuggestions.length === 0 ? "Add your first nudge" : "Manage your nudges"}
+                  {customSuggestions.length === 0 ? "Add your first evora" : "Manage your evoras"}
                 </Button>
               </div>
             )}
