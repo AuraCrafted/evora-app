@@ -342,7 +342,7 @@ const Roll = () => {
               <div className="flex flex-col items-center gap-2">
                 {customSuggestions.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center max-w-xs">
-                    No custom nudges yet — rolling will help you add your first.
+                    No custom evoras yet — rolling will help you add your first.
                   </p>
                 )}
                 <Button
