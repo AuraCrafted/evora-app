@@ -134,7 +134,8 @@ const Plans = () => {
     try {
       await openCheckout(priceId);
     } catch (e: any) {
-      toast.error(e.message || "Couldn't open checkout.");
+      console.error("Checkout error:", e);
+      toast.error(e?.message || "Couldn't open checkout.");
     }
   };
 

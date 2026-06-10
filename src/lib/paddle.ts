@@ -15,6 +15,22 @@ export function getPaddleEnvironment(): "sandbox" | "live" {
 let paddleInitialized = false;
 let paddleInitPromise: Promise<void> | null = null;
 
+function waitForPaddle(timeoutMs = 5000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const tick = () => {
+      if (typeof window !== "undefined" && (window as any).Paddle?.Environment) {
+        resolve();
+      } else if (Date.now() - start > timeoutMs) {
+        reject(new Error("Paddle.js failed to load"));
+      } else {
+        setTimeout(tick, 50);
+      }
+    };
+    tick();
+  });
+}
+
 export async function initializePaddle() {
   if (paddleInitialized) return;
   if (paddleInitPromise) return paddleInitPromise;
@@ -23,26 +39,28 @@ export async function initializePaddle() {
     throw new Error("VITE_PAYMENTS_CLIENT_TOKEN is not set");
   }
 
-  paddleInitPromise = new Promise<void>((resolve, reject) => {
+  paddleInitPromise = (async () => {
     const existing = document.querySelector('script[data-paddle="true"]') as HTMLScriptElement | null;
-    const onReady = () => {
-      const paddleJsEnvironment = getPaddleEnvironment() === "sandbox" ? "sandbox" : "production";
-      window.Paddle.Environment.set(paddleJsEnvironment);
-      window.Paddle.Initialize({ token: clientToken });
-      paddleInitialized = true;
-      resolve();
-    };
-    if (existing && window.Paddle) {
-      onReady();
-      return;
+    if (!existing) {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
+        script.dataset.paddle = "true";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Paddle.js"));
+        document.head.appendChild(script);
+      });
     }
-    const script = document.createElement("script");
-    script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
-    script.dataset.paddle = "true";
-    script.onload = onReady;
-    script.onerror = reject;
-    document.head.appendChild(script);
+    await waitForPaddle();
+    const paddleJsEnvironment = getPaddleEnvironment() === "sandbox" ? "sandbox" : "production";
+    window.Paddle.Environment.set(paddleJsEnvironment);
+    window.Paddle.Initialize({ token: clientToken });
+    paddleInitialized = true;
+  })().catch((err) => {
+    paddleInitPromise = null;
+    throw err;
   });
+
   return paddleInitPromise;
 }
 
