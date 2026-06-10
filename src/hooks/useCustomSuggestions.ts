@@ -99,7 +99,7 @@ export function useCustomSuggestions() {
       input: CustomSuggestionInput,
     ): { ok: true; id: string; error?: undefined } | { ok: false; error: string; id?: undefined } => {
       if (items.length >= MAX_CUSTOM) {
-        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom nudges.` };
+        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom evoras.` };
       }
       const parsed = customSuggestionSchema.safeParse(input);
       if (!parsed.success) {
