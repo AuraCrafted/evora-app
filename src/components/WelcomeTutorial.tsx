@@ -20,7 +20,7 @@ const steps = [
   },
   {
     title: "Accept or skip",
-    body: "Like it? Tap Accept and do it. Not feeling it? Skip to reroll. Free plan gets 4 rolls a day.",
+    body: "Like it? Tap Accept and do it. Not feeling it? Skip to reroll. Free plan gets 10 rolls a day.",
   },
   {
     title: "Build a streak",
