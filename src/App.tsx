@@ -27,6 +27,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PaymentTestModeBanner />
+          <PrivacyConsent />
           <WelcomeTutorial />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/coach" element={<Coach />} />
             <Route path="/coach/:threadId" element={<Coach />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
