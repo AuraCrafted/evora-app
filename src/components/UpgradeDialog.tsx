@@ -21,7 +21,7 @@ const plans: Plan[] = [
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpgrade: () => void;
+  onUpgrade: (tier: "month" | "year") => void;
 }
 
 export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
@@ -29,7 +29,8 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
 
   const handleUpgrade = () => {
     const plan = plans.find((p) => p.id === selected);
-    onUpgrade();
+    const tier = (plan?.id === "year" ? "year" : "month") as "month" | "year";
+    onUpgrade(tier);
     onOpenChange(false);
     toast.success(`Welcome to Evora ${plan?.name}!`, {
       description: "Unlimited rolls unlocked. Take it gently.",

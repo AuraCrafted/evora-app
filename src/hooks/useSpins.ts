@@ -4,12 +4,16 @@ import type { Suggestion } from "@/data/suggestions";
 const STORAGE_KEY = "nudge.spins.v3";
 const FREE_ROLLS_PER_DAY = 4;
 const PRO_KEY = "nudge.pro.v1";
+const TIER_KEY = "nudge.pro.tier.v1";
 const FREE_RESET_KEY = "nudge.pro.reset.v2";
+
+export type PlanTier = "free" | "month" | "year";
 
 // One-time reset to free plan for QA. Once cleared here, the flag below
 // keeps the user free until they explicitly upgrade again.
 if (typeof window !== "undefined" && localStorage.getItem(FREE_RESET_KEY) !== "done") {
   localStorage.removeItem(PRO_KEY);
+  localStorage.removeItem(TIER_KEY);
   localStorage.setItem(FREE_RESET_KEY, "done");
 }
 
@@ -70,9 +74,14 @@ function calcStreak(history: HistoryEntry[]): number {
 
 export function useSpins() {
   const [state, setState] = useState<SpinState>(() => load());
-  const [isPro, setIsPro] = useState<boolean>(
-    () => typeof window !== "undefined" && localStorage.getItem(PRO_KEY) === "true",
-  );
+  const [tier, setTierState] = useState<PlanTier>(() => {
+    if (typeof window === "undefined") return "free";
+    const stored = localStorage.getItem(TIER_KEY) as PlanTier | null;
+    if (stored === "month" || stored === "year") return stored;
+    // Back-compat with old pro flag
+    return localStorage.getItem(PRO_KEY) === "true" ? "month" : "free";
+  });
+  const isPro = tier !== "free";
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -113,15 +122,27 @@ export function useSpins() {
     }));
   }, []);
 
-  const upgrade = useCallback(() => {
-    localStorage.setItem(PRO_KEY, "true");
-    setIsPro(true);
+  const setTier = useCallback((next: PlanTier) => {
+    if (next === "free") {
+      localStorage.removeItem(PRO_KEY);
+      localStorage.removeItem(TIER_KEY);
+    } else {
+      localStorage.setItem(PRO_KEY, "true");
+      localStorage.setItem(TIER_KEY, next);
+    }
+    setTierState(next);
   }, []);
 
+  const upgrade = useCallback(
+    (next: PlanTier = "month") => {
+      setTier(next === "free" ? "month" : next);
+    },
+    [setTier],
+  );
+
   const downgrade = useCallback(() => {
-    localStorage.removeItem(PRO_KEY);
-    setIsPro(false);
-  }, []);
+    setTier("free");
+  }, [setTier]);
 
   const clearHistory = useCallback(() => {
     setState((s) => ({ ...s, history: [] }));
@@ -147,6 +168,8 @@ export function useSpins() {
     completed,
     nextResetMs,
     hasNudgedToday,
+    tier,
+    setTier,
     recordSpin,
     recordDecision,
     grantBonusSpin,
