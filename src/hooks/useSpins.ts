@@ -4,12 +4,16 @@ import type { Suggestion } from "@/data/suggestions";
 const STORAGE_KEY = "nudge.spins.v3";
 const FREE_ROLLS_PER_DAY = 4;
 const PRO_KEY = "nudge.pro.v1";
+const TIER_KEY = "nudge.pro.tier.v1";
 const FREE_RESET_KEY = "nudge.pro.reset.v2";
+
+export type PlanTier = "free" | "month" | "year";
 
 // One-time reset to free plan for QA. Once cleared here, the flag below
 // keeps the user free until they explicitly upgrade again.
 if (typeof window !== "undefined" && localStorage.getItem(FREE_RESET_KEY) !== "done") {
   localStorage.removeItem(PRO_KEY);
+  localStorage.removeItem(TIER_KEY);
   localStorage.setItem(FREE_RESET_KEY, "done");
 }
 
