@@ -39,6 +39,7 @@ function formatTimeLeft(ms: number): string {
 }
 
 const Roll = () => {
+  const navigate = useNavigate();
   const {
     used,
     total,
@@ -50,7 +51,6 @@ const Roll = () => {
     recordSpin,
     recordDecision,
     grantBonusSpin,
-    upgrade,
   } = useSpins();
   const { energy } = useEnergy();
   const { tasteAvailable, consumeTaste } = useEnergyTaste();
