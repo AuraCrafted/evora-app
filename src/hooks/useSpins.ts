@@ -151,6 +151,7 @@ export function useSpins() {
     recordDecision,
     grantBonusSpin,
     upgrade,
+    downgrade,
     clearHistory,
   };
 }
