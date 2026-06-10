@@ -39,7 +39,7 @@ const Home = () => {
             <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-semibold">Nudge</span>
+            <span className="font-display text-xl font-semibold">Evora</span>
           </div>
           <div className="text-[11px] font-medium text-muted-foreground rounded-full bg-card px-3 py-1.5 soft-shadow">
             {timeOfDayLabel[tod]}
