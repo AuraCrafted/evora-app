@@ -138,7 +138,7 @@ export function useCustomSuggestions() {
                 ...s,
                 emoji: parsed.data.emoji,
                 title: parsed.data.title,
-                description: parsed.data.description?.trim() || "Your own nudge.",
+                description: parsed.data.description?.trim() || "Your own evora.",
                 duration: parsed.data.duration,
               }
             : s,
