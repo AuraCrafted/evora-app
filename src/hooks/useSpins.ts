@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { Suggestion } from "@/data/suggestions";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const STORAGE_KEY = "nudge.spins.v3";
 const FREE_ROLLS_PER_DAY = 4;
