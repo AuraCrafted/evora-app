@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       const text = await res.text();
       console.error('Paddle cancel failed', res.status, text);
-      return new Response(JSON.stringify({ error: 'paddle_cancel_failed', detail: text }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'paddle_cancel_failed' }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     await admin
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('cancel-subscription unexpected error', e);
+    return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
