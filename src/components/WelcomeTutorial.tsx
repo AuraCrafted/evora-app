@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/sonner";
 
 const STORAGE_KEY = "nudge:tutorial-seen-v1";
 
-type Phase = "welcome" | "tutorial" | "done";
+type Phase = "tutorial" | "done";
 
 const steps = [
   {
