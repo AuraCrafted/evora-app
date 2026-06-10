@@ -85,6 +85,15 @@ export default function Auth() {
             {mode === "signup" ? "Sign in" : "Sign up"}
           </button>
         </p>
+        <div className="mt-6 text-center">
+          <div className="text-[10px] text-muted-foreground">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Notice</Link>
+            <span className="mx-1">·</span>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <span className="mx-1">·</span>
+            <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
+          </div>
+        </div>
       </div>
     </main>
   );

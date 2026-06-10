@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Dices, Flame, Heart, Home, MessageCircle, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -40,6 +40,13 @@ export const BottomNav = ({ streak }: Props) => {
 
   return (
     <nav className="sticky bottom-0 left-0 right-0 z-30 px-3 pb-4 pt-2">
+      <div className="mx-auto max-w-md text-center mb-1.5">
+        <Link to="/privacy" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
+        <span className="text-[10px] text-muted-foreground mx-1">·</span>
+        <Link to="/terms" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
+        <span className="text-[10px] text-muted-foreground mx-1">·</span>
+        <Link to="/refunds" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Refunds</Link>
+      </div>
       <div className="mx-auto max-w-md rounded-full bg-card/90 backdrop-blur-md soft-shadow border border-border/60 px-1.5 py-1.5 flex items-center justify-between gap-0.5">
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
