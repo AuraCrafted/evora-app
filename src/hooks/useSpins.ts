@@ -75,14 +75,10 @@ function calcStreak(history: HistoryEntry[]): number {
 export function useSpins() {
   const [state, setState] = useState<SpinState>(() => load());
   const sub = useSubscription();
-  const [localTier, setTierState] = useState<PlanTier>(() => {
-    if (typeof window === "undefined") return "free";
-    const stored = localStorage.getItem(TIER_KEY) as PlanTier | null;
-    if (stored === "month" || stored === "year") return stored;
-    return localStorage.getItem(PRO_KEY) === "true" ? "month" : "free";
-  });
-  // Real subscription (when signed in) takes precedence over local demo state.
-  const tier: PlanTier = sub.isPro ? sub.tier : localTier;
+  // Tier is now strictly derived from the server-backed subscription.
+  // Unauthenticated or unsubscribed users are always "free" — there's no
+  // localStorage override path that could grant pro features.
+  const tier: PlanTier = sub.isPro ? sub.tier : "free";
   const isPro = tier !== "free";
 
   useEffect(() => {
@@ -124,16 +120,12 @@ export function useSpins() {
     }));
   }, []);
 
-  const setTier = useCallback((next: PlanTier) => {
-    if (next === "free") {
-      localStorage.removeItem(PRO_KEY);
-      localStorage.removeItem(TIER_KEY);
-    } else {
-      localStorage.setItem(PRO_KEY, "true");
-      localStorage.setItem(TIER_KEY, next);
-    }
-    setTierState(next);
+  // Tier mutations are no-ops on the client. Real tier changes happen via
+  // Paddle checkout/cancel flows, which update the subscriptions row server-side.
+  const setTier = useCallback((_next: PlanTier) => {
+    // intentionally no-op: tier is server-authoritative
   }, []);
+
 
   const upgrade = useCallback(
     (next: PlanTier = "month") => {
