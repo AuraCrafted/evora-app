@@ -3,7 +3,7 @@ import type { Suggestion } from "@/data/suggestions";
 import { useSubscription } from "@/hooks/useSubscription";
 
 const STORAGE_KEY = "nudge.spins.v3";
-const FREE_ROLLS_PER_DAY = 4;
+const FREE_ROLLS_PER_DAY = 10;
 // Legacy keys — cleared so they can't be used to escalate tier from devtools.
 const LEGACY_PRO_KEY = "nudge.pro.v1";
 const LEGACY_TIER_KEY = "nudge.pro.tier.v1";
