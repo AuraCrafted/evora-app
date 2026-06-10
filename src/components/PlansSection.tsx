@@ -21,7 +21,7 @@ const plans: Plan[] = [
     perDay: "No card needed",
     features: [
       "10 rolls per day",
-      "🔋 1 energy-aware roll per day (taste it)",
+      "🔋 1 energy-aware roll per day",
       "All built-in categories",
       "Streaks & history",
     ],

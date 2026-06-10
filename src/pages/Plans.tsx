@@ -28,7 +28,7 @@ const plans: Plan[] = [
     tagline: "Get unstuck, occasionally.",
     features: [
       "10 rolls per day",
-      "🔋 1 energy-aware roll per day (taste it)",
+      "🔋 1 energy-aware roll per day",
       "Mixed categories",
       "Skip freely",
       "Visual streak",
