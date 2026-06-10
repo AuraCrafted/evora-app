@@ -97,10 +97,10 @@ const Roll = () => {
   const filteredPool = useMemo(() => {
     return contextFilter(basePool, {
       useTimeOfDay: isPro,
-      energy: isPro ? energy : undefined,
+      energy: energyAware ? energy : undefined,
       quickStart,
     });
-  }, [basePool, isPro, energy, quickStart]);
+  }, [basePool, isPro, energyAware, energy, quickStart]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
