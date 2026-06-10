@@ -123,6 +123,7 @@ const Roll = () => {
       const entryId = recordSpin(next);
       setCurrentEntryId(entryId);
       if (!isPro) {
+        if (tasteAvailable) consumeTaste();
         const spinsAfter = used + 1;
         if (spinsAfter > 0 && spinsAfter % 3 === 0) {
           window.setTimeout(() => setShowAd(true), 600);
