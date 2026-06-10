@@ -53,6 +53,8 @@ const Roll = () => {
     upgrade,
   } = useSpins();
   const { energy } = useEnergy();
+  const { tasteAvailable, consumeTaste } = useEnergyTaste();
+  const energyAware = isPro || tasteAvailable;
   const { items: customSuggestions } = useCustomSuggestions();
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
