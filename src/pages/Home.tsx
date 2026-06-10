@@ -76,9 +76,9 @@ const Home = () => {
           {!isPro && (
             <p className="text-[11px] text-muted-foreground text-center mt-3">
               {tasteAvailable ? (
-                <>Try the energy slider!{"\n\n\n"}&nbsp;&nbsp;</>
+                <>Try the energy slider! &nbsp;{"\n\n\n"}</>
               ) : (
-                <>You've used today's free taste.{"\n\n\n"}&nbsp;&nbsp;</>
+                <>You've used today's free taste. &nbsp;{"\n\n\n"}</>
               )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
                 See Monthly To Get full Access →
