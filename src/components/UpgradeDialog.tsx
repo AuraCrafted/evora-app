@@ -14,9 +14,8 @@ interface Plan {
 }
 
 const plans: Plan[] = [
-  { id: "week", name: "Weekly", price: "$5", period: "/ week", perDay: "$0.71/day" },
-  { id: "month", name: "Monthly", price: "$25", period: "/ month", badge: "Popular", perDay: "$0.83/day" },
-  { id: "year", name: "Yearly", price: "$49", period: "/ year", badge: "Best value", perDay: "$0.13/day" },
+  { id: "month", name: "Monthly", price: "$8.99", period: "/ month", badge: "Popular", perDay: "$0.30/day" },
+  { id: "year", name: "Yearly", price: "$49.99", period: "/ year", badge: "Best value", perDay: "$0.14/day" },
 ];
 
 interface Props {

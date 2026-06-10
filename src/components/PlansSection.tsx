@@ -20,50 +20,38 @@ const plans: Plan[] = [
     period: "forever",
     perDay: "No card needed",
     features: [
-      "3 dice rolls per week",
+      "10 rolls per day",
+      "🔋 1 energy-aware roll per day (taste it)",
       "All built-in categories",
       "Streaks & history",
-      "Daily reminders",
-    ],
-  },
-  {
-    id: "week",
-    name: "Weekly",
-    price: "$5",
-    period: "/ week",
-    perDay: "$0.71/day",
-    features: [
-      "Unlimited dice rolls",
-      "Unlimited custom nudges",
-      "💬 Chat with your Nudge Coach",
-      "Cancel anytime",
     ],
   },
   {
     id: "month",
     name: "Monthly",
-    price: "$25",
+    price: "$8.99",
     period: "/ month",
-    perDay: "$0.83/day",
+    perDay: "$0.30/day",
     badge: "Popular",
     highlight: true,
     features: [
-      "Everything in Weekly",
+      "Unlimited rolls",
+      "🔋 Full energy-aware tasks",
+      "⏰ Time-of-day filtering",
       "💬 Unlimited Nudge Coach chats",
-      "Reroll without limits",
-      "Support a tiny indie app",
+      "Ad-free",
     ],
   },
   {
     id: "year",
     name: "Yearly",
-    price: "$49",
+    price: "$49.99",
     period: "/ year",
-    perDay: "$0.13/day",
+    perDay: "$0.14/day",
     badge: "Best value",
     features: [
       "Everything in Monthly",
-      "Save over 80% vs weekly",
+      "Save 54% vs monthly",
       "Early access to new features",
       "One payment, full year",
     ],
@@ -146,17 +134,16 @@ export const PlansSection = ({ isPro, onChoosePlan }: Props) => {
                 className="mt-5 w-full"
                 aria-label="Free plan, currently active"
               >
-                {isPro ? "Included" : "You're on Free"}
+                {isPro ? "Included with Pro" : "You're on Free"}
               </Button>
-            ) : (
+            ) : isPro ? null : (
               <Button
                 onClick={onChoosePlan}
                 variant={plan.highlight ? "hero" : "outline"}
                 size="sm"
                 className="mt-5 w-full"
-                disabled={isPro}
               >
-                {isPro ? "Already Pro" : `Choose ${plan.name}`}
+                {`Choose ${plan.name}`}
               </Button>
             )}
           </div>
