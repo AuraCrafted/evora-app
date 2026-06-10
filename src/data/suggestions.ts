@@ -36,7 +36,7 @@ export const categoryLabels: Record<Category, string> = {
   tidy: "Tidying",
   create: "Creativity",
   care: "Self-care",
-  custom: "My nudges",
+  custom: "My evoras",
 };
 
 export const categoryEmoji: Record<Category, string> = {
