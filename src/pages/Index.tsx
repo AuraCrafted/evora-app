@@ -14,6 +14,7 @@ import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
+import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
@@ -52,6 +53,8 @@ const Roll = () => {
     upgrade,
   } = useSpins();
   const { energy } = useEnergy();
+  const { tasteAvailable, consumeTaste } = useEnergyTaste();
+  const energyAware = isPro || tasteAvailable;
   const { items: customSuggestions } = useCustomSuggestions();
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
@@ -94,10 +97,10 @@ const Roll = () => {
   const filteredPool = useMemo(() => {
     return contextFilter(basePool, {
       useTimeOfDay: isPro,
-      energy: isPro ? energy : undefined,
+      energy: energyAware ? energy : undefined,
       quickStart,
     });
-  }, [basePool, isPro, energy, quickStart]);
+  }, [basePool, isPro, energyAware, energy, quickStart]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
@@ -120,6 +123,7 @@ const Roll = () => {
       const entryId = recordSpin(next);
       setCurrentEntryId(entryId);
       if (!isPro) {
+        if (tasteAvailable) consumeTaste();
         const spinsAfter = used + 1;
         if (spinsAfter > 0 && spinsAfter % 3 === 0) {
           window.setTimeout(() => setShowAd(true), 600);

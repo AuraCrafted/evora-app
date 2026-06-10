@@ -6,6 +6,7 @@ import { EnergySelector } from "@/components/EnergySelector";
 import { InstallBanner } from "@/components/InstallBanner";
 import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
+import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 import { sfx } from "@/lib/feedback";
 
@@ -26,6 +27,8 @@ const subtitles: Record<string, string> = {
 const Home = () => {
   const { streak, completed, remaining, total, isPro, hasNudgedToday } = useSpins();
   const { energy, setEnergy } = useEnergy();
+  const { tasteAvailable } = useEnergyTaste();
+  const sliderUnlocked = isPro || tasteAvailable;
   const tod = currentTimeOfDay();
 
   return (
@@ -67,11 +70,16 @@ const Home = () => {
           <EnergySelector
             value={energy}
             onChange={setEnergy}
-            locked={!isPro}
+            locked={!sliderUnlocked}
             onLockedClick={() => sfx.tap()}
           />
           {!isPro && (
             <p className="text-[11px] text-muted-foreground text-center mt-3">
+              {tasteAvailable ? (
+                <>Try the energy slider — your free taste for today. </>
+              ) : (
+                <>You've used today's free taste. </>
+              )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
                 See Monthly →
               </Link>
