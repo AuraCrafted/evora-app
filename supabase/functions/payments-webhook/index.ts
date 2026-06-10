@@ -37,8 +37,6 @@ async function handleSubscriptionCreated(subscription: any, env: StripeEnv) {
       user_id: userId,
       stripe_subscription_id: subscription.id,
       stripe_customer_id: subscription.customer,
-      paddle_subscription_id: subscription.id, // legacy NOT NULL safeguard pre-migration
-      paddle_customer_id: subscription.customer,
       product_id: productId,
       price_id: priceId,
       status: subscription.status,

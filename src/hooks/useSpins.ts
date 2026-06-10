@@ -121,7 +121,7 @@ export function useSpins() {
   }, []);
 
   // Tier mutations are no-ops on the client. Real tier changes happen via
-  // Paddle checkout/cancel flows, which update the subscriptions row server-side.
+  // Stripe checkout/cancel flows, which update the subscriptions row server-side.
   const setTier = useCallback((_next: PlanTier) => {
     // intentionally no-op: tier is server-authoritative
   }, []);
