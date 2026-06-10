@@ -60,7 +60,7 @@ const Home = () => {
             </span>
           </h1>
           <p className="mt-3 text-muted-foreground text-[15px] max-w-md whitespace-pre-line">
-            When you don't know what to do,{"\n"}Nudge picks something small that
+            When you don't know what to do,{"\n"}Evora picks something small that
             actually fits right now.
           </p>
         </div>
