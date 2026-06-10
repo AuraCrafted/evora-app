@@ -275,7 +275,7 @@ export function AdDialog({
           </div>
           <DialogHeader className="space-y-2">
             <DialogTitle className="font-display text-xl font-semibold text-primary-foreground">
-              Enjoying Nudge?
+              Enjoying Evora?
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/90 text-sm">
               Go Pro to remove ads, unlock unlimited rolls, custom nudges, and smart filters.
