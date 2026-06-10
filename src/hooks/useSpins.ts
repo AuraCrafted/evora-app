@@ -4,7 +4,7 @@ import type { Suggestion } from "@/data/suggestions";
 const STORAGE_KEY = "nudge.spins.v3";
 const FREE_ROLLS_PER_DAY = 4;
 const PRO_KEY = "nudge.pro.v1";
-const FREE_RESET_KEY = "nudge.pro.reset.v1";
+const FREE_RESET_KEY = "nudge.pro.reset.v2";
 
 // One-time reset to free plan for QA. Once cleared here, the flag below
 // keeps the user free until they explicitly upgrade again.
@@ -118,6 +118,11 @@ export function useSpins() {
     setIsPro(true);
   }, []);
 
+  const downgrade = useCallback(() => {
+    localStorage.removeItem(PRO_KEY);
+    setIsPro(false);
+  }, []);
+
   const clearHistory = useCallback(() => {
     setState((s) => ({ ...s, history: [] }));
   }, []);
@@ -146,6 +151,7 @@ export function useSpins() {
     recordDecision,
     grantBonusSpin,
     upgrade,
+    downgrade,
     clearHistory,
   };
 }
