@@ -1,6 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { getPaddleClient, type PaddleEnv } from '../_shared/paddle.ts';
+import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
