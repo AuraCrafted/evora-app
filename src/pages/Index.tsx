@@ -14,6 +14,7 @@ import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
+import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
 import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
