@@ -63,7 +63,7 @@ function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion |
     id: s.id,
     emoji: s.emoji,
     title: s.title,
-    description: typeof s.description === "string" ? s.description : "Your own nudge.",
+    description: typeof s.description === "string" ? s.description : "Your own evora.",
     duration: s.duration,
     minutes,
     effort,
