@@ -49,23 +49,35 @@ export const PrivacyConsent = () => {
           <Shield className="h-6 w-6 text-primary-foreground" />
         </div>
         <h2 className="font-display text-2xl font-semibold tracking-tight text-center">
-          Your privacy matters
+          Before you get started
         </h2>
         <p className="mt-3 text-center text-sm text-muted-foreground leading-relaxed">
-          Before you get started, please review how we handle your data. We keep it simple: your
-          info is used to personalize your nudges and sync your plan — never sold.
+          Please review our Privacy Notice, Terms & Conditions, and Refund Policy. Your data is
+          used to personalize your nudges and sync your plan — never sold.
         </p>
+
+        <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+          <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/terms" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground">
+            Terms
+          </Link>
+          <Link to="/refunds" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground">
+            Refunds
+          </Link>
+        </div>
 
         <div className="mt-6 flex flex-col gap-3">
           <Button asChild variant="soft" size="lg" className="w-full">
             <Link to="/privacy" target="_blank" rel="noopener noreferrer">
               <BookOpen className="h-4 w-4" />
-              Read
+              Read privacy notice
             </Link>
           </Button>
           <Button variant="hero" size="lg" className="w-full" onClick={accept}>
             <Check className="h-4 w-4" />
-            Accept
+            Read and Accept
           </Button>
         </div>
       </div>

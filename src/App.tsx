@@ -11,6 +11,8 @@ import Feedback from "./pages/Feedback.tsx";
 import Coach from "./pages/Coach.tsx";
 import Auth from "./pages/Auth.tsx";
 import Privacy from "./pages/Privacy.tsx";
+import Terms from "./pages/Terms.tsx";
+import Refunds from "./pages/Refunds.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
 import { PrivacyConsent } from "./components/PrivacyConsent";
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/coach/:threadId" element={<Coach />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refunds" element={<Refunds />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
