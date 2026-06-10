@@ -78,7 +78,7 @@ const Home = () => {
               {tasteAvailable ? (
                 <>Try The Energy Slider{"\n"}</>
               ) : (
-                <>You've Used Today's Free Taste{"\n"}</>
+                <>You've Used Today's Free Trial{"\n"}</>
               )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
                 See Monthly To Get Full Access →
