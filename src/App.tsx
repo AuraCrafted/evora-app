@@ -10,8 +10,10 @@ import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
 import Coach from "./pages/Coach.tsx";
 import Auth from "./pages/Auth.tsx";
+import Privacy from "./pages/Privacy.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
+import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 
