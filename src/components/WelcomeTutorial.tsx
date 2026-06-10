@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, ArrowLeft, X, Gift } from "lucide-react";
+import { ArrowRight, ArrowLeft, X } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { useSpins } from "@/hooks/useSpins";
 import { toast } from "@/components/ui/sonner";
