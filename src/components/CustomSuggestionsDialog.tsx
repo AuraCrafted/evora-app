@@ -206,7 +206,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
           </h3>
           {items.length === 0 ? (
             <div className="rounded-2xl bg-secondary p-4 text-center text-sm text-muted-foreground">
-              No custom nudges yet. Add your first one above.
+              No custom evoras yet. Add your first one above.
             </div>
           ) : (
             <ul className="space-y-2">
