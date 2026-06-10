@@ -54,6 +54,13 @@ export default function Refunds() {
           </p>
         </section>
       </div>
+
+      <footer className="mt-12 pt-6 border-t border-border/60">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Notice</Link>
+          <Link to="/terms" className="hover:text-foreground transition-colors">Terms & Conditions</Link>
+        </div>
+      </footer>
     </main>
   );
 }
