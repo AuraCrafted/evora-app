@@ -55,7 +55,7 @@ export const InstallBanner = () => {
             <Download className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold leading-tight">Add Nudge to your home screen</div>
+            <div className="text-sm font-semibold leading-tight">Add Evora to your home screen</div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               One tap to roll. Feels like a real app.
             </p>

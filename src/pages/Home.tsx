@@ -39,7 +39,7 @@ const Home = () => {
             <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-semibold">Nudge</span>
+            <span className="font-display text-xl font-semibold">Evora</span>
           </div>
           <div className="text-[11px] font-medium text-muted-foreground rounded-full bg-card px-3 py-1.5 soft-shadow">
             {timeOfDayLabel[tod]}
@@ -60,7 +60,7 @@ const Home = () => {
             </span>
           </h1>
           <p className="mt-3 text-muted-foreground text-[15px] max-w-md whitespace-pre-line">
-            When you don't know what to do,{"\n"}Nudge picks something small that
+            When you don't know what to do,{"\n"}Evora picks something small that
             actually fits right now.
           </p>
         </div>
@@ -128,7 +128,7 @@ const Home = () => {
 
         {/* How it works */}
         <div className="mt-8 rounded-3xl bg-card p-5 soft-shadow">
-          <h2 className="font-display text-base font-semibold mb-3">How Nudge works</h2>
+          <h2 className="font-display text-base font-semibold mb-3">How Evora works</h2>
           <ul className="space-y-2.5">
             {[
               "Tell us your energy (optional).",

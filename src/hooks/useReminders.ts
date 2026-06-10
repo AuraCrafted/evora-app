@@ -71,7 +71,7 @@ export function useReminders(streak: number, hasNudgedToday: boolean) {
       const today = todayKey();
       if (last === today) return;
 
-      const title = streak > 0 ? `🔥 Keep your ${streak}-day streak alive` : "🎲 Time for a tiny nudge";
+      const title = streak > 0 ? `🔥 Keep your ${streak}-day streak alive` : "🎲 Time for a tiny evora";
       const body =
         streak > 0
           ? "One small action today and your streak rolls on."

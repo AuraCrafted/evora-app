@@ -63,7 +63,7 @@ function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion |
     id: s.id,
     emoji: s.emoji,
     title: s.title,
-    description: typeof s.description === "string" ? s.description : "Your own nudge.",
+    description: typeof s.description === "string" ? s.description : "Your own evora.",
     duration: s.duration,
     minutes,
     effort,
@@ -99,7 +99,7 @@ export function useCustomSuggestions() {
       input: CustomSuggestionInput,
     ): { ok: true; id: string; error?: undefined } | { ok: false; error: string; id?: undefined } => {
       if (items.length >= MAX_CUSTOM) {
-        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom nudges.` };
+        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom evoras.` };
       }
       const parsed = customSuggestionSchema.safeParse(input);
       if (!parsed.success) {
@@ -111,7 +111,7 @@ export function useCustomSuggestions() {
         id,
         emoji: parsed.data.emoji,
         title: parsed.data.title,
-        description: parsed.data.description?.trim() || "Your own nudge.",
+        description: parsed.data.description?.trim() || "Your own evora.",
         duration: parsed.data.duration,
         minutes,
         effort: minutes <= 5 ? "low" : minutes <= 15 ? "medium" : "high",
@@ -138,7 +138,7 @@ export function useCustomSuggestions() {
                 ...s,
                 emoji: parsed.data.emoji,
                 title: parsed.data.title,
-                description: parsed.data.description?.trim() || "Your own nudge.",
+                description: parsed.data.description?.trim() || "Your own evora.",
                 duration: parsed.data.duration,
               }
             : s,

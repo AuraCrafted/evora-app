@@ -46,7 +46,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
     setForm({
       emoji: s.emoji,
       title: s.title,
-      description: s.description === "Your own nudge." ? "" : s.description,
+      description: s.description === "Your own evora." ? "" : s.description,
       duration: s.duration,
     });
     setErrors({});
@@ -80,7 +80,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         return;
       }
       sfx.accept();
-      toast({ title: "Nudge updated" });
+      toast({ title: "Evora updated" });
     } else {
       const res = add(parsed.data);
       if (!res.ok) {
@@ -88,7 +88,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         return;
       }
       sfx.accept();
-      toast({ title: "Nudge saved", description: "It's now in your custom pool." });
+      toast({ title: "Evora saved", description: "It's now in your custom pool." });
     }
     setEditingId(null);
     setForm(EMPTY);
@@ -108,7 +108,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         <DialogHeader>
           <DialogTitle className="font-display text-xl flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Your custom nudges
+            Your custom evoras
           </DialogTitle>
           <DialogDescription>
             Make the dice roll your own ideas. {items.length}/{max} saved.
@@ -188,7 +188,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4" /> {atLimit ? "Limit reached" : "Add nudge"}
+                  <Plus className="h-4 w-4" /> {atLimit ? "Limit reached" : "Add evora"}
                 </>
               )}
             </Button>
@@ -206,7 +206,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
           </h3>
           {items.length === 0 ? (
             <div className="rounded-2xl bg-secondary p-4 text-center text-sm text-muted-foreground">
-              No custom nudges yet. Add your first one above.
+              No custom evoras yet. Add your first one above.
             </div>
           ) : (
             <ul className="space-y-2">

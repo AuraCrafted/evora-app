@@ -46,10 +46,10 @@ const plans: Plan[] = [
     features: [
       "Unlimited rolls",
       "Choose your category",
-      "Custom nudges",
+      "Custom evoras",
       "⏰ Time-of-day filtering",
       "🔋 Energy-aware tasks (low / normal / push)",
-      "🏷️ Tag your custom nudges",
+      "🏷️ Tag your custom evoras",
       "✋ Commit Mode (soft accountability)",
       "📊 Activity patterns",
       "Ad-free",

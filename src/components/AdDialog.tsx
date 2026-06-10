@@ -175,7 +175,7 @@ export function AdDialog({
   if (mode === "rewarded") {
     const perks = [
       { icon: InfinityIcon, title: "Unlimited rolls", desc: "Never hit a daily cap again." },
-      { icon: Wand2, title: "Custom nudges", desc: "Build your own personal task library." },
+      { icon: Wand2, title: "Custom evoras", desc: "Build your own personal task library." },
       { icon: Clock, title: "Smart timing", desc: "Nudges tuned to your time & energy." },
       { icon: ShieldOff, title: "Zero ads", desc: "Clean, distraction-free momentum." },
     ];
@@ -275,10 +275,10 @@ export function AdDialog({
           </div>
           <DialogHeader className="space-y-2">
             <DialogTitle className="font-display text-xl font-semibold text-primary-foreground">
-              Enjoying Nudge?
+              Enjoying Evora?
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/90 text-sm">
-              Go Pro to remove ads, unlock unlimited rolls, custom nudges, and smart filters.
+              Go Pro to remove ads, unlock unlimited rolls, custom evoras, and smart filters.
             </DialogDescription>
           </DialogHeader>
         </div>
