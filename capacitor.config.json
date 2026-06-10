@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.5c75fe72ae1145bc8efdd365adcddfd1",
+  "appName": "evora-app",
+  "webDir": "dist",
+  "server": {
+    "url": "https://5c75fe72-ae11-45bc-8efd-d365adcddfd1.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
