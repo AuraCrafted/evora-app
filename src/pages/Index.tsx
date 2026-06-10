@@ -208,8 +208,9 @@ const Roll = () => {
   };
 
   const handleUpgrade = () => {
-    sfx.celebrate();
-    upgrade();
+    sfx.tap();
+    setShowUpgrade(false);
+    navigate("/plans");
   };
 
   const usageDots = useMemo(() => Array.from({ length: Math.min(total, 10) }), [total]);
