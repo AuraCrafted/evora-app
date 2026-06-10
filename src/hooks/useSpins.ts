@@ -118,6 +118,11 @@ export function useSpins() {
     setIsPro(true);
   }, []);
 
+  const downgrade = useCallback(() => {
+    localStorage.removeItem(PRO_KEY);
+    setIsPro(false);
+  }, []);
+
   const clearHistory = useCallback(() => {
     setState((s) => ({ ...s, history: [] }));
   }, []);
