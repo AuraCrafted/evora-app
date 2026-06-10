@@ -8,6 +8,7 @@ import Roll from "./pages/Index.tsx";
 import History from "./pages/History.tsx";
 import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
+import Coach from "./pages/Coach.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
 
