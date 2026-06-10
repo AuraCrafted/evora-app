@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Dices, Flame, Heart, Home, MessageCircle, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
