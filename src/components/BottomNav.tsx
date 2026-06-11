@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Dices, Flame, Heart, Home, MessageCircle, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Dices, Dumbbell, Flame, Home, MessageCircle, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { isMuted, setMuted, sfx } from "@/lib/feedback";
@@ -18,7 +18,7 @@ interface NavItem {
 const items: NavItem[] = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/roll", label: "Roll", icon: Dices },
-  { to: "/coach", label: "Coach", icon: Heart },
+  { to: "/coach", label: "Coach", icon: Dumbbell },
   { to: "/history", label: "Streak", icon: Flame },
   { to: "/plans", label: "Plans", icon: Sparkles },
   { to: "/feedback", label: "Ideas", icon: MessageCircle },
