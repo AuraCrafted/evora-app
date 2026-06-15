@@ -69,18 +69,39 @@ export function useSubscription() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Skip Realtime (WebSocket) in non-http(s) environments like Capacitor (capacitor://, file://),
+    // where WebSocket connections are blocked as insecure. Fall back to polling instead.
+    const protocol = typeof window !== "undefined" ? window.location.protocol : "";
+    const isWebEnv = protocol === "http:" || protocol === "https:";
+
+    if (!isWebEnv) {
+      const interval = setInterval(() => {
+        refetch();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+
     const channel = supabase.channel(`subs-${user.id}-${Math.random().toString(36).slice(2, 8)}`);
-    channel
-      .on(
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${user.id}` },
-        () => {
-          refetch();
-        },
-      )
-      .subscribe();
+    try {
+      channel
+        .on(
+          "postgres_changes" as any,
+          { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${user.id}` },
+          () => {
+            refetch();
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("Realtime subscribe failed, skipping:", err);
+    }
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        /* noop */
+      }
     };
   }, [user, refetch]);
 
