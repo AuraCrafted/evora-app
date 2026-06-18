@@ -16,11 +16,17 @@ import { useSpins, type PlanTier } from "@/hooks/useSpins";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { useIAP, type IAPProductId } from "@/hooks/useIAP";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { sfx } from "@/lib/feedback";
 import { toast } from "sonner";
+
+const APPLE_PRODUCT_BY_PLAN: Record<"month" | "year", IAPProductId> = {
+  month: "com.thiskid7.evora.monthly",
+  year: "com.thiskid7.evora.yearly",
+};
 
 interface Plan {
   id: PlanTier;
