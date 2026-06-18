@@ -107,9 +107,11 @@ const Plans = () => {
   const { streak } = useSpins();
   const { tier, isPro, cancelAtPeriodEnd, periodEnd, refetch } = useSubscription();
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
+  const iap = useIAP();
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
@@ -135,8 +137,34 @@ const Plans = () => {
     requireAuth(() => setPendingPlan(plan));
   };
 
-  const confirmCheckout = () => {
-    if (!pendingPlan?.priceId || !user) return;
+  const confirmCheckout = async () => {
+    if (!pendingPlan || !user) return;
+
+    // iOS native: Apple In-App Purchase
+    if (iap.enabled) {
+      const productId =
+        pendingPlan.id === "month" || pendingPlan.id === "year"
+          ? APPLE_PRODUCT_BY_PLAN[pendingPlan.id]
+          : null;
+      if (!productId) {
+        setPendingPlan(null);
+        return;
+      }
+      setPendingPlan(null);
+      try {
+        await iap.purchase(productId);
+        toast.success("Purchase successful — activating your plan…");
+        setTimeout(() => refetch(), 1500);
+      } catch (e: any) {
+        console.error("IAP error:", e);
+        const msg = e?.message || String(e);
+        if (!/cancel/i.test(msg)) toast.error(msg || "Purchase failed.");
+      }
+      return;
+    }
+
+    // Web: Stripe embedded checkout
+    if (!pendingPlan.priceId) return;
     const priceId = pendingPlan.priceId;
     setPendingPlan(null);
     try {
@@ -153,9 +181,32 @@ const Plans = () => {
     }
   };
 
+  const handleRestore = async () => {
+    sfx.tap();
+    setRestoring(true);
+    try {
+      await iap.restore();
+      toast.success("Purchases restored.");
+      setTimeout(() => refetch(), 1000);
+    } catch (e: any) {
+      toast.error(e?.message || "Couldn't restore purchases.");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const confirmCancel = async () => {
     setCancelling(true);
     try {
+      if (iap.enabled) {
+        // Apple requires subscription cancellation through App Store settings.
+        toast.message("Manage your subscription in the App Store", {
+          description:
+            "Open Settings → [Your Name] → Subscriptions to cancel. Changes sync back on next launch.",
+        });
+        setShowCancel(false);
+        return;
+      }
       const { error } = await supabase.functions.invoke("cancel-subscription");
       if (error) throw error;
       toast.success("Cancellation scheduled.", {
