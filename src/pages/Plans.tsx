@@ -364,8 +364,25 @@ const Plans = () => {
           })}
         </div>
 
+        {iap.enabled && (
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRestore}
+              disabled={restoring || iap.busy}
+            >
+              {restoring ? <Loader2 className="h-4 w-4 animate-spin" /> : "Restore Purchases"}
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center max-w-xs">
+              Already subscribed on another device? Tap Restore. Manage or cancel anytime in
+              Settings → Subscriptions.
+            </p>
+          </div>
+        )}
+
         <p className="text-center text-[11px] text-muted-foreground mt-6">
-          Secure checkout. Cancel anytime.
+          {iap.enabled ? "Billed by Apple. Cancel anytime in App Store settings." : "Secure checkout. Cancel anytime."}
         </p>
       </section>
 
