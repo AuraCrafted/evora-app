@@ -118,7 +118,7 @@ export function useIAP() {
           price: typeof p.price === "number" ? p.price : 0,
           currencyCode: p.currencyCode,
         } satisfies IAPProduct;
-      }).filter((x): x is IAPProduct => !!x);
+      }).filter((x): x is IAPProduct => x !== null);
       setProducts(mapped);
     } catch (err) {
       console.error("[IAP] getProducts failed:", err);
