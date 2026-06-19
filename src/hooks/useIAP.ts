@@ -159,7 +159,7 @@ const initializePurchaseStore = async (validateReceipt: ReceiptValidator) => {
 
 /**
  * Native Apple In-App Purchases hook using cordova-plugin-purchase, which avoids
- * the @capgo/native-purchases SPM package that was causing Xcode conflicts.
+ * Swift Package Manager dependencies that can conflict with generated Xcode projects.
  * Web (and Android, for now) falls back to no-op so existing Stripe flow keeps working.
  */
 export function useIAP() {
