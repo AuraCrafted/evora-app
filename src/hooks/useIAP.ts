@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { supabase } from "@/integrations/supabase/client";
 
-declare global {
-  interface Window {
-    CdvPurchase?: any;
-    store?: any;
-  }
-}
+// ============================================================================
+// RevenueCat configuration
+// ============================================================================
+// Paste your iOS PUBLIC SDK key from RevenueCat → Project settings → API keys.
+// (Public keys are safe to ship in client code. Do NOT use a secret key here.)
+const REVENUECAT_IOS_API_KEY = "appl_REPLACE_ME";
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
+  "com.thiskid7.evora.weekly",
   "com.thiskid7.evora.monthly",
   "com.thiskid7.evora.yearly",
 ] as const;
@@ -26,8 +28,10 @@ export interface IAPProduct {
   currencyCode?: string;
 }
 
-// Maps an Apple product ID to the price_id used in the subscriptions table
-export function priceIdForApple(productId: string): "evora_monthly" | "evora_yearly" | null {
+export function priceIdForApple(
+  productId: string,
+): "evora_weekly" | "evora_monthly" | "evora_yearly" | null {
+  if (productId === "com.thiskid7.evora.weekly") return "evora_weekly";
   if (productId === "com.thiskid7.evora.monthly") return "evora_monthly";
   if (productId === "com.thiskid7.evora.yearly") return "evora_yearly";
   return null;
@@ -37,152 +41,50 @@ export function isIAPPlatform(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 }
 
-type ReceiptValidator = (receipt: string, productId?: string) => Promise<any>;
+// ============================================================================
+// SDK init (singleton)
+// ============================================================================
+let configurePromise: Promise<void> | null = null;
 
-type PendingPurchase = {
-  resolve: (value: any) => void;
-  reject: (reason?: any) => void;
-  timer: number;
-};
+const configureRevenueCat = async (): Promise<void> => {
+  if (configurePromise) return configurePromise;
+  configurePromise = (async () => {
+    if (!REVENUECAT_IOS_API_KEY || REVENUECAT_IOS_API_KEY.includes("REPLACE_ME")) {
+      throw new Error(
+        "RevenueCat iOS API key is not set. Edit src/hooks/useIAP.ts and paste your appl_… key.",
+      );
+    }
 
-let storeInitPromise: Promise<{ cdv: any; store: any }> | null = null;
-let activeValidator: ReceiptValidator | null = null;
-const pendingPurchases = new Map<string, PendingPurchase>();
+    // Tie purchases to the Supabase user when signed in.
+    const { data } = await supabase.auth.getUser();
+    const appUserID = data.user?.id;
 
-const waitForPurchaseGlobal = async () => {
-  if (window.CdvPurchase?.store) return window.CdvPurchase;
-
-  await new Promise<void>((resolve) => {
-    let attempts = 0;
-    const done = () => resolve();
-    document.addEventListener("deviceready", done, { once: true });
-    const poll = window.setInterval(() => {
-      attempts += 1;
-      if (window.CdvPurchase?.store || attempts >= 80) {
-        window.clearInterval(poll);
-        document.removeEventListener("deviceready", done);
-        resolve();
-      }
-    }, 125);
-  });
-
-  if (!window.CdvPurchase?.store) {
-    throw new Error("Apple purchases are not available in this iOS build. Run npm install, then npx cap sync ios.");
-  }
-  return window.CdvPurchase;
-};
-
-const extractReceipt = (store: any, transaction?: any): string | null => {
-  const fromTransaction = transaction?.parentReceipt?.nativeData?.appStoreReceipt;
-  if (fromTransaction) return fromTransaction;
-
-  const receipts = store?.localReceipts || [];
-  for (const receipt of receipts) {
-    const appStoreReceipt = receipt?.nativeData?.appStoreReceipt;
-    if (appStoreReceipt) return appStoreReceipt;
-  }
-  return null;
-};
-
-const productIdFromTransaction = (transaction: any): string | undefined =>
-  transaction?.products?.[0]?.id || transaction?.productId;
-
-const rejectPending = (productId: string | undefined, error: any) => {
-  if (!productId) return;
-  const pending = pendingPurchases.get(productId);
-  if (!pending) return;
-  window.clearTimeout(pending.timer);
-  pendingPurchases.delete(productId);
-  pending.reject(error);
-};
-
-const resolvePending = (productId: string | undefined, value: any) => {
-  if (!productId) return;
-  const pending = pendingPurchases.get(productId);
-  if (!pending) return;
-  window.clearTimeout(pending.timer);
-  pendingPurchases.delete(productId);
-  pending.resolve(value);
-};
-
-const initializePurchaseStore = async (validateReceipt: ReceiptValidator) => {
-  activeValidator = validateReceipt;
-  if (storeInitPromise) return storeInitPromise;
-
-  storeInitPromise = (async () => {
-    const cdv = await waitForPurchaseGlobal();
-    const store = cdv.store;
-    const platform = cdv.Platform.APPLE_APPSTORE;
-
-    store.verbosity = cdv.LogLevel?.WARNING ?? 2;
-    store.register(
-      IAP_PRODUCT_IDS.map((id) => ({
-        id,
-        type: cdv.ProductType.PAID_SUBSCRIPTION,
-        platform,
-        group: "evora_subscription",
-      })),
-    );
-
-    store.error((error: any) => {
-      console.error("[IAP] store error:", error);
-      rejectPending(error?.productId, new Error(error?.message || "Apple purchase failed."));
+    await Purchases.setLogLevel({ level: LOG_LEVEL.WARN });
+    await Purchases.configure({
+      apiKey: REVENUECAT_IOS_API_KEY,
+      appUserID,
     });
-
-    store.when().approved(async (transaction: any) => {
-      const productId = productIdFromTransaction(transaction);
-      try {
-        let receipt = extractReceipt(store, transaction);
-        if (!receipt) {
-          await store.update();
-          receipt = extractReceipt(store, transaction);
-        }
-        if (!receipt) throw new Error("No App Store receipt returned from StoreKit.");
-        const result = await activeValidator?.(receipt, productId);
-        await transaction.finish();
-        resolvePending(productId, result);
-      } catch (error) {
-        rejectPending(productId, error);
-      }
-    });
-
-    const errors = await store.initialize([{ platform, options: { needAppReceipt: false, autoFinish: false } }]);
-    const setupError = errors?.find((error: any) => error?.isError);
-    if (setupError) throw new Error(setupError.message || "Apple purchases failed to initialize.");
-    await store.update();
-
-    return { cdv, store };
   })();
-
-  return storeInitPromise;
+  return configurePromise;
 };
 
-/**
- * Native Apple In-App Purchases hook using cordova-plugin-purchase, which avoids
- * Swift Package Manager dependencies that can conflict with generated Xcode projects.
- * Web (and Android, for now) falls back to no-op so existing Stripe flow keeps working.
- */
+// Sync the latest entitlement state from RevenueCat → our subscriptions table.
+const syncSubscriptionToBackend = async () => {
+  const { error } = await supabase.functions.invoke(
+    "sync-revenuecat-subscription",
+    { body: {} },
+  );
+  if (error) throw error;
+};
+
+// ============================================================================
+// Hook
+// ============================================================================
 export function useIAP() {
   const enabled = isIAPPlatform();
   const [products, setProducts] = useState<IAPProduct[]>([]);
   const [loading, setLoading] = useState(enabled);
   const [busy, setBusy] = useState(false);
-
-  /**
-   * Sends the StoreKit receipt to the validate-apple-receipt edge function,
-   * which verifies with Apple and upserts the subscription row.
-   */
-  const validateReceipt = useCallback(
-    async (receipt: string, productId?: string) => {
-      const { data, error } = await supabase.functions.invoke("validate-apple-receipt", {
-        body: { receipt, productId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    [],
-  );
 
   const loadProducts = useCallback(async () => {
     if (!enabled) {
@@ -190,27 +92,25 @@ export function useIAP() {
       return;
     }
     try {
-      const { cdv, store } = await initializePurchaseStore(validateReceipt);
-      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id) => store.get(id, cdv.Platform.APPLE_APPSTORE))
-        .filter(Boolean)
-        .map((p: any) => {
-          const pricing = p.pricing || p.offers?.[0]?.pricingPhases?.[0];
-          return {
-            identifier: p.id,
-            title: p.title,
-            description: p.description,
-            priceString: pricing?.price ?? "",
-            price: typeof pricing?.priceMicros === "number" ? pricing.priceMicros / 1_000_000 : 0,
-            currencyCode: pricing?.currency,
-          };
-        });
+      await configureRevenueCat();
+      const result = await Purchases.getProducts({
+        productIdentifiers: [...IAP_PRODUCT_IDS],
+      });
+      const mapped: IAPProduct[] = (result.products || []).map((p: any) => ({
+        identifier: p.identifier,
+        title: p.title ?? p.identifier,
+        description: p.description ?? "",
+        priceString: p.priceString ?? "",
+        price: typeof p.price === "number" ? p.price : 0,
+        currencyCode: p.currencyCode,
+      }));
       setProducts(mapped);
     } catch (err) {
-      console.error("[IAP] getProducts failed:", err);
+      console.error("[IAP] loadProducts failed:", err);
     } finally {
       setLoading(false);
     }
-  }, [enabled, validateReceipt]);
+  }, [enabled]);
 
   useEffect(() => {
     loadProducts();
@@ -221,53 +121,36 @@ export function useIAP() {
       if (!enabled) throw new Error("In-App Purchases are only available in the iOS app.");
       setBusy(true);
       try {
-        const { cdv, store } = await initializePurchaseStore(validateReceipt);
-        const product = store.get(productId, cdv.Platform.APPLE_APPSTORE);
-        const offer = product?.getOffer();
-        if (!offer) throw new Error("This Apple product is not available yet. Check App Store Connect and try again.");
-
-        const result = new Promise((resolve, reject) => {
-          const timer = window.setTimeout(() => {
-            pendingPurchases.delete(productId);
-            reject(new Error("Apple purchase timed out before a receipt was returned."));
-          }, 120_000);
-          pendingPurchases.set(productId, { resolve, reject, timer });
+        await configureRevenueCat();
+        const result = await Purchases.getProducts({
+          productIdentifiers: [productId],
         });
-
-        const orderError = await offer.order();
-        if (orderError) {
-          rejectPending(productId, new Error(orderError.message || "Apple purchase failed."));
+        const storeProduct = result.products?.[0];
+        if (!storeProduct) {
+          throw new Error("This Apple product is not available yet. Check App Store Connect and RevenueCat.");
         }
-
-        return await result;
+        await Purchases.purchaseStoreProduct({ product: storeProduct as any });
+        await syncSubscriptionToBackend();
+        return { ok: true };
       } finally {
         setBusy(false);
       }
     },
-    [enabled, validateReceipt],
+    [enabled],
   );
 
   const restore = useCallback(async () => {
     if (!enabled) throw new Error("Restore is only available in the iOS app.");
     setBusy(true);
     try {
-      const { store } = await initializePurchaseStore(validateReceipt);
-      const restoreError = await store.restorePurchases();
-      if (restoreError) throw new Error(restoreError.message || "Couldn't restore Apple purchases.");
-      await store.update();
-
-      const receipt = extractReceipt(store);
-      if (receipt) return await validateReceipt(receipt);
-
-      const { data, error } = await supabase.functions.invoke("validate-apple-receipt", {
-        body: { restore: true },
-      });
-      if (error) throw error;
-      return data;
+      await configureRevenueCat();
+      await Purchases.restorePurchases();
+      await syncSubscriptionToBackend();
+      return { ok: true };
     } finally {
       setBusy(false);
     }
-  }, [enabled, validateReceipt]);
+  }, [enabled]);
 
   return {
     enabled,
