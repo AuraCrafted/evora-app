@@ -168,38 +168,6 @@ export function useIAP() {
   const [loading, setLoading] = useState(enabled);
   const [busy, setBusy] = useState(false);
 
-  const loadProducts = useCallback(async () => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const { cdv, store } = await initializePurchaseStore(validateReceipt);
-      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id) => store.get(id, cdv.Platform.APPLE_APPSTORE))
-        .filter(Boolean)
-        .map((p: any) => {
-          const pricing = p.pricing || p.offers?.[0]?.pricingPhases?.[0];
-          return {
-        identifier: p.id,
-        title: p.title,
-        description: p.description,
-            priceString: pricing?.price ?? "",
-            price: typeof pricing?.priceMicros === "number" ? pricing.priceMicros / 1_000_000 : 0,
-            currencyCode: pricing?.currency,
-          };
-        });
-      setProducts(mapped);
-    } catch (err) {
-      console.error("[IAP] getProducts failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled]);
-
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
   /**
    * Sends the StoreKit receipt to the validate-apple-receipt edge function,
    * which verifies with Apple and upserts the subscription row.
@@ -215,6 +183,38 @@ export function useIAP() {
     },
     [],
   );
+
+  const loadProducts = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const { cdv, store } = await initializePurchaseStore(validateReceipt);
+      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id) => store.get(id, cdv.Platform.APPLE_APPSTORE))
+        .filter(Boolean)
+        .map((p: any) => {
+          const pricing = p.pricing || p.offers?.[0]?.pricingPhases?.[0];
+          return {
+            identifier: p.id,
+            title: p.title,
+            description: p.description,
+            priceString: pricing?.price ?? "",
+            price: typeof pricing?.priceMicros === "number" ? pricing.priceMicros / 1_000_000 : 0,
+            currencyCode: pricing?.currency,
+          };
+        });
+      setProducts(mapped);
+    } catch (err) {
+      console.error("[IAP] getProducts failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [enabled, validateReceipt]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const purchase = useCallback(
     async (productId: IAPProductId) => {
