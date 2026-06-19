@@ -42,7 +42,7 @@ type ReceiptValidator = (receipt: string, productId?: string) => Promise<any>;
 type PendingPurchase = {
   resolve: (value: any) => void;
   reject: (reason?: any) => void;
-  timer: ReturnType<typeof setTimeout>;
+  timer: number;
 };
 
 let storeInitPromise: Promise<{ cdv: any; store: any }> | null = null;
