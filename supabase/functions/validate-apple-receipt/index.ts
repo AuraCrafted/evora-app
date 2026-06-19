@@ -14,6 +14,7 @@ const APPLE_PROD = "https://buy.itunes.apple.com/verifyReceipt";
 const APPLE_SANDBOX = "https://sandbox.itunes.apple.com/verifyReceipt";
 
 const APPLE_PRODUCT_TO_PRICE_ID: Record<string, string> = {
+  "com.thiskid7.evora.weekly": "evora_weekly",
   "com.thiskid7.evora.monthly": "evora_monthly",
   "com.thiskid7.evora.yearly": "evora_yearly",
 };
