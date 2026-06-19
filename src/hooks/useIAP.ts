@@ -106,7 +106,7 @@ export function useIAP() {
         return;
       }
       const { packagesById } = await loadRevenueCat(userId);
-      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id) => {
+      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id): IAPProduct | null => {
         const pkg = packagesById.get(id);
         const p = pkg?.product;
         if (!p) return null;
@@ -117,7 +117,7 @@ export function useIAP() {
           priceString: p.priceString ?? "",
           price: typeof p.price === "number" ? p.price : 0,
           currencyCode: p.currencyCode,
-        } satisfies IAPProduct;
+        };
       }).filter((x): x is IAPProduct => x !== null);
       setProducts(mapped);
     } catch (err) {
