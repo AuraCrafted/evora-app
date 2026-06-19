@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 
-// Apple App Store Connect product identifiers (must match RevenueCat product IDs)
+// Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
   "com.thiskid7.evora.monthly",
   "com.thiskid7.evora.yearly",
@@ -31,52 +31,28 @@ export function isIAPPlatform(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 }
 
-// RevenueCat iOS public SDK key. Add VITE_REVENUECAT_IOS_KEY to your .env.
-const RC_IOS_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY as string | undefined;
+type SubscriptionsModule = typeof import("@squareetlabs/capacitor-subscriptions");
+type SubsApi = SubscriptionsModule["Subscriptions"];
 
-type RCModule = typeof import("@revenuecat/purchases-capacitor");
+let subsPromise: Promise<SubsApi> | null = null;
 
-let rcInitPromise: Promise<{
-  Purchases: RCModule["Purchases"];
-  packagesById: Map<string, any>;
-}> | null = null;
-
-const loadRevenueCat = async (appUserId: string) => {
-  if (rcInitPromise) return rcInitPromise;
-
-  rcInitPromise = (async () => {
-    if (!RC_IOS_KEY) {
-      throw new Error(
-        "VITE_REVENUECAT_IOS_KEY is missing. Add it to your .env to enable Apple purchases.",
-      );
-    }
-    const mod = await import("@revenuecat/purchases-capacitor");
-    const { Purchases, LOG_LEVEL } = mod;
-    await Purchases.setLogLevel({ level: LOG_LEVEL.WARN });
-    await Purchases.configure({ apiKey: RC_IOS_KEY, appUserID: appUserId });
-
-    const offerings = await Purchases.getOfferings();
-    const packagesById = new Map<string, any>();
-    const all = [
-      ...(offerings.current?.availablePackages ?? []),
-      ...Object.values(offerings.all ?? {}).flatMap(
-        (o: any) => o.availablePackages ?? [],
-      ),
-    ];
-    for (const pkg of all) {
-      const id = pkg?.product?.identifier;
-      if (id && !packagesById.has(id)) packagesById.set(id, pkg);
-    }
-    return { Purchases, packagesById };
-  })();
-
-  return rcInitPromise;
+const loadSubscriptions = async (): Promise<SubsApi> => {
+  if (subsPromise) return subsPromise;
+  subsPromise = import("@squareetlabs/capacitor-subscriptions").then(
+    (m) => m.Subscriptions,
+  );
+  return subsPromise;
 };
 
-const syncSubscription = async () => {
+const syncEntitlement = async (payload: {
+  productId: string;
+  transactionId?: string | number | null;
+  expirationDateMs?: number | null;
+  isTrial?: boolean;
+}) => {
   const { data, error } = await supabase.functions.invoke(
-    "sync-revenuecat-subscription",
-    { body: {} },
+    "sync-apple-subscription",
+    { body: payload },
   );
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
@@ -84,7 +60,8 @@ const syncSubscription = async () => {
 };
 
 /**
- * Native Apple In-App Purchases hook backed by RevenueCat (SPM-compatible).
+ * Native Apple In-App Purchases hook backed by StoreKit 2 via
+ * @squareetlabs/capacitor-subscriptions (SPM-compatible, no Cordova).
  * Web and Android fall back to no-op so the existing Stripe flow keeps working.
  */
 export function useIAP() {
@@ -99,29 +76,36 @@ export function useIAP() {
       return;
     }
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-      const { packagesById } = await loadRevenueCat(userId);
-      const mapped: IAPProduct[] = IAP_PRODUCT_IDS.map((id): IAPProduct | null => {
-        const pkg = packagesById.get(id);
-        const p = pkg?.product;
-        if (!p) return null;
-        return {
-          identifier: p.identifier,
-          title: p.title ?? "",
-          description: p.description ?? "",
-          priceString: p.priceString ?? "",
-          price: typeof p.price === "number" ? p.price : 0,
-          currencyCode: p.currencyCode,
-        };
-      }).filter((x): x is IAPProduct => x !== null);
-      setProducts(mapped);
+      const Subscriptions = await loadSubscriptions();
+      const results = await Promise.all(
+        IAP_PRODUCT_IDS.map(async (id): Promise<IAPProduct | null> => {
+          try {
+            const res: any = await Subscriptions.getProductDetails({
+              productIdentifier: id,
+            });
+            const d = res?.data;
+            if (!d) return null;
+            const priceString: string = d.displayPrice ?? d.price ?? "";
+            const numeric = parseFloat(
+              priceString.replace(/[^0-9.,-]/g, "").replace(",", "."),
+            );
+            return {
+              identifier: d.id ?? id,
+              title: d.displayName ?? "",
+              description: d.description ?? "",
+              priceString,
+              price: Number.isFinite(numeric) ? numeric : 0,
+              currencyCode: d.currencyCode,
+            };
+          } catch (err) {
+            console.error("[IAP] getProductDetails failed for", id, err);
+            return null;
+          }
+        }),
+      );
+      setProducts(results.filter((x): x is IAPProduct => x !== null));
     } catch (err) {
-      console.error("[IAP] getProducts failed:", err);
+      console.error("[IAP] loadProducts failed:", err);
     } finally {
       setLoading(false);
     }
@@ -136,18 +120,37 @@ export function useIAP() {
       if (!enabled) throw new Error("In-App Purchases are only available in the iOS app.");
       setBusy(true);
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData.user?.id;
-        if (!userId) throw new Error("You must be signed in to purchase.");
+        const Subscriptions = await loadSubscriptions();
+        const res: any = await Subscriptions.purchaseProduct({
+          productIdentifier: productId,
+        });
+        // responseCode: 0 success, others = failure / user cancelled
+        if (res?.responseCode !== 0) {
+          throw new Error(res?.responseMessage || "Apple purchase failed.");
+        }
+        const transactionId = res?.data ?? null;
 
-        const { Purchases, packagesById } = await loadRevenueCat(userId);
-        const pkg = packagesById.get(productId);
-        if (!pkg)
-          throw new Error(
-            "This Apple product is not available yet. Check RevenueCat offerings and App Store Connect.",
-          );
-        await Purchases.purchasePackage({ aPackage: pkg });
-        return await syncSubscription();
+        // Pull the latest transaction so we can populate expiry / trial state.
+        let expirationDateMs: number | null = null;
+        let isTrial = false;
+        try {
+          const latest: any = await Subscriptions.getLatestTransaction({
+            productIdentifier: productId,
+          });
+          const tx = latest?.data;
+          if (tx?.expirationDate)
+            expirationDateMs = new Date(tx.expirationDate).getTime();
+          if (tx?.isTrial === true || tx?.offerType === "introductory") isTrial = true;
+        } catch (err) {
+          console.warn("[IAP] getLatestTransaction failed:", err);
+        }
+
+        return await syncEntitlement({
+          productId,
+          transactionId,
+          expirationDateMs,
+          isTrial,
+        });
       } finally {
         setBusy(false);
       }
@@ -159,12 +162,32 @@ export function useIAP() {
     if (!enabled) throw new Error("Restore is only available in the iOS app.");
     setBusy(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) throw new Error("You must be signed in to restore.");
-      const { Purchases } = await loadRevenueCat(userId);
-      await Purchases.restorePurchases();
-      return await syncSubscription();
+      const Subscriptions = await loadSubscriptions();
+      const res: any = await Subscriptions.getCurrentEntitlements();
+      const entitlements: any[] = Array.isArray(res?.data) ? res.data : [];
+
+      // Pick the entitlement with the latest expirationDate.
+      let pick: any = null;
+      for (const e of entitlements) {
+        const exp = e?.expirationDate ? new Date(e.expirationDate).getTime() : 0;
+        const cur = pick?.expirationDate
+          ? new Date(pick.expirationDate).getTime()
+          : 0;
+        if (!pick || exp > cur) pick = e;
+      }
+
+      if (!pick) {
+        return await syncEntitlement({ productId: "", expirationDateMs: 0 });
+      }
+
+      return await syncEntitlement({
+        productId: pick.productIdentifier ?? pick.productId ?? "",
+        transactionId: pick.transactionId ?? null,
+        expirationDateMs: pick.expirationDate
+          ? new Date(pick.expirationDate).getTime()
+          : null,
+        isTrial: pick.isTrial === true || pick.offerType === "introductory",
+      });
     } finally {
       setBusy(false);
     }
