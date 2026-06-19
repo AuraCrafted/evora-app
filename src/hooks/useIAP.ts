@@ -11,7 +11,6 @@ declare global {
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
-  "com.thiskid7.evora.weekly",
   "com.thiskid7.evora.monthly",
   "com.thiskid7.evora.yearly",
 ] as const;
@@ -30,8 +29,7 @@ export interface IAPProduct {
 // Maps an Apple product ID to the price_id used in the subscriptions table
 export function priceIdForApple(
   productId: string,
-): "evora_weekly" | "evora_monthly" | "evora_yearly" | null {
-  if (productId === "com.thiskid7.evora.weekly") return "evora_weekly";
+): "evora_monthly" | "evora_yearly" | null {
   if (productId === "com.thiskid7.evora.monthly") return "evora_monthly";
   if (productId === "com.thiskid7.evora.yearly") return "evora_yearly";
   return null;
