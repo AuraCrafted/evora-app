@@ -11,7 +11,6 @@ declare global {
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
-  "com.thiskid7.evora.weekly",
   "com.thiskid7.evora.monthly",
   "com.thiskid7.evora.yearly",
 ] as const;
