@@ -82,6 +82,21 @@ function tone({
 }
 
 function vibrate(pattern: number | number[]) {
+  // Prefer native iOS haptics when running inside Capacitor.
+  if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
+    // Dynamic import keeps the web bundle from pulling the plugin.
+    import("@/lib/native")
+      .then(({ haptic }) => {
+        const len = Array.isArray(pattern)
+          ? pattern.reduce((a, b) => a + b, 0)
+          : pattern;
+        if (len >= 80) haptic("heavy");
+        else if (len >= 30) haptic("medium");
+        else haptic("light");
+      })
+      .catch(() => {});
+    return;
+  }
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     try {
       navigator.vibrate(pattern);
