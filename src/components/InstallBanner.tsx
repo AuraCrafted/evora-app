@@ -3,7 +3,9 @@ import { Download, X, Share, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { sfx } from "@/lib/feedback";
-import { isNative } from "@/lib/native";
+import { Capacitor } from "@capacitor/core";
+
+const isNative = Capacitor.isNativePlatform();
 
 const DISMISS_KEY = "nudge.installDismissed.v1";
 const DISMISS_DAYS = 7;
