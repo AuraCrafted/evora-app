@@ -3,7 +3,9 @@ import { Download, X, Share, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { sfx } from "@/lib/feedback";
-import { isNative } from "@/lib/native";
+import { Capacitor } from "@capacitor/core";
+
+const isNative = Capacitor.isNativePlatform();
 
 const DISMISS_KEY = "nudge.installDismissed.v1";
 const DISMISS_DAYS = 7;
@@ -29,7 +31,7 @@ export const InstallBanner = () => {
   }, []);
 
   // Never show inside the native iOS app — it's already installed.
-  if (isNative()) return null;
+  if (isNative) return null;
   if (installed || dismissed) return null;
   // Only show when we can actually do something useful
   if (!canPrompt && platform !== "ios") return null;

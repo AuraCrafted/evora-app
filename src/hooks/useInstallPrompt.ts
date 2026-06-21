@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -6,6 +7,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 type Platform = "ios" | "android" | "desktop" | "other";
+
+const isNative = Capacitor.isNativePlatform();
 
 function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
@@ -29,6 +32,9 @@ export function useInstallPrompt() {
   const [platform] = useState<Platform>(() => detectPlatform());
 
   useEffect(() => {
+    // PWA install prompts are irrelevant inside the native Capacitor app.
+    if (isNative) return;
+
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
