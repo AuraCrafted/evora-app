@@ -31,7 +31,7 @@ export const InstallBanner = () => {
   }, []);
 
   // Never show inside the native iOS app — it's already installed.
-  if (isNative()) return null;
+  if (isNative) return null;
   if (installed || dismissed) return null;
   // Only show when we can actually do something useful
   if (!canPrompt && platform !== "ios") return null;
