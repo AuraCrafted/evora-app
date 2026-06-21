@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 type Platform = "ios" | "android" | "desktop" | "other";
 
-const isNative = Capacitor.isNativePlatform();
+const isNative = () => Capacitor.isNativePlatform();
 
 function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
@@ -28,12 +28,16 @@ function isStandalone(): boolean {
 
 export function useInstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState<boolean>(() => isStandalone());
+  const [installed, setInstalled] = useState<boolean>(() => isNative() || isStandalone());
   const [platform] = useState<Platform>(() => detectPlatform());
 
   useEffect(() => {
     // PWA install prompts are irrelevant inside the native Capacitor app.
-    if (isNative) return;
+    if (isNative()) {
+      setDeferred(null);
+      setInstalled(true);
+      return;
+    }
 
     const onPrompt = (e: Event) => {
       e.preventDefault();
@@ -52,6 +56,7 @@ export function useInstallPrompt() {
   }, []);
 
   const promptInstall = async (): Promise<"accepted" | "dismissed" | "unavailable"> => {
+    if (isNative()) return "unavailable";
     if (!deferred) return "unavailable";
     await deferred.prompt();
     const choice = await deferred.userChoice;
