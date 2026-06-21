@@ -5,12 +5,12 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { sfx } from "@/lib/feedback";
 import { Capacitor } from "@capacitor/core";
 
-const isNative = Capacitor.isNativePlatform();
+const isNative = () => Capacitor.isNativePlatform();
 
 const DISMISS_KEY = "nudge.installDismissed.v1";
 const DISMISS_DAYS = 7;
 
-export const InstallBanner = () => {
+const InstallBannerContent = () => {
   const { canPrompt, installed, platform, promptInstall } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(true); // start hidden, decide after mount
   const [showIosSheet, setShowIosSheet] = useState(false);
@@ -30,8 +30,6 @@ export const InstallBanner = () => {
     setDismissed(age < DISMISS_DAYS * 24 * 60 * 60 * 1000);
   }, []);
 
-  // Never show inside the native iOS app — it's already installed.
-  if (isNative) return null;
   if (installed || dismissed) return null;
   // Only show when we can actually do something useful
   if (!canPrompt && platform !== "ios") return null;
@@ -128,4 +126,11 @@ export const InstallBanner = () => {
       )}
     </>
   );
+};
+
+export const InstallBanner = () => {
+  // Never render PWA install UI inside the native Capacitor app — it's already installed.
+  if (isNative()) return null;
+
+  return <InstallBannerContent />;
 };
