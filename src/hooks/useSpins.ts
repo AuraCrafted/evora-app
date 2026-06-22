@@ -4,7 +4,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 
 const STORAGE_KEY = "nudge.spins.v3";
 const FREE_ROLLS_PER_DAY = 5;
-// Legacy keys — cleared so they can't be used to escalate tier from devtools.
+// Legacy keys, cleared so they can't be used to escalate tier from devtools.
 const LEGACY_PRO_KEY = "nudge.pro.v1";
 const LEGACY_TIER_KEY = "nudge.pro.tier.v1";
 const LEGACY_RESET_KEY = "nudge.pro.reset.v2";
@@ -76,7 +76,7 @@ export function useSpins() {
   const [state, setState] = useState<SpinState>(() => load());
   const sub = useSubscription();
   // Tier is now strictly derived from the server-backed subscription.
-  // Unauthenticated or unsubscribed users are always "free" — there's no
+  // Unauthenticated or unsubscribed users are always "free", there's no
   // localStorage override path that could grant pro features.
   const tier: PlanTier = sub.isPro ? sub.tier : "free";
   const isPro = tier !== "free";

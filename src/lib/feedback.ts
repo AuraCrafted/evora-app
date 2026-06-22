@@ -1,4 +1,4 @@
-// Sound + haptics utility — Web Audio API generated tones (no asset files needed)
+// Sound + haptics utility, Web Audio API generated tones (no asset files needed)
 
 let ctx: AudioContext | null = null;
 let muted = false;
@@ -109,13 +109,13 @@ function vibrate(pattern: number | number[]) {
 // === Public sound effects ===
 
 export const sfx = {
-  // Clickable tap — short tick
+  // Clickable tap, short tick
   tap() {
     tone({ freq: 520, duration: 0.06, type: "triangle", volume: 0.1 });
     vibrate(8);
   },
 
-  // Dice rolling — tumbling rattle of short blips
+  // Dice rolling, tumbling rattle of short blips
   rollStart() {
     const beats = 8;
     for (let i = 0; i < beats; i++) {
@@ -131,7 +131,7 @@ export const sfx = {
     vibrate([20, 40, 20, 40, 20, 40, 20, 60]);
   },
 
-  // Dice landed — soft confirming thud + bell
+  // Dice landed, soft confirming thud + bell
   rollLand() {
     tone({ freq: 220, duration: 0.18, type: "sine", volume: 0.18, freqEnd: 140 });
     tone({ freq: 660, duration: 0.25, type: "sine", volume: 0.1, delay: 0.05 });
@@ -139,7 +139,7 @@ export const sfx = {
     vibrate([30, 30, 60]);
   },
 
-  // Accept — bright rising chime
+  // Accept, bright rising chime
   accept() {
     tone({ freq: 523.25, duration: 0.12, type: "sine", volume: 0.16 });
     tone({ freq: 659.25, duration: 0.14, type: "sine", volume: 0.16, delay: 0.08 });
@@ -147,13 +147,13 @@ export const sfx = {
     vibrate([15, 25, 35]);
   },
 
-  // Reject — soft falling note
+  // Reject, soft falling note
   reject() {
     tone({ freq: 440, duration: 0.1, type: "sine", volume: 0.1, freqEnd: 330 });
     vibrate(20);
   },
 
-  // Upgrade success — celebratory arpeggio
+  // Upgrade success, celebratory arpeggio
   celebrate() {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
       tone({ freq: f, duration: 0.18, type: "triangle", volume: 0.15, delay: i * 0.08 });
@@ -161,7 +161,7 @@ export const sfx = {
     vibrate([20, 30, 20, 30, 20, 60]);
   },
 
-  // Timer complete — repeating alarm chime
+  // Timer complete, repeating alarm chime
   timerDone() {
     for (let i = 0; i < 3; i++) {
       const base = i * 0.45;

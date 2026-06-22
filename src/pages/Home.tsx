@@ -122,7 +122,7 @@ const Home = () => {
 
         <p className="text-center text-xs text-muted-foreground mt-3">
           {hasNudgedToday
-            ? "Nice — you've already moved today."
+            ? "Nice, you've already moved today."
             : "Two minutes is enough. Promise."}
         </p>
 
@@ -132,7 +132,7 @@ const Home = () => {
           <ul className="space-y-2.5">
             {[
               "Tell us your energy (optional).",
-              "Tap roll — we pick something small that fits.",
+              "Tap roll, we pick something small that fits.",
               "Do it, or skip and try another.",
             ].map((step, i) => (
               <li key={step} className="flex items-start gap-3 text-sm">

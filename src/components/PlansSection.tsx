@@ -81,7 +81,7 @@ export const PlansSection = ({ isPro, onChoosePlan }: Props) => {
           Pick the plan that fits
         </h2>
         <p className="mt-2 text-muted-foreground text-[15px] max-w-md mx-auto">
-          Start free. Upgrade whenever you want more rolls — cancel anytime.
+          Start free. Upgrade whenever you want more rolls, cancel anytime.
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export const PlansSection = ({ isPro, onChoosePlan }: Props) => {
       </div>
 
       <p className="text-center text-[11px] text-muted-foreground mt-6">
-        Demo paywall — no real charge will be made.
+        Demo paywall, no real charge will be made.
       </p>
     </section>
   );

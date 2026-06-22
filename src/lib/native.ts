@@ -48,7 +48,7 @@ export async function haptic(
         break;
     }
   } catch {
-    // ignore — plugin missing in web build
+    // ignore, plugin missing in web build
   }
 }
 
@@ -58,7 +58,7 @@ export async function initNativeChrome(): Promise<void> {
   try {
     const { StatusBar, Style } = await import("@capacitor/status-bar");
     await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
-    // Don't overlay — let content sit below the status bar; safe areas handle padding.
+    // Don't overlay, let content sit below the status bar; safe areas handle padding.
     await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
   } catch {
     // ignore

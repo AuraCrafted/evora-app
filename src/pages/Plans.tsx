@@ -80,7 +80,7 @@ const plans: Plan[] = [
     perDay: "$0.30/day",
     badge: "Most useful",
     highlight: true,
-    tagline: "Right-Time Rolls — context-aware.",
+    tagline: "Right-Time Rolls, context-aware.",
     priceId: "evora_monthly",
     features: [
       "Unlimited rolls",
@@ -105,7 +105,7 @@ const plans: Plan[] = [
     priceId: "evora_yearly",
     features: [
       "Everything in Monthly",
-      "🤖 AI Coach — your personal guide",
+      "🤖 AI Coach, your personal guide",
       "🔥 Personal Action System (your own taxonomy)",
       "🛤️ Guided Paths (slump, focus, less scrolling)",
       "🪞 Reflection layer after tasks",
@@ -130,7 +130,7 @@ const Plans = () => {
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      toast.success("Payment received — activating your plan…");
+      toast.success("Payment received, activating your plan…");
       const t = setTimeout(() => refetch(), 2500);
       searchParams.delete("checkout");
       searchParams.delete("session_id");
@@ -181,7 +181,7 @@ const Plans = () => {
     console.log("[IAP DEBUG] iap enabled:", iap.enabled);
 
     if (!selectedPlan || !user) {
-      console.warn("[Checkout] Aborting — missing plan or user", {
+      console.warn("[Checkout] Aborting, missing plan or user", {
         pendingPlan: selectedPlan,
         hasUser: !!user,
       });
@@ -278,7 +278,7 @@ const Plans = () => {
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         console.info("[IAP] sync-apple-subscription success", { productId, synced: data });
-        toast.success("Purchase successful — activating your plan…");
+        toast.success("Purchase successful, activating your plan…");
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
         const cancelledByUser = isApplePurchaseCancelled(e);
@@ -396,7 +396,7 @@ const Plans = () => {
           </span>
         </h1>
         <p className="mt-3 text-muted-foreground text-[15px] max-w-md">
-          Start free. Upgrade when randomness stops being enough — cancel anytime.
+          Start free. Upgrade when randomness stops being enough, cancel anytime.
         </p>
 
         {isPro && (

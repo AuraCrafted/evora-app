@@ -119,7 +119,7 @@ const Coach = () => {
           </div>
           <h1 className="font-display text-2xl font-semibold mb-2">AI Coach is a Yearly perk</h1>
           <p className="text-muted-foreground text-[15px] mb-6">
-            Your warm, grounded guide that helps you turn vague feelings into one small next step —
+            Your warm, grounded guide that helps you turn vague feelings into one small next step ,
             available on the Yearly plan.
           </p>
           <Link to="/plans" className="w-full">
@@ -323,7 +323,7 @@ const Coach = () => {
                 <div className="text-4xl mb-3">🌿</div>
                 <h2 className="font-display text-lg font-semibold">Hey, I'm here.</h2>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  Tell me what's on your mind — stuck, restless, foggy, hopeful — and we'll find a
+                  Tell me what's on your mind, stuck, restless, foggy, hopeful, and we'll find a
                   small next step together.
                 </p>
               </div>

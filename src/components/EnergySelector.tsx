@@ -101,7 +101,7 @@ export const EnergySelector = ({
           onValueChange={handleChange}
           onValueCommit={handleCommit}
           aria-label="Energy level from 1 to 10"
-          aria-valuetext={`${display} of ${ENERGY_MAX} — ${label}`}
+          aria-valuetext={`${display} of ${ENERGY_MAX}, ${label}`}
           disabled={locked}
         />
       </div>

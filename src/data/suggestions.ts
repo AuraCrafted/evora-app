@@ -19,7 +19,7 @@ export interface Suggestion {
   title: string;
   description: string;
   duration: string;
-  /** Minutes — used for filtering and quick-start mode */
+  /** Minutes, used for filtering and quick-start mode */
   minutes: number;
   effort: Effort;
   timeOfDay: TimeOfDay[];
@@ -87,7 +87,7 @@ export const suggestions: Suggestion[] = [
   s("l1-6", "🧠", "Put your phone down for 30 seconds", "Set it face down. Count to thirty. That's it.", 1, "low", "mind", ["reflective", "quick"]),
   s("l1-7", "🌿", "Open a window or step outside briefly", "Let real air touch your face for a moment.", 2, "low", "outside", ["outdoors", "quick"]),
   s("l1-8", "🧼", "Fix your posture", "Shoulders back, chin level, spine tall. Hold it.", 1, "low", "care", ["quick"]),
-  s("l1-9", "🧠", "Smile — even slightly", "Fake works too. Your body doesn't know the difference.", 1, "low", "mind", ["reflective", "quick"]),
+  s("l1-9", "🧠", "Smile, even slightly", "Fake works too. Your body doesn't know the difference.", 1, "low", "mind", ["reflective", "quick"]),
   s("l1-10", "🧹", "Clear one small item near you", "A wrapper, a cup, a stray paper. Just one.", 2, "low", "tidy", ["quick"]),
   s("l1-11", "🏃", "Roll your shoulders", "Forward five times, backward five times. Feel it loosen.", 1, "low", "fitness", ["physical", "quick"]),
   s("l1-12", "🧠", "Take 3 slow breaths", "Four in, six out. Three rounds. Eyes soft.", 1, "low", "mind", ["reflective", "quick"]),
@@ -179,12 +179,12 @@ export const suggestions: Suggestion[] = [
   s("l5-10", "🧠", "Commit to 25 minutes of focus", "One pomodoro. One task. Everything else waits.", 25, "high", "mind", ["focus"], ["morning", "midday", "evening"]),
   s("l5-11", "🌿", "Go for a longer walk", "20+ minutes. Let your thoughts settle while you move.", 20, "medium", "outside", ["outdoors", "physical", "reflective"], ["morning", "midday", "evening"]),
   s("l5-12", "🤝", "Help someone with something", "Offer, listen, do. Being useful to another person.", 20, "medium", "social", ["social"], ["morning", "midday", "evening"]),
-  s("l5-13", "🧹", "Deep clean a specific area", "Not just tidy — actually clean. Scrub, wipe, rearrange.", 25, "high", "tidy", ["focus", "physical"]),
+  s("l5-13", "🧹", "Deep clean a specific area", "Not just tidy, actually clean. Scrub, wipe, rearrange.", 25, "high", "tidy", ["focus", "physical"]),
   s("l5-14", "🧠", "Reflect on your week", "What went well? What didn't? What's next? Write it out.", 20, "medium", "mind", ["reflective", "focus"], ["evening", "night"]),
   s("l5-15", "🎨", "Try something new", "A recipe, a craft, a route, an instrument. Beginner energy.", 25, "high", "create", ["create"]),
   s("l5-16", "🏃", "Do a structured workout", "Proper warm-up, real sets, cool down. 20+ minutes.", 25, "high", "fitness", ["physical"], ["morning", "midday", "evening"]),
   s("l5-17", "🧹", "Organize a larger space", "Closet, pantry, garage corner. Take before-and-after pics.", 25, "high", "tidy", ["focus", "physical"]),
   s("l5-18", "🌿", "Spend time in nature quietly", "Park, trail, garden. No podcast. Just presence.", 20, "medium", "outside", ["outdoors", "reflective"], ["morning", "midday", "evening"]),
-  s("l5-19", "🧠", "Complete something you've been avoiding", "Not start — finish. Take the dreaded thing to done.", 25, "high", "mind", ["focus"], ["morning", "midday", "evening"]),
+  s("l5-19", "🧠", "Complete something you've been avoiding", "Not start, finish. Take the dreaded thing to done.", 25, "high", "mind", ["focus"], ["morning", "midday", "evening"]),
   s("l5-20", "🧠", "Focus deeply with no distractions", "Phone in another room. 25 minutes. One thing only.", 25, "high", "mind", ["focus"], ["morning", "midday", "evening"]),
 ];

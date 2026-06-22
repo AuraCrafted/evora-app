@@ -45,7 +45,7 @@ export const SuggestionCard = ({ suggestion, onAccept, onReject, canReroll }: Pr
           disabled={!canReroll}
         >
           <RotateCcw className="h-4 w-4" />
-          {canReroll ? "Not this one — reroll" : "No more rerolls this week"}
+          {canReroll ? "Not this one, reroll" : "No more rerolls this week"}
         </Button>
       </div>
     </div>

@@ -65,7 +65,7 @@ export const WelcomeTutorial = () => {
       grantBonusSpin();
       sfx.celebrate();
       toast("🎁 Bonus roll unlocked!", {
-        description: "Thanks for taking the tour — enjoy a free roll on us.",
+        description: "Thanks for taking the tour, enjoy a free roll on us.",
       });
     }
     setPhase("done");
