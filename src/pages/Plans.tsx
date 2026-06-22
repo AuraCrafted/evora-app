@@ -17,21 +17,31 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
+  AppleIAPError,
   appleIAPErrorMessage,
   isApplePurchaseCancelled,
   useIAP,
   type IAPProductId,
 } from "@/hooks/useIAP";
+import { Capacitor } from "@capacitor/core";
+import { Subscriptions } from "@squareetlabs/capacitor-subscriptions";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { sfx } from "@/lib/feedback";
 import { toast } from "sonner";
 
-const APPLE_PRODUCT_BY_PLAN: Record<"month" | "year", IAPProductId> = {
+const APPLE_PRODUCT_BY_PLAN: Partial<
+  Record<PlanTier | "monthly" | "yearly", IAPProductId>
+> = {
   month: "com.thiskid7.evora.monthly",
+  monthly: "com.thiskid7.evora.monthly",
   year: "com.thiskid7.evora.yearly",
+  yearly: "com.thiskid7.evora.yearly",
 };
+
+const appleProductIdForPlan = (planId?: PlanTier | "monthly" | "yearly") =>
+  planId ? APPLE_PRODUCT_BY_PLAN[planId] ?? null : null;
 
 interface Plan {
   id: PlanTier;
@@ -151,45 +161,45 @@ const Plans = () => {
   };
 
   const confirmCheckout = async () => {
-    console.info("[Checkout] Continue to payment tapped", {
-      pendingPlanId: pendingPlan?.id,
-      hasUser: !!user,
-      iapEnabled: iap.enabled,
+    const selectedPlan = pendingPlan;
+    const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+
+    console.log("[IAP DEBUG] Continue clicked");
+    console.log("[IAP DEBUG] selected plan:", {
+      planId: selectedPlan?.id,
+      planName: selectedPlan?.name,
+      appleMapping: {
+        monthly: "com.thiskid7.evora.monthly",
+        yearly: "com.thiskid7.evora.yearly",
+      },
     });
-    if (!pendingPlan || !user) {
+    console.log("[IAP DEBUG] isNative:", {
+      isNative,
+      isNativePlatform: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform(),
+    });
+    console.log("[IAP DEBUG] iap enabled:", iap.enabled);
+
+    if (!selectedPlan || !user) {
       console.warn("[Checkout] Aborting — missing plan or user", {
-        pendingPlan,
+        pendingPlan: selectedPlan,
         hasUser: !!user,
       });
       return;
     }
 
-    // Dynamically import Capacitor so we can log platform info even if iap.enabled is false.
-    try {
-      const { Capacitor } = await import("@capacitor/core");
-      console.info("[Checkout] Capacitor platform info", {
-        isNativePlatform: Capacitor.isNativePlatform(),
-        platform: Capacitor.getPlatform(),
-        iapEnabled: iap.enabled,
-      });
-    } catch (err) {
-      console.warn("[Checkout] Could not read Capacitor platform info", err);
-    }
-
     // iOS native: Apple In-App Purchase
-    if (iap.enabled) {
-      const productId =
-        pendingPlan.id === "month" || pendingPlan.id === "year"
-          ? APPLE_PRODUCT_BY_PLAN[pendingPlan.id]
-          : null;
-      console.info("[IAP] Resolved Apple product ID for plan", {
-        planId: pendingPlan.id,
+    if (isNative) {
+      const productId = appleProductIdForPlan(selectedPlan.id);
+      console.log("[IAP DEBUG] product id:", productId);
+      console.info("[IAP] Resolved Apple product ID for native iOS checkout", {
+        planId: selectedPlan.id,
         productId,
         mapping: APPLE_PRODUCT_BY_PLAN,
       });
       if (!productId) {
         console.error("[IAP] Missing Apple product ID for selected plan", {
-          planId: pendingPlan.id,
+          planId: selectedPlan.id,
         });
         toast.error("This plan is missing an Apple product ID.");
         setPendingPlan(null);
@@ -199,10 +209,7 @@ const Plans = () => {
 
       // Probe getProductDetails before purchase so we can log StoreKit availability.
       try {
-        console.info("[IAP] Calling getProductDetails probe", { productId });
-        const { Subscriptions } = await import(
-          "@squareetlabs/capacitor-subscriptions"
-        );
+        console.log("[IAP DEBUG] calling getProductDetails", { productId });
         const probe: any = await Subscriptions.getProductDetails({
           productIdentifier: productId,
         });
@@ -225,13 +232,61 @@ const Plans = () => {
       }
 
       try {
-        console.info("[IAP] Calling purchaseProduct", { productId });
-        const result = await iap.purchase(productId);
-        console.info("[IAP] purchaseProduct success", { productId, result });
+        console.log("[IAP DEBUG] calling purchaseProduct", { productId });
+        const purchaseResponse: any = await Subscriptions.purchaseProduct({
+          productIdentifier: productId,
+        });
+        console.log("[IAP DEBUG] purchaseProduct result:", {
+          productId,
+          response: purchaseResponse,
+        });
+        if (purchaseResponse?.responseCode !== 0) {
+          throw new AppleIAPError(
+            purchaseResponse?.responseMessage || "Apple purchase failed.",
+            {
+              productId,
+              responseCode: purchaseResponse?.responseCode,
+              raw: purchaseResponse,
+            },
+          );
+        }
+
+        const transactionId = purchaseResponse?.data ?? null;
+        let expirationDateMs: number | null = null;
+        let isTrial = false;
+        try {
+          const latest: any = await Subscriptions.getLatestTransaction({
+            productIdentifier: productId,
+          });
+          console.info("[IAP] getLatestTransaction response", {
+            productId,
+            response: latest,
+          });
+          const tx = latest?.data;
+          if (tx?.expirationDate) expirationDateMs = new Date(tx.expirationDate).getTime();
+          if (tx?.isTrial === true || tx?.offerType === "introductory") isTrial = true;
+        } catch (latestErr) {
+          console.warn("[IAP] getLatestTransaction failed:", latestErr);
+        }
+
+        const { data, error } = await supabase.functions.invoke(
+          "sync-apple-subscription",
+          {
+            body: { productId, transactionId, expirationDateMs, isTrial },
+          },
+        );
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        console.info("[IAP] sync-apple-subscription success", { productId, synced: data });
         toast.success("Purchase successful — activating your plan…");
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
         const cancelledByUser = isApplePurchaseCancelled(e);
+        console.error("[IAP DEBUG] purchaseProduct error:", {
+          productId,
+          cancelledByUser,
+          error: e,
+        });
         console.error("[IAP] Checkout failed", {
           productId,
           cancelledByUser,
@@ -251,8 +306,8 @@ const Plans = () => {
 
 
     // Web: Stripe embedded checkout
-    if (!pendingPlan.priceId) return;
-    const priceId = pendingPlan.priceId;
+    if (!selectedPlan.priceId) return;
+    const priceId = selectedPlan.priceId;
     setPendingPlan(null);
     try {
       openCheckout({
@@ -491,7 +546,7 @@ const Plans = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Not now</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCheckout}>Continue to checkout</AlertDialogAction>
+            <Button type="button" onClick={confirmCheckout}>Continue to payment</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
