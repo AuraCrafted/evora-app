@@ -102,7 +102,7 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
           Unlock unlimited rolls
         </Button>
         <p className="text-center text-[11px] text-muted-foreground -mt-1">
-          Demo paywall — no real charge will be made.
+          Demo paywall, no real charge will be made.
         </p>
       </DialogContent>
     </Dialog>

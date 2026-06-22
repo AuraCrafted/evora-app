@@ -25,7 +25,7 @@ export function AdDialog({
   mode = "interstitial",
   onReward,
 }: AdDialogProps) {
-  // "offer" | "playing" | "complete" — only used in rewarded mode
+  // "offer" | "playing" | "complete", only used in rewarded mode
   const [stage, setStage] = useState<"offer" | "playing" | "complete">("offer");
   const [seconds, setSeconds] = useState(COUNTDOWN);
   const [rewardClaimed, setRewardClaimed] = useState(false);
@@ -92,7 +92,7 @@ export function AdDialog({
                 Out of rolls?
               </DialogTitle>
               <DialogDescription className="text-primary-foreground/90 text-sm">
-                Watch a short ad to earn one extra roll — or go Pro for unlimited.
+                Watch a short ad to earn one extra roll, or go Pro for unlimited.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -198,7 +198,7 @@ export function AdDialog({
                 Skip the wait. Go Pro.
               </DialogTitle>
               <DialogDescription className="text-primary-foreground/90 text-sm">
-                One roll isn't enough when momentum is building. Here's everything Pro unlocks — instantly.
+                One roll isn't enough when momentum is building. Here's everything Pro unlocks, instantly.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -232,7 +232,7 @@ export function AdDialog({
                   onOpenChange(false);
                 }}
               >
-                Unlock Pro — skip the ad
+                Unlock Pro, skip the ad
               </Button>
             )}
             <Button

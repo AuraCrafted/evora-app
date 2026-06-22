@@ -124,7 +124,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
             {fmt(remaining)}
           </span>
           <span className="mt-1 text-xs text-muted-foreground">
-            {done ? "Time's up — nice work!" : `of ${suggestion.duration}`}
+            {done ? "Time's up, nice work!" : `of ${suggestion.duration}`}
           </span>
         </div>
       </div>

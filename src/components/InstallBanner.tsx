@@ -129,7 +129,7 @@ const InstallBannerContent = () => {
 };
 
 export const InstallBanner = () => {
-  // Never render PWA install UI inside the native Capacitor app — it's already installed.
+  // Never render PWA install UI inside the native Capacitor app, it's already installed.
   if (isNative()) return null;
 
   return <InstallBannerContent />;

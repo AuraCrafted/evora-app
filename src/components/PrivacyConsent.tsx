@@ -53,7 +53,7 @@ export const PrivacyConsent = () => {
         </h2>
         <p className="mt-3 text-center text-sm text-muted-foreground leading-relaxed">
           Please review our Privacy Notice, Terms & Conditions, and Refund Policy. Your data is
-          used to personalize your nudges and sync your plan — never sold.
+          used to personalize your nudges and sync your plan, never sold.
         </p>
 
         <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">

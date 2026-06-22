@@ -35,7 +35,7 @@ export const MilestoneDialog = ({ open, onOpenChange, days }: Props) => {
   const data = messages[days] ?? {
     emoji: "🎉",
     title: `${days} day streak`,
-    body: "Keep going — you're building something real.",
+    body: "Keep going, you're building something real.",
   };
 
   return (

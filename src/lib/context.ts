@@ -70,9 +70,9 @@ function maxMinutes(level: Energy): number {
 export interface FilterOptions {
   /** When true, restrict to time-of-day-appropriate tasks */
   useTimeOfDay?: boolean;
-  /** Energy level 1-10 — filters by effort + duration */
+  /** Energy level 1-10, filters by effort + duration */
   energy?: Energy;
-  /** Quick start — only ≤5 minute, low-effort tasks */
+  /** Quick start, only ≤5 minute, low-effort tasks */
   quickStart?: boolean;
   /** Optional time override (for testing) */
   now?: Date;
@@ -113,7 +113,7 @@ export function contextFilter(pool: Suggestion[], opts: FilterOptions = {}): Sug
     }
   }
 
-  // Final safety net — never return empty if pool had items
+  // Final safety net, never return empty if pool had items
   if (result.length === 0) return pool;
   return result;
 }

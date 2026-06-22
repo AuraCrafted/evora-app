@@ -13,7 +13,7 @@ function load(): Energy {
     const raw = localStorage.getItem(KEY);
     if (!raw) return ENERGY_DEFAULT;
     const parsed = JSON.parse(raw) as Stored;
-    // Reset if older than 4 hours — energy changes through the day
+    // Reset if older than 4 hours, energy changes through the day
     if (Date.now() - parsed.ts > 4 * 60 * 60 * 1000) return ENERGY_DEFAULT;
     return clampEnergy(parsed.energy);
   } catch {
