@@ -16,7 +16,12 @@ import { useSpins, type PlanTier } from "@/hooks/useSpins";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { useIAP, type IAPProductId } from "@/hooks/useIAP";
+import {
+  appleIAPErrorMessage,
+  isApplePurchaseCancelled,
+  useIAP,
+  type IAPProductId,
+} from "@/hooks/useIAP";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -147,18 +152,38 @@ const Plans = () => {
           ? APPLE_PRODUCT_BY_PLAN[pendingPlan.id]
           : null;
       if (!productId) {
+        console.error("[IAP] Missing Apple product ID for selected plan", {
+          planId: pendingPlan.id,
+        });
+        toast.error("This plan is missing an Apple product ID.");
         setPendingPlan(null);
         return;
       }
+      console.info("[IAP] Continue to payment tapped", {
+        planId: pendingPlan.id,
+        requestedProductId: productId,
+        expectedProductIds: APPLE_PRODUCT_BY_PLAN,
+      });
       setPendingPlan(null);
       try {
         await iap.purchase(productId);
         toast.success("Purchase successful — activating your plan…");
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
-        console.error("IAP error:", e);
-        const msg = e?.message || String(e);
-        if (!/cancel/i.test(msg)) toast.error(msg || "Purchase failed.");
+        const cancelledByUser = isApplePurchaseCancelled(e);
+        console.error("[IAP] Checkout failed", {
+          productId,
+          cancelledByUser,
+          error: e,
+        });
+        if (cancelledByUser) {
+          toast.message("Purchase cancelled.");
+          return;
+        }
+        toast.error(appleIAPErrorMessage(e), {
+          description:
+            "Verify your Xcode StoreKit file contains this exact product ID: " + productId,
+        });
       }
       return;
     }
