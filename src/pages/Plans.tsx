@@ -163,6 +163,7 @@ const Plans = () => {
     const selectedPlan = pendingPlan;
     const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
+    console.log("[IAP DEBUG] Continue clicked");
     console.log("[IAP DEBUG] selected plan:", {
       planId: selectedPlan?.id,
       planName: selectedPlan?.name,
@@ -501,7 +502,7 @@ const Plans = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Not now</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCheckout}>Continue to checkout</AlertDialogAction>
+            <Button type="button" onClick={confirmCheckout}>Continue to payment</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
