@@ -236,7 +236,7 @@ const Plans = () => {
         const purchaseResponse: any = await Subscriptions.purchaseProduct({
           productIdentifier: productId,
         });
-        console.log("[IAP DEBUG] purchaseProduct success:", {
+        console.log("[IAP DEBUG] purchaseProduct result:", {
           productId,
           response: purchaseResponse,
         });
