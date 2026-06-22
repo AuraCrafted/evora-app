@@ -17,6 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
+  AppleIAPError,
   appleIAPErrorMessage,
   isApplePurchaseCancelled,
   useIAP,
@@ -232,8 +233,51 @@ const Plans = () => {
 
       try {
         console.log("[IAP DEBUG] calling purchaseProduct", { productId });
-        const result = await iap.purchase(productId);
-        console.log("[IAP DEBUG] purchaseProduct success:", { productId, result });
+        const purchaseResponse: any = await Subscriptions.purchaseProduct({
+          productIdentifier: productId,
+        });
+        console.log("[IAP DEBUG] purchaseProduct success:", {
+          productId,
+          response: purchaseResponse,
+        });
+        if (purchaseResponse?.responseCode !== 0) {
+          throw new AppleIAPError(
+            purchaseResponse?.responseMessage || "Apple purchase failed.",
+            {
+              productId,
+              responseCode: purchaseResponse?.responseCode,
+              raw: purchaseResponse,
+            },
+          );
+        }
+
+        const transactionId = purchaseResponse?.data ?? null;
+        let expirationDateMs: number | null = null;
+        let isTrial = false;
+        try {
+          const latest: any = await Subscriptions.getLatestTransaction({
+            productIdentifier: productId,
+          });
+          console.info("[IAP] getLatestTransaction response", {
+            productId,
+            response: latest,
+          });
+          const tx = latest?.data;
+          if (tx?.expirationDate) expirationDateMs = new Date(tx.expirationDate).getTime();
+          if (tx?.isTrial === true || tx?.offerType === "introductory") isTrial = true;
+        } catch (latestErr) {
+          console.warn("[IAP] getLatestTransaction failed:", latestErr);
+        }
+
+        const { data, error } = await supabase.functions.invoke(
+          "sync-apple-subscription",
+          {
+            body: { productId, transactionId, expirationDateMs, isTrial },
+          },
+        );
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        console.info("[IAP] sync-apple-subscription success", { productId, synced: data });
         toast.success("Purchase successful — activating your plan…");
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
