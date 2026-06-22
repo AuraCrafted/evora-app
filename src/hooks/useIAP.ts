@@ -190,14 +190,20 @@ export function useIAP() {
     async (productId: IAPProductId) => {
       if (!enabled) throw new Error("In-App Purchases are only available in the iOS app.");
       setBusy(true);
+      console.info("[IAP] Starting Apple purchase", { productId });
       try {
         const Subscriptions = await loadSubscriptions();
         const res: any = await Subscriptions.purchaseProduct({
           productIdentifier: productId,
         });
+        console.info("[IAP] purchaseProduct response", { productId, response: res });
         // responseCode: 0 success, others = failure / user cancelled
         if (res?.responseCode !== 0) {
-          throw new Error(res?.responseMessage || "Apple purchase failed.");
+          throw new AppleIAPError(res?.responseMessage || "Apple purchase failed.", {
+            productId,
+            responseCode: res?.responseCode,
+            raw: res,
+          });
         }
         const transactionId = res?.data ?? null;
 
@@ -208,6 +214,10 @@ export function useIAP() {
           const latest: any = await Subscriptions.getLatestTransaction({
             productIdentifier: productId,
           });
+          console.info("[IAP] getLatestTransaction response", {
+            productId,
+            response: latest,
+          });
           const tx = latest?.data;
           if (tx?.expirationDate)
             expirationDateMs = new Date(tx.expirationDate).getTime();
@@ -216,12 +226,21 @@ export function useIAP() {
           console.warn("[IAP] getLatestTransaction failed:", err);
         }
 
-        return await syncEntitlement({
+        const synced = await syncEntitlement({
           productId,
           transactionId,
           expirationDateMs,
           isTrial,
         });
+        console.info("[IAP] sync-apple-subscription success", { productId, synced });
+        return synced;
+      } catch (err) {
+        console.error("[IAP] purchase failed", {
+          productId,
+          cancelledByUser: isApplePurchaseCancelled(err),
+          error: err,
+        });
+        throw err;
       } finally {
         setBusy(false);
       }
