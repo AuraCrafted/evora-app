@@ -32,7 +32,7 @@ export function useInstallPrompt() {
   const [platform] = useState<Platform>(() => detectPlatform());
 
   useEffect(() => {
-    // PWA install prompts are irrelevant inside the native Capacitor app.
+    // Install prompts are irrelevant inside the native Capacitor app.
     if (isNative()) {
       setDeferred(null);
       setInstalled(true);
