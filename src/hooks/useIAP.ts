@@ -31,6 +31,68 @@ export function isIAPPlatform(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 }
 
+export class AppleIAPError extends Error {
+  productId?: string;
+  responseCode?: number | string;
+  raw?: unknown;
+
+  constructor(
+    message: string,
+    options: { productId?: string; responseCode?: number | string; raw?: unknown } = {},
+  ) {
+    super(message);
+    this.name = "AppleIAPError";
+    this.productId = options.productId;
+    this.responseCode = options.responseCode;
+    this.raw = options.raw;
+  }
+}
+
+const cancellationCodes = new Set([
+  "2",
+  "paymentcancelled",
+  "paymentcanceled",
+  "skerrorpaymentcancelled",
+  "skerrorpaymentcanceled",
+  "usercancelled",
+  "usercanceled",
+  "e_user_cancelled",
+  "e_user_canceled",
+]);
+
+export function isApplePurchaseCancelled(error: unknown): boolean {
+  const err = error as any;
+  const raw = err?.raw ?? err?.cause ?? err;
+  const candidates = [
+    err?.responseCode,
+    err?.code,
+    err?.errorCode,
+    raw?.responseCode,
+    raw?.code,
+    raw?.errorCode,
+    raw?.data?.responseCode,
+    raw?.data?.code,
+    raw?.data?.errorCode,
+  ];
+
+  return candidates.some((candidate) => {
+    if (candidate === null || candidate === undefined) return false;
+    const normalized = String(candidate).replace(/[\s._-]/g, "").toLowerCase();
+    return cancellationCodes.has(normalized);
+  });
+}
+
+export function appleIAPErrorMessage(error: unknown): string {
+  const err = error as any;
+  return (
+    err?.message ||
+    err?.responseMessage ||
+    err?.raw?.responseMessage ||
+    err?.raw?.message ||
+    "Apple purchase failed. Check the StoreKit configuration and try again."
+  );
+}
+
 type SubscriptionsModule = typeof import("@squareetlabs/capacitor-subscriptions");
 type SubsApi = SubscriptionsModule["Subscriptions"];
 
@@ -75,6 +137,10 @@ export function useIAP() {
       setLoading(false);
       return;
     }
+    console.info("[IAP] Loading Apple StoreKit products", {
+      platform: Capacitor.getPlatform(),
+      productIds: IAP_PRODUCT_IDS,
+    });
     try {
       const Subscriptions = await loadSubscriptions();
       const results = await Promise.all(
@@ -98,12 +164,17 @@ export function useIAP() {
               currencyCode: d.currencyCode,
             };
           } catch (err) {
-            console.error("[IAP] getProductDetails failed for", id, err);
+            console.error("[IAP] getProductDetails failed", { productId: id, error: err });
             return null;
           }
         }),
       );
-      setProducts(results.filter((x): x is IAPProduct => x !== null));
+      const loadedProducts = results.filter((x): x is IAPProduct => x !== null);
+      console.info("[IAP] Loaded Apple StoreKit products", {
+        requestedProductIds: IAP_PRODUCT_IDS,
+        loadedProductIds: loadedProducts.map((product) => product.identifier),
+      });
+      setProducts(loadedProducts);
     } catch (err) {
       console.error("[IAP] loadProducts failed:", err);
     } finally {
