@@ -139,11 +139,42 @@ const Plans = () => {
 
   const handleChoose = (plan: Plan) => {
     sfx.tap();
+    console.info("[Checkout] Choose plan button clicked", {
+      planId: plan.id,
+      planName: plan.name,
+      iapEnabled: iap.enabled,
+      iapLoading: iap.loading,
+      iapBusy: iap.busy,
+      iapProductsLoaded: iap.products.map((p) => p.identifier),
+    });
     requireAuth(() => setPendingPlan(plan));
   };
 
   const confirmCheckout = async () => {
-    if (!pendingPlan || !user) return;
+    console.info("[Checkout] Continue to payment tapped", {
+      pendingPlanId: pendingPlan?.id,
+      hasUser: !!user,
+      iapEnabled: iap.enabled,
+    });
+    if (!pendingPlan || !user) {
+      console.warn("[Checkout] Aborting — missing plan or user", {
+        pendingPlan,
+        hasUser: !!user,
+      });
+      return;
+    }
+
+    // Dynamically import Capacitor so we can log platform info even if iap.enabled is false.
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      console.info("[Checkout] Capacitor platform info", {
+        isNativePlatform: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+        iapEnabled: iap.enabled,
+      });
+    } catch (err) {
+      console.warn("[Checkout] Could not read Capacitor platform info", err);
+    }
 
     // iOS native: Apple In-App Purchase
     if (iap.enabled) {
@@ -151,6 +182,11 @@ const Plans = () => {
         pendingPlan.id === "month" || pendingPlan.id === "year"
           ? APPLE_PRODUCT_BY_PLAN[pendingPlan.id]
           : null;
+      console.info("[IAP] Resolved Apple product ID for plan", {
+        planId: pendingPlan.id,
+        productId,
+        mapping: APPLE_PRODUCT_BY_PLAN,
+      });
       if (!productId) {
         console.error("[IAP] Missing Apple product ID for selected plan", {
           planId: pendingPlan.id,
@@ -159,14 +195,39 @@ const Plans = () => {
         setPendingPlan(null);
         return;
       }
-      console.info("[IAP] Continue to payment tapped", {
-        planId: pendingPlan.id,
-        requestedProductId: productId,
-        expectedProductIds: APPLE_PRODUCT_BY_PLAN,
-      });
       setPendingPlan(null);
+
+      // Probe getProductDetails before purchase so we can log StoreKit availability.
       try {
-        await iap.purchase(productId);
+        console.info("[IAP] Calling getProductDetails probe", { productId });
+        const { Subscriptions } = await import(
+          "@squareetlabs/capacitor-subscriptions"
+        );
+        const probe: any = await Subscriptions.getProductDetails({
+          productIdentifier: productId,
+        });
+        console.info("[IAP] getProductDetails probe response", { productId, probe });
+        if (!probe?.data) {
+          toast.error("Apple product not found in StoreKit.", {
+            description:
+              "Add this product ID to your Xcode StoreKit configuration: " + productId,
+          });
+          return;
+        }
+      } catch (probeErr) {
+        console.error("[IAP] getProductDetails probe failed", { productId, probeErr });
+        toast.error("Couldn't reach Apple StoreKit.", {
+          description:
+            "Make sure a .storekit file is attached to your Run scheme and contains " +
+            productId,
+        });
+        return;
+      }
+
+      try {
+        console.info("[IAP] Calling purchaseProduct", { productId });
+        const result = await iap.purchase(productId);
+        console.info("[IAP] purchaseProduct success", { productId, result });
         toast.success("Purchase successful — activating your plan…");
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
@@ -187,6 +248,7 @@ const Plans = () => {
       }
       return;
     }
+
 
     // Web: Stripe embedded checkout
     if (!pendingPlan.priceId) return;
