@@ -89,10 +89,10 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-1-nobg.png"
+            image="images/screenshot-2-nobg.png"
             eyebrow="Step 01"
-            title="Pick your energy."
-            body="Tell Evora how you feel. We match nudges to your vibe."
+            title="Swipe to roll."
+            body="One small action, picked for right now. Two minutes or twenty — your call."
             side="right"
             accent={colors.coral}
           />
@@ -101,10 +101,10 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-2-nobg.png"
+            image="images/screenshot-3-nobg.png"
             eyebrow="Step 02"
-            title="Swipe to roll."
-            body="A small action, picked for right now. Two minutes or twenty."
+            title="Accept. Do it. Done."
+            body="Tap I'll do it and start. A built-in timer keeps you in flow."
             side="left"
             accent={colors.coralDeep}
           />
@@ -113,10 +113,10 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-3-nobg.png"
+            image="images/screenshot-4-nobg.png"
             eyebrow="Step 03"
-            title="Accept. Do it. Done."
-            body="Tap accept and start. A built-in timer keeps you in flow."
+            title="Build a streak."
+            body="Every yes builds momentum. Hit 3, 7, 14, 30 days in a row."
             side="right"
             accent={colors.apricot}
           />
@@ -125,18 +125,19 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-4-nobg.png"
+            image="images/screenshot-5-nobg.png"
             eyebrow="Step 04"
-            title="Build a streak."
-            body="Every accepted nudge stacks momentum. Hit 3, 7, 14, 30 days."
+            title="Coach in your pocket."
+            body="Stuck or struggling? Talk it through. Evora listens and helps you plan the next few minutes."
             side="left"
             accent={colors.sage}
           />
         </TransitionSeries.Sequence>
+
         <TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: TRANS, config: { damping: 200 } })} />
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
-          <Outro image="images/screenshot-5-nobg.png" />
+          <Outro image="images/screenshot-1-nobg.png" />
         </TransitionSeries.Sequence>
       </TransitionSeries>
       <Grain />
