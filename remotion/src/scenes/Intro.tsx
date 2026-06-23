@@ -85,19 +85,11 @@ export const Intro: React.FC = () => {
         }}
       >
         <div style={{ position: "relative" }}>
-          <div
-            style={{
-              position: "absolute",
-              inset: -60,
-              borderRadius: 80,
-              background: `radial-gradient(circle, ${colors.coral}55, transparent 70%)`,
-              filter: "blur(40px)",
-            }}
-          />
           <Img
-            src={staticFile("images/screenshot-1-nobg.png")}
-            style={{ height: 820, width: "auto", filter: `drop-shadow(0 40px 60px ${colors.coralDeep}55)` }}
+            src={staticFile("images/screenshot-1.png")}
+            style={{ height: 820, width: "auto" }}
           />
+
         </div>
       </div>
     </AbsoluteFill>

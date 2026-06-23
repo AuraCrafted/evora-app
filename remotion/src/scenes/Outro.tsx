@@ -79,19 +79,11 @@ export const Outro: React.FC<{ image: string }> = ({ image }) => {
         }}
       >
         <div style={{ position: "relative" }}>
-          <div
-            style={{
-              position: "absolute",
-              inset: -60,
-              borderRadius: 100,
-              background: `radial-gradient(circle, ${colors.apricot}77, transparent 70%)`,
-              filter: "blur(50px)",
-            }}
-          />
           <Img
             src={staticFile(image)}
-            style={{ height: 820, width: "auto", filter: `drop-shadow(0 40px 60px ${colors.coralDeep}55)` }}
+            style={{ height: 820, width: "auto" }}
           />
+
         </div>
       </div>
     </AbsoluteFill>

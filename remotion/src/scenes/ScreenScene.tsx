@@ -90,19 +90,11 @@ export const ScreenScene: React.FC<Props> = ({ image, eyebrow, title, body, side
       }}
     >
       <div style={{ position: "relative" }}>
-        <div
-          style={{
-            position: "absolute",
-            inset: -60,
-            borderRadius: 100,
-            background: `radial-gradient(circle, ${accent}55, transparent 70%)`,
-            filter: "blur(45px)",
-          }}
-        />
         <Img
           src={staticFile(image)}
-          style={{ height: 880, width: "auto", filter: `drop-shadow(0 50px 70px ${colors.coralDeep}55)` }}
+          style={{ height: 880, width: "auto" }}
         />
+
       </div>
     </div>
   );
