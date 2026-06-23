@@ -133,10 +133,12 @@ export const MainVideo: React.FC = () => {
             accent={colors.sage}
           />
         </TransitionSeries.Sequence>
-...
+        <TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: TRANS, config: { damping: 200 } })} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <Outro image="images/screenshot-1.png" />
         </TransitionSeries.Sequence>
+
 
       </TransitionSeries>
       <Grain />
