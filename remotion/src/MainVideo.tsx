@@ -89,7 +89,7 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-2-nobg.png"
+            image="images/screenshot-2.png"
             eyebrow="Step 01"
             title="Swipe to roll."
             body="One small action, picked for right now. Two minutes or twenty — your call."
@@ -101,10 +101,10 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-3-nobg.png"
+            image="images/screenshot-3.png"
             eyebrow="Step 02"
             title="Accept. Do it. Done."
-            body="Tap I'll do it and start. A built-in timer keeps you in flow."
+            body="Tap I'll do it and start. Keep building momentum with one small yes."
             side="left"
             accent={colors.coralDeep}
           />
@@ -113,10 +113,10 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-4-nobg.png"
+            image="images/screenshot-4.png"
             eyebrow="Step 03"
-            title="Build a streak."
-            body="Every yes builds momentum. Hit 3, 7, 14, 30 days in a row."
+            title="Track your streak."
+            body="See recent rolls, completed nudges, skips, and the momentum you’re building." 
             side="right"
             accent={colors.apricot}
           />
@@ -125,20 +125,19 @@ export const MainVideo: React.FC = () => {
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
           <ScreenScene
-            image="images/screenshot-5-nobg.png"
+            image="images/screenshot-5.png"
             eyebrow="Step 04"
             title="Coach in your pocket."
-            body="Stuck or struggling? Talk it through. Evora listens and helps you plan the next few minutes."
+            body="Talk it through and get grounded support for the next few minutes."
             side="left"
             accent={colors.sage}
           />
         </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: TRANS, config: { damping: 200 } })} />
-
+...
         <TransitionSeries.Sequence durationInFrames={SCENE}>
-          <Outro image="images/screenshot-1-nobg.png" />
+          <Outro image="images/screenshot-1.png" />
         </TransitionSeries.Sequence>
+
       </TransitionSeries>
       <Grain />
     </AbsoluteFill>
