@@ -137,7 +137,7 @@ export const MainVideo: React.FC = () => {
         <TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: TRANS, config: { damping: 200 } })} />
 
         <TransitionSeries.Sequence durationInFrames={SCENE}>
-          <Outro image="images/screenshot-5-nobg.png" />
+          <Outro image="images/screenshot-1-nobg.png" />
         </TransitionSeries.Sequence>
       </TransitionSeries>
       <Grain />
