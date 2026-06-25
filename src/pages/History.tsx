@@ -119,7 +119,7 @@ const HistoryPage = () => {
             <button
               onClick={() => {
                 sfx.tap();
-                clearHistory();
+                setConfirmClearOpen(true);
               }}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
