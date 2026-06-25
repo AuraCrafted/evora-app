@@ -32,6 +32,7 @@ interface SpinState {
   used: number;
   bonus: number;
   history: HistoryEntry[];
+  hiddenBeforeTs?: number;
 }
 
 function startOfDay(ts: number = Date.now()): number {
