@@ -140,7 +140,9 @@ export function useSpins() {
   }, [setTier]);
 
   const clearHistory = useCallback(() => {
-    setState((s) => ({ ...s, history: [] }));
+    // Hide recent rolls from the list without discarding the underlying data,
+    // so streak, completed count, yes rate and other lifetime stats are preserved.
+    setState((s) => ({ ...s, hiddenBeforeTs: Date.now() }));
   }, []);
 
   const streak = useMemo(() => calcStreak(state.history), [state.history]);
@@ -150,6 +152,13 @@ export function useSpins() {
     const today = startOfDay();
     return state.history.some((h) => h.accepted && startOfDay(h.ts) === today);
   }, [state.history]);
+  const visibleHistory = useMemo(
+    () =>
+      state.hiddenBeforeTs
+        ? state.history.filter((h) => h.ts > (state.hiddenBeforeTs ?? 0))
+        : state.history,
+    [state.history, state.hiddenBeforeTs],
+  );
 
   return {
     used: state.used,
@@ -158,7 +167,8 @@ export function useSpins() {
     bonus: state.bonus,
     canSpin,
     isPro,
-    history: state.history,
+    history: visibleHistory,
+    allHistory: state.history,
     streak,
     completed,
     nextResetMs,
