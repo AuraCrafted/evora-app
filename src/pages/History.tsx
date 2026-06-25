@@ -1,7 +1,18 @@
+import { useState } from "react";
 import { useSpins } from "@/hooks/useSpins";
 import { BottomNav } from "@/components/BottomNav";
 import { ReminderSettings } from "@/components/ReminderSettings";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Flame, Check, X, Clock, Trash2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { categoryEmoji, categoryLabels, Category } from "@/data/suggestions";
