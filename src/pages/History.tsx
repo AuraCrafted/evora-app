@@ -1,7 +1,18 @@
+import { useState } from "react";
 import { useSpins } from "@/hooks/useSpins";
 import { BottomNav } from "@/components/BottomNav";
 import { ReminderSettings } from "@/components/ReminderSettings";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Flame, Check, X, Clock, Trash2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { categoryEmoji, categoryLabels, Category } from "@/data/suggestions";
@@ -20,15 +31,14 @@ function timeAgo(ts: number): string {
 }
 
 const HistoryPage = () => {
-  const { history, streak, completed, hasNudgedToday, clearHistory } = useSpins();
+  const { history, allHistory, streak, completed, hasNudgedToday, clearHistory } = useSpins();
   const navigate = useNavigate();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
+  const decided = allHistory.filter((h) => h.accepted !== null).length;
   const acceptanceRate =
-    history.length > 0
-      ? Math.round(
-          (history.filter((h) => h.accepted).length /
-            history.filter((h) => h.accepted !== null).length || 0) * 100,
-        )
+    decided > 0
+      ? Math.round((allHistory.filter((h) => h.accepted).length / decided) * 100)
       : 0;
 
   return (
@@ -109,7 +119,7 @@ const HistoryPage = () => {
             <button
               onClick={() => {
                 sfx.tap();
-                clearHistory();
+                setConfirmClearOpen(true);
               }}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
@@ -179,6 +189,29 @@ const HistoryPage = () => {
           </ul>
         )}
       </section>
+
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear recent rolls?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove your recent roll history. Your streak, statistics,
+              and progress will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => sfx.tap()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                sfx.tap();
+                clearHistory();
+              }}
+            >
+              Clear History
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav streak={streak} />
     </main>
