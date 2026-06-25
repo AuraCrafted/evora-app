@@ -190,6 +190,29 @@ const HistoryPage = () => {
         )}
       </section>
 
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear recent rolls?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove your recent roll history. Your streak, statistics,
+              and progress will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => sfx.tap()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                sfx.tap();
+                clearHistory();
+              }}
+            >
+              Clear History
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <BottomNav streak={streak} />
     </main>
   );
