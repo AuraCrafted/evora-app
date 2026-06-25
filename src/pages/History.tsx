@@ -31,15 +31,14 @@ function timeAgo(ts: number): string {
 }
 
 const HistoryPage = () => {
-  const { history, streak, completed, hasNudgedToday, clearHistory } = useSpins();
+  const { history, allHistory, streak, completed, hasNudgedToday, clearHistory } = useSpins();
   const navigate = useNavigate();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
+  const decided = allHistory.filter((h) => h.accepted !== null).length;
   const acceptanceRate =
-    history.length > 0
-      ? Math.round(
-          (history.filter((h) => h.accepted).length /
-            history.filter((h) => h.accepted !== null).length || 0) * 100,
-        )
+    decided > 0
+      ? Math.round((allHistory.filter((h) => h.accepted).length / decided) * 100)
       : 0;
 
   return (
