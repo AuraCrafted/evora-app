@@ -15,18 +15,7 @@ export const ReminderSettings = ({ streak, hasNudgedToday }: Props) => {
   );
 
   if (!supported) {
-    return (
-      <div className="rounded-3xl bg-card p-5 soft-shadow">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center">
-            <BellOff className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Daily reminders aren't supported in this browser.
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const blocked = permission === "denied";
