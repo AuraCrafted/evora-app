@@ -394,8 +394,7 @@ const Roll = () => {
         ) : current && !rolling ? (
           <SuggestionCard
             suggestion={current}
-            onAccept={handleAccept}
-            onReject={handleReject}
+            onFeedback={handleFeedback}
             canReroll={(isPro || !hasRerolled) && canSpin}
           />
         ) : (
