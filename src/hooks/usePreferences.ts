@@ -45,21 +45,44 @@ function load(): Preferences {
   }
 }
 
+function save(p: Preferences) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(p));
+    window.dispatchEvent(new CustomEvent("evora:prefs-changed"));
+  } catch {
+    /* noop */
+  }
+}
+
 export function usePreferences() {
   const [prefs, setPrefs] = useState<Preferences>(() => load());
 
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(prefs));
-    } catch {
-      /* noop */
-    }
-  }, [prefs]);
+    const sync = () => setPrefs(load());
+    window.addEventListener("evora:prefs-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("evora:prefs-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
-  const update = (patch: Partial<Preferences>) => setPrefs((p) => ({ ...p, ...patch }));
+  const update = (patch: Partial<Preferences>) =>
+    setPrefs((p) => {
+      const next = { ...p, ...patch };
+      save(next);
+      return next;
+    });
   const complete = (patch: Partial<Preferences> = {}) =>
-    setPrefs((p) => ({ ...p, ...patch, completedAt: Date.now() }));
-  const reset = () => setPrefs(EMPTY);
+    setPrefs((p) => {
+      const next = { ...p, ...patch, completedAt: Date.now() };
+      save(next);
+      return next;
+    });
+  const reset = () => {
+    save(EMPTY);
+    setPrefs(EMPTY);
+  };
 
   return {
     prefs,
