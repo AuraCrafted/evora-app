@@ -214,6 +214,47 @@ const Settings = () => {
           </p>
         </div>
 
+        {/* Sound & haptics */}
+        <div>
+          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+            Sound & haptics
+          </div>
+          <div className="rounded-2xl bg-card border border-border/60 soft-shadow overflow-hidden divide-y divide-border/60">
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <Volume2 className="h-4 w-4 text-muted-foreground" />
+              <span className="flex-1 text-sm">Sounds</span>
+              <Switch checked={sound.enabled} onCheckedChange={handleToggleSound} />
+            </div>
+            {sound.enabled && (
+              <div className="px-4 py-3.5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Volume</span>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">
+                    {Math.round(sound.volume * 100)}%
+                  </span>
+                </div>
+                <Slider
+                  value={[Math.round(sound.volume * 100)]}
+                  min={0}
+                  max={100}
+                  step={5}
+                  onValueChange={handleVolume}
+                  onValueCommit={() => playSound("tab")}
+                />
+              </div>
+            )}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <Vibrate className="h-4 w-4 text-muted-foreground" />
+              <span className="flex-1 text-sm">Haptics</span>
+              <Switch checked={sound.haptics} onCheckedChange={handleToggleHaptics} />
+            </div>
+          </div>
+          <p className="px-2 pt-2 text-[11px] text-muted-foreground">
+            Subtle, calming sounds. Long-press a setting in iOS Control Center to mute the device entirely.
+          </p>
+        </div>
+
+
         {/* Legal */}
         <div>
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
