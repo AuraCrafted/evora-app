@@ -83,6 +83,7 @@ const Onboarding = () => {
     sfx.tap();
     if (step === STEPS - 1) {
       const saved = complete();
+      sfx.onboarding();
       console.log("[ONBOARDING DEBUG] completedAt value", saved.completedAt);
       console.log("[ONBOARDING DEBUG] Navigation started", "/");
       navigate("/", { replace: true });
