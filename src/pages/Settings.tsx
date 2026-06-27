@@ -10,17 +10,29 @@ import {
   Sparkles,
   CreditCard,
   Heart,
+  Volume2,
+  Vibrate,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useSpins } from "@/hooks/useSpins";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIAP } from "@/hooks/useIAP";
 import { sfx } from "@/lib/feedback";
+import {
+  getSoundSettings,
+  setSoundEnabled,
+  setHapticsEnabled,
+  setVolume,
+  subscribeSoundSettings,
+  playSound,
+} from "@/lib/sounds";
 import { haptic, isIOS } from "@/lib/native";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Row = ({
   icon: Icon,
