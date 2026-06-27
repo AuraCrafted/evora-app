@@ -167,7 +167,14 @@ const Roll = () => {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
-      const next = pickRandom(filteredPool, excludeId);
+      const next =
+        pickRanked(filteredPool, {
+          energy: energyAware ? energy : undefined,
+          prefs,
+          feedback,
+          recentIds,
+          excludeId,
+        }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
       setFace(Math.floor(Math.random() * 6) + 1);
       setCurrent(next);
       setRolling(false);
