@@ -416,7 +416,7 @@ const Roll = () => {
               <div className="flex flex-col items-center gap-2">
                 {customSuggestions.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center max-w-xs">
-                    No custom evoras yet, rolling will help you add your first.
+                    No custom spins yet, rolling will help you add your first.
                   </p>
                 )}
                 <Button
@@ -429,7 +429,7 @@ const Roll = () => {
                   className="text-muted-foreground"
                 >
                   <Plus className="h-4 w-4" />
-                  {customSuggestions.length === 0 ? "Add your first evora" : "Manage your evoras"}
+                  {customSuggestions.length === 0 ? "Add your first spin" : "Manage your spins"}
                 </Button>
               </div>
             )}
