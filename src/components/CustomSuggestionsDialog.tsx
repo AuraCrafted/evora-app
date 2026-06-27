@@ -108,7 +108,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
         <DialogHeader>
           <DialogTitle className="font-display text-xl flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Your custom evoras
+            Your custom spins
           </DialogTitle>
           <DialogDescription>
             Make the dice roll your own ideas. {items.length}/{max} saved.
