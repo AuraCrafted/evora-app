@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Check } from "lucide-react";
-import { usePreferences, type Interest, type Avoid } from "@/hooks/usePreferences";
+import { readPreferences, usePreferences, type Interest, type Avoid } from "@/hooks/usePreferences";
 import type { Goal, TaskType } from "@/data/suggestions";
 import { sfx } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
@@ -77,10 +77,21 @@ const Onboarding = () => {
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
 
   const next = () => {
+    if (step === STEPS - 1) {
+      console.log("[ONBOARDING DEBUG] Start button clicked");
+    }
     sfx.tap();
     if (step === STEPS - 1) {
-      complete();
+      const saved = complete();
+      console.log("[ONBOARDING DEBUG] completedAt value", saved.completedAt);
+      console.log("[ONBOARDING DEBUG] Navigation started", "/");
       navigate("/", { replace: true });
+      window.requestAnimationFrame(() => {
+        console.log("[ONBOARDING DEBUG] Navigation finished", {
+          hash: window.location.hash,
+          completedAt: readPreferences().completedAt,
+        });
+      });
     } else {
       setStep((s) => s + 1);
     }
@@ -88,8 +99,16 @@ const Onboarding = () => {
 
   const skip = () => {
     sfx.tap();
-    complete();
+    const saved = complete();
+    console.log("[ONBOARDING DEBUG] completedAt value", saved.completedAt);
+    console.log("[ONBOARDING DEBUG] Navigation started", "/");
     navigate("/", { replace: true });
+    window.requestAnimationFrame(() => {
+      console.log("[ONBOARDING DEBUG] Navigation finished", {
+        hash: window.location.hash,
+        completedAt: readPreferences().completedAt,
+      });
+    });
   };
 
   return (
