@@ -20,17 +20,26 @@ import { WelcomeTutorial } from "./components/WelcomeTutorial";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
-import { usePreferences } from "./hooks/usePreferences";
+import { readPreferences, usePreferences } from "./hooks/usePreferences";
 
 const queryClient = new QueryClient();
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { isComplete } = usePreferences();
   const location = useLocation();
+  const completedAt = readPreferences().completedAt;
   const exempt = ["/onboarding", "/auth", "/privacy", "/terms", "/refunds"].some((p) =>
     location.pathname.startsWith(p),
   );
-  if (!isComplete && !exempt) {
+
+  if (isComplete || completedAt) {
+    console.log("[ONBOARDING DEBUG] Gate detected completion", {
+      pathname: location.pathname,
+      completedAt,
+    });
+  }
+
+  if (!isComplete && !completedAt && !exempt) {
     return <Navigate to="/onboarding" replace />;
   }
   return <>{children}</>;
