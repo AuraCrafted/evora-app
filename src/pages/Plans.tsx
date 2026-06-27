@@ -280,6 +280,7 @@ const Plans = () => {
         if (data?.error) throw new Error(data.error);
         console.info("[IAP] sync-apple-subscription success", { productId, synced: data });
         toast.success("Purchase successful, activating your plan…");
+        sfx.purchase();
         setTimeout(() => refetch(), 1500);
       } catch (e: any) {
         const cancelledByUser = isApplePurchaseCancelled(e);
