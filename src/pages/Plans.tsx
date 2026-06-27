@@ -88,7 +88,7 @@ const plans: Plan[] = [
       "Custom spins",
       "⏰ Time-of-day filtering",
       "🔋 Energy-aware tasks (low / normal / push)",
-      "🏷️ Tag your custom evoras",
+      "🏷️ Tag your custom spins",
       "✋ Commit Mode (soft accountability)",
       "📊 Activity patterns",
       "Ad-free",
