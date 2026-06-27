@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Route, Routes } from "react-router-dom";
+import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,13 +14,27 @@ import Privacy from "./pages/Privacy.tsx";
 import Terms from "./pages/Terms.tsx";
 import Refunds from "./pages/Refunds.tsx";
 import Settings from "./pages/Settings.tsx";
+import Onboarding from "./pages/Onboarding.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
+import { usePreferences } from "./hooks/usePreferences";
 
 const queryClient = new QueryClient();
+
+const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
+  const { isComplete } = usePreferences();
+  const location = useLocation();
+  const exempt = ["/onboarding", "/auth", "/privacy", "/terms", "/refunds"].some((p) =>
+    location.pathname.startsWith(p),
+  );
+  if (!isComplete && !exempt) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,22 +46,25 @@ const App = () => (
           <PaymentTestModeBanner />
           <PrivacyConsent />
           <WelcomeTutorial />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/roll" element={<Roll />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/plans" element={<Plans />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/coach" element={<Coach />} />
-            <Route path="/coach/:threadId" element={<Coach />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/refunds" element={<Refunds />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <OnboardingGate>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/roll" element={<Roll />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/plans" element={<Plans />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/coach" element={<Coach />} />
+              <Route path="/coach/:threadId" element={<Coach />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/refunds" element={<Refunds />} />
+              <Route path="/settings" element={<Settings />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </OnboardingGate>
         </AuthProvider>
       </HashRouter>
     </TooltipProvider>
