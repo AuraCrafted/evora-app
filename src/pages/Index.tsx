@@ -227,15 +227,6 @@ const Roll = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRewardedAd]);
 
-  const handleAccept = () => {
-    if (!current) return;
-    sfx.accept();
-    if (currentEntryId) recordDecision(currentEntryId, true);
-    setActiveTask(current);
-    setCurrent(null);
-    setCurrentEntryId(null);
-    setHasRerolled(false);
-  };
 
   const handleTimerComplete = () => {
     celebrateAccept();
