@@ -93,6 +93,12 @@ const Settings = () => {
   const handleVolume = (vals: number[]) => {
     setVolume((vals[0] ?? 70) / 100);
   };
+
+  const handleRestore = async () => {
+    sfx.tap();
+    haptic("light");
+    setRestoring(true);
+    try {
       await iap.restore();
       haptic("success");
       toast.success("Purchases restored.");
