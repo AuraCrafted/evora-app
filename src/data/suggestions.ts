@@ -13,6 +13,30 @@ export type Effort = "low" | "medium" | "high";
 export type TimeOfDay = "morning" | "midday" | "evening" | "night";
 export type Tag = "focus" | "social" | "physical" | "quick" | "reflective" | "outdoors" | "create";
 
+export type TaskType = "physical" | "mental" | "creative" | "admin" | "social";
+export type Mood = "calm" | "focused" | "playful" | "reflective" | "energizing";
+export type Goal =
+  | "wellbeing"
+  | "productivity"
+  | "connection"
+  | "creativity"
+  | "learning"
+  | "fitness"
+  | "mindfulness";
+export type Setting = "indoor" | "outdoor" | "either";
+export type SocialMode = "solo" | "social" | "either";
+
+export interface SuggestionMeta {
+  energyMin: number; // 1-10 inclusive
+  energyMax: number;
+  type: TaskType;
+  mood: Mood;
+  goals: Goal[];
+  setting: Setting;
+  social: SocialMode;
+  difficulty: "easy" | "moderate" | "hard";
+}
+
 export interface Suggestion {
   id: string;
   emoji: string;
@@ -25,6 +49,10 @@ export interface Suggestion {
   timeOfDay: TimeOfDay[];
   tags: Tag[];
   category: Exclude<Category, "any">;
+  /** Optional explicit metadata; otherwise derived from category/effort/tags. */
+  meta?: Partial<SuggestionMeta>;
+  /** Marks AI-personalized tasks */
+  ai?: boolean;
 }
 
 export const categoryLabels: Record<Category, string> = {
@@ -52,6 +80,70 @@ export const categoryEmoji: Record<Category, string> = {
 };
 
 const ALL_TIMES: TimeOfDay[] = ["morning", "midday", "evening", "night"];
+
+// Energy bands derived from effort + minutes.
+function deriveEnergyBand(effort: Effort, minutes: number): [number, number] {
+  if (effort === "low" && minutes <= 2) return [1, 6];
+  if (effort === "low" && minutes <= 5) return [2, 7];
+  if (effort === "low") return [3, 8];
+  if (effort === "medium" && minutes <= 10) return [4, 9];
+  if (effort === "medium") return [5, 9];
+  if (effort === "high" && minutes <= 15) return [6, 10];
+  return [7, 10];
+}
+
+const TYPE_BY_CATEGORY: Record<Exclude<Category, "any">, TaskType> = {
+  outside: "physical",
+  social: "social",
+  fitness: "physical",
+  mind: "mental",
+  tidy: "admin",
+  create: "creative",
+  care: "mental",
+  custom: "mental",
+};
+
+const GOAL_BY_CATEGORY: Record<Exclude<Category, "any">, Goal[]> = {
+  outside: ["wellbeing", "mindfulness"],
+  social: ["connection"],
+  fitness: ["fitness", "wellbeing"],
+  mind: ["productivity", "mindfulness"],
+  tidy: ["productivity"],
+  create: ["creativity"],
+  care: ["wellbeing", "mindfulness"],
+  custom: [],
+};
+
+function deriveMood(tags: Tag[], effort: Effort): Mood {
+  if (tags.includes("reflective")) return "reflective";
+  if (tags.includes("focus")) return "focused";
+  if (tags.includes("create")) return "playful";
+  if (effort === "high" || tags.includes("physical")) return "energizing";
+  return "calm";
+}
+
+/** Resolves the full metadata, deriving any missing fields from the base task. */
+export function getMeta(s: Suggestion): SuggestionMeta {
+  const [emin, emax] = deriveEnergyBand(s.effort, s.minutes);
+  const cat = s.category;
+  const social: SocialMode =
+    s.meta?.social ?? (cat === "social" || s.tags.includes("social") ? "social" : "solo");
+  const setting: Setting =
+    s.meta?.setting ?? (cat === "outside" || s.tags.includes("outdoors") ? "outdoor" : "indoor");
+  const difficulty: "easy" | "moderate" | "hard" =
+    s.meta?.difficulty ??
+    (s.effort === "low" ? "easy" : s.effort === "medium" ? "moderate" : "hard");
+  return {
+    energyMin: s.meta?.energyMin ?? emin,
+    energyMax: s.meta?.energyMax ?? emax,
+    type: s.meta?.type ?? TYPE_BY_CATEGORY[cat] ?? "mental",
+    mood: s.meta?.mood ?? deriveMood(s.tags, s.effort),
+    goals: s.meta?.goals ?? GOAL_BY_CATEGORY[cat] ?? [],
+    setting,
+    social,
+    difficulty,
+  };
+}
 
 // Helper to keep the list readable
 const s = (

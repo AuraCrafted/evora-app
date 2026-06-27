@@ -1,7 +1,7 @@
-import type { Suggestion, TimeOfDay, Effort } from "@/data/suggestions";
+import { type Suggestion, type TimeOfDay, getMeta } from "@/data/suggestions";
 
 /**
- * Energy is now an integer 1-10.
+ * Energy is an integer 1-10.
  * 1 = lightest task possible (drained)
  * 10 = most demanding task (full beast mode)
  */
@@ -36,55 +36,38 @@ export const timeOfDayLabel: Record<TimeOfDay, string> = {
 
 /** Short label for a 1-10 energy level. */
 export function energyLevelLabel(level: Energy): string {
-  if (level <= 2) return "Barely there";
-  if (level <= 4) return "Low energy";
+  if (level <= 3) return "Low battery";
   if (level <= 6) return "Steady";
   if (level <= 8) return "Energized";
   return "Full send";
 }
 
 export function energyLevelEmoji(level: Energy): string {
-  if (level <= 2) return "🪫";
-  if (level <= 4) return "🥱";
+  if (level <= 3) return "🪫";
   if (level <= 6) return "🙂";
   if (level <= 8) return "💪";
   return "⚡";
 }
 
-/** Which effort buckets are appropriate for this energy level. */
-function allowedEfforts(level: Energy): Effort[] {
-  if (level <= 3) return ["low"];
-  if (level <= 7) return ["low", "medium"];
-  return ["low", "medium", "high"];
-}
-
-/** Soft maximum on minutes for a given energy level. */
-function maxMinutes(level: Energy): number {
-  if (level <= 2) return 3;
-  if (level <= 4) return 8;
-  if (level <= 6) return 20;
-  if (level <= 8) return 45;
-  return 999;
-}
-
 export interface FilterOptions {
   /** When true, restrict to time-of-day-appropriate tasks */
   useTimeOfDay?: boolean;
-  /** Energy level 1-10, filters by effort + duration */
+  /** Energy level 1-10, filters by task energy band */
   energy?: Energy;
-  /** Quick start, only ≤5 minute, low-effort tasks */
+  /** Quick start, only the shortest, lowest-effort tasks */
   quickStart?: boolean;
   /** Optional time override (for testing) */
   now?: Date;
 }
 
 /**
- * Context-aware filter. Returns a relevant subset of the pool.
- * Falls back gracefully if filters are too strict.
+ * Context-aware filter using each task's energy band metadata.
+ * Energy 1–3 → only true low-effort tasks
+ * Energy 4–6 → low + moderate
+ * Energy 7–10 → moderate + hard
  */
 export function contextFilter(pool: Suggestion[], opts: FilterOptions = {}): Suggestion[] {
   const { useTimeOfDay, energy, quickStart, now } = opts;
-
   let result = pool;
 
   if (quickStart) {
@@ -99,21 +82,18 @@ export function contextFilter(pool: Suggestion[], opts: FilterOptions = {}): Sug
 
   if (typeof energy === "number") {
     const level = clampEnergy(energy);
-    const allowed = allowedEfforts(level);
-    const minutesCap = maxMinutes(level);
-    const filtered = result.filter(
-      (s) => s.effort && allowed.includes(s.effort) && (s.minutes ?? 99) <= minutesCap,
-    );
-    if (filtered.length > 0) {
-      result = filtered;
-    } else {
-      // Fall back to effort-only if minutes filter was too tight
-      const loose = result.filter((s) => s.effort && allowed.includes(s.effort));
-      if (loose.length > 0) result = loose;
-    }
+    const filtered = result.filter((s) => {
+      const m = getMeta(s);
+      // Strict: task energy band must contain the current level.
+      if (level < m.energyMin || level > m.energyMax) return false;
+      // Extra guard for the extremes so very ambitious tasks never appear at low energy.
+      if (level <= 3 && s.effort !== "low") return false;
+      if (level >= 8 && s.effort === "low" && (s.minutes ?? 0) > 3) return false;
+      return true;
+    });
+    if (filtered.length > 0) result = filtered;
   }
 
-  // Final safety net, never return empty if pool had items
   if (result.length === 0) return pool;
   return result;
 }

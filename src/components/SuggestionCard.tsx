@@ -1,20 +1,25 @@
 import { Suggestion, categoryLabels } from "@/data/suggestions";
 import { Button } from "@/components/ui/button";
-import { Check, RotateCcw, Clock } from "lucide-react";
+import { Check, X, ThumbsDown, Sparkles, Clock } from "lucide-react";
+import type { FeedbackKind } from "@/hooks/useTaskFeedback";
 
 interface Props {
   suggestion: Suggestion;
-  onAccept: () => void;
-  onReject: () => void;
+  onFeedback: (kind: FeedbackKind) => void;
   canReroll: boolean;
 }
 
-export const SuggestionCard = ({ suggestion, onAccept, onReject, canReroll }: Props) => {
+export const SuggestionCard = ({ suggestion, onFeedback, canReroll }: Props) => {
   return (
     <div className="w-full max-w-md rounded-3xl bg-card p-7 soft-shadow animate-scale-in">
       <div className="flex items-center justify-between mb-5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
           {categoryLabels[suggestion.category]}
+          {suggestion.ai && (
+            <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-primary">
+              <Sparkles className="h-2.5 w-2.5" /> For you
+            </span>
+          )}
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
@@ -33,20 +38,46 @@ export const SuggestionCard = ({ suggestion, onAccept, onReject, canReroll }: Pr
       </div>
 
       <div className="mt-7 flex flex-col gap-3">
-        <Button onClick={onAccept} variant="hero" size="lg" className="w-full">
+        <Button onClick={() => onFeedback("did")} variant="hero" size="lg" className="w-full">
           <Check className="h-5 w-5" />
           I'll do it
         </Button>
-        <Button
-          onClick={onReject}
-          variant="ghost"
-          size="lg"
-          className="w-full text-muted-foreground hover:text-foreground"
-          disabled={!canReroll}
-        >
-          <RotateCcw className="h-4 w-4" />
-          {canReroll ? "Not this one, reroll" : "No more rerolls this week"}
-        </Button>
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            onClick={() => onFeedback("later")}
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            Not today
+          </Button>
+          <Button
+            onClick={() => onFeedback("dislike")}
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            disabled={!canReroll}
+          >
+            <ThumbsDown className="h-4 w-4" />
+            Not helpful
+          </Button>
+          <Button
+            onClick={() => onFeedback("more")}
+            variant="ghost"
+            size="sm"
+            className="text-primary hover:text-primary"
+            disabled={!canReroll}
+          >
+            <Sparkles className="h-4 w-4" />
+            More like this
+          </Button>
+        </div>
+        {!canReroll && (
+          <p className="text-[11px] text-center text-muted-foreground">
+            No more rerolls right now.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -33,7 +33,10 @@ interface SpinState {
   bonus: number;
   history: HistoryEntry[];
   hiddenBeforeTs?: number;
+  recentIds?: string[];
 }
+
+const RECENT_MAX = 15;
 
 function startOfDay(ts: number = Date.now()): number {
   const d = new Date(ts);
@@ -101,11 +104,17 @@ export function useSpins() {
       accepted: null,
     };
     setState((s) => {
+      const prevRecent = s.recentIds ?? [];
+      const recentIds = [suggestion.id, ...prevRecent.filter((id) => id !== suggestion.id)].slice(
+        0,
+        RECENT_MAX,
+      );
+      const baseHistory = [entry, ...s.history].slice(0, 200);
       // Consume bonus spins before the daily quota.
       if (s.bonus > 0) {
-        return { ...s, bonus: s.bonus - 1, history: [entry, ...s.history].slice(0, 200) };
+        return { ...s, bonus: s.bonus - 1, history: baseHistory, recentIds };
       }
-      return { ...s, used: s.used + 1, history: [entry, ...s.history].slice(0, 200) };
+      return { ...s, used: s.used + 1, history: baseHistory, recentIds };
     });
     return entry.id;
   }, []);
@@ -169,6 +178,7 @@ export function useSpins() {
     isPro,
     history: visibleHistory,
     allHistory: state.history,
+    recentIds: state.recentIds ?? [],
     streak,
     completed,
     nextResetMs,

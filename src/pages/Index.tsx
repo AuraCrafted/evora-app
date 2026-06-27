@@ -16,18 +16,38 @@ import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
 import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
-import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
+import { usePreferences } from "@/hooks/usePreferences";
+import { useTaskFeedback, type FeedbackKind } from "@/hooks/useTaskFeedback";
+import { suggestions, Suggestion, Category, getMeta } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
+import { pickRanked } from "@/lib/ranker";
+import { supabase } from "@/integrations/supabase/client";
 
 const MILESTONES = [3, 7, 14, 30] as const;
 const ROLL_DURATION = 1100;
+const AI_TASKS_KEY = "evora.aiTasks.v1";
+const AI_FEEDBACK_THRESHOLD = 10;
 
-function pickRandom(pool: Suggestion[], excludeId?: string): Suggestion {
-  const filtered = excludeId && pool.length > 1 ? pool.filter((s) => s.id !== excludeId) : pool;
-  return filtered[Math.floor(Math.random() * filtered.length)];
+function loadAiTasks(): Suggestion[] {
+  try {
+    const raw = localStorage.getItem(AI_TASKS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, 30) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAiTasks(t: Suggestion[]) {
+  try {
+    localStorage.setItem(AI_TASKS_KEY, JSON.stringify(t.slice(0, 30)));
+  } catch {
+    /* noop */
+  }
 }
 
 function formatTimeLeft(ms: number): string {
@@ -48,6 +68,7 @@ const Roll = () => {
     isPro,
     streak,
     nextResetMs,
+    recentIds,
     recordSpin,
     recordDecision,
     grantBonusSpin,
@@ -56,6 +77,10 @@ const Roll = () => {
   const { tasteAvailable, consumeTaste } = useEnergyTaste();
   const energyAware = isPro || tasteAvailable;
   const { items: customSuggestions } = useCustomSuggestions();
+  const { prefs } = usePreferences();
+  const { feedback, record: recordFeedback } = useTaskFeedback();
+  const [aiTasks, setAiTasks] = useState<Suggestion[]>(() => loadAiTasks());
+  const aiFetchingRef = useRef(false);
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -90,9 +115,9 @@ const Roll = () => {
 
   const basePool = useMemo(() => {
     if (category === "custom") return customSuggestions;
-    if (category === "any") return [...suggestions, ...customSuggestions];
-    return suggestions.filter((s) => s.category === category);
-  }, [category, customSuggestions]);
+    if (category === "any") return [...suggestions, ...customSuggestions, ...aiTasks];
+    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
+  }, [category, customSuggestions, aiTasks]);
 
   const filteredPool = useMemo(() => {
     return contextFilter(basePool, {
@@ -101,6 +126,33 @@ const Roll = () => {
       quickStart,
     });
   }, [basePool, isPro, energyAware, energy, quickStart]);
+
+  // Fetch AI-personalized tasks once the user has given enough feedback.
+  useEffect(() => {
+    if (aiFetchingRef.current) return;
+    if (!prefs.completedAt) return;
+    if (feedback.count < AI_FEEDBACK_THRESHOLD) return;
+    // Refresh when we have fewer than 6 cached or the cache is older than a day.
+    const last = Number(localStorage.getItem("evora.aiTasks.ts") || 0);
+    if (aiTasks.length >= 6 && Date.now() - last < 24 * 60 * 60 * 1000) return;
+    aiFetchingRef.current = true;
+    supabase.functions
+      .invoke("generate-task", {
+        body: { prefs, energy, recentTitles: recentIds.slice(0, 8) },
+      })
+      .then(({ data, error }) => {
+        if (error || !data?.tasks) return;
+        const next = [...data.tasks, ...aiTasks].slice(0, 30);
+        setAiTasks(next);
+        saveAiTasks(next);
+        localStorage.setItem("evora.aiTasks.ts", String(Date.now()));
+      })
+      .catch(() => {})
+      .finally(() => {
+        aiFetchingRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.completedAt, feedback.count]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
@@ -115,7 +167,14 @@ const Roll = () => {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
-      const next = pickRandom(filteredPool, excludeId);
+      const next =
+        pickRanked(filteredPool, {
+          energy: energyAware ? energy : undefined,
+          prefs,
+          feedback,
+          recentIds,
+          excludeId,
+        }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
       setFace(Math.floor(Math.random() * 6) + 1);
       setCurrent(next);
       setRolling(false);
@@ -168,15 +227,6 @@ const Roll = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRewardedAd]);
 
-  const handleAccept = () => {
-    if (!current) return;
-    sfx.accept();
-    if (currentEntryId) recordDecision(currentEntryId, true);
-    setActiveTask(current);
-    setCurrent(null);
-    setCurrentEntryId(null);
-    setHasRerolled(false);
-  };
 
   const handleTimerComplete = () => {
     celebrateAccept();
@@ -188,10 +238,34 @@ const Roll = () => {
     setActiveTask(null);
   };
 
-  const handleReject = () => {
+  const handleFeedback = (kind: FeedbackKind) => {
     if (!current) return;
+    const meta = getMeta(current);
+    const tags = [...current.tags, current.category, meta.type, ...meta.goals];
+    recordFeedback(current.id, tags, kind);
+
+    if (kind === "did") {
+      sfx.accept();
+      if (currentEntryId) recordDecision(currentEntryId, true);
+      setActiveTask(current);
+      setCurrent(null);
+      setCurrentEntryId(null);
+      setHasRerolled(false);
+      return;
+    }
+
+    if (kind === "later") {
+      // Dismiss, no reroll, doesn't penalize streak.
+      sfx.tap();
+      setCurrent(null);
+      setCurrentEntryId(null);
+      setHasRerolled(false);
+      return;
+    }
+
+    // dislike or more → reroll if allowed
     sfx.reject();
-    if (currentEntryId) recordDecision(currentEntryId, false);
+    if (currentEntryId) recordDecision(currentEntryId, kind === "dislike" ? false : null);
     if ((hasRerolled && !isPro) || !canSpin) {
       if (!canSpin) {
         if (!isPro) {
@@ -320,8 +394,7 @@ const Roll = () => {
         ) : current && !rolling ? (
           <SuggestionCard
             suggestion={current}
-            onAccept={handleAccept}
-            onReject={handleReject}
+            onFeedback={handleFeedback}
             canReroll={(isPro || !hasRerolled) && canSpin}
           />
         ) : (

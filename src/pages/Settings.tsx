@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   Sparkles,
   CreditCard,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
@@ -168,6 +169,19 @@ const Settings = () => {
               Cancel or change your plan in Settings → Apple ID → Subscriptions.
             </p>
           )}
+        </div>
+
+        {/* Personalization */}
+        <div>
+          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+            Personalization
+          </div>
+          <div className="rounded-2xl bg-card border border-border/60 soft-shadow overflow-hidden divide-y divide-border/60">
+            <Row icon={Heart} label="Edit your preferences" to="/onboarding" />
+          </div>
+          <p className="px-2 pt-2 text-[11px] text-muted-foreground">
+            Evora uses these to tailor your rolls over time.
+          </p>
         </div>
 
         {/* Legal */}
