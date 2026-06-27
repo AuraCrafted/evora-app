@@ -131,6 +131,7 @@ const Plans = () => {
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
       toast.success("Payment received, activating your plan…");
+      sfx.purchase();
       const t = setTimeout(() => refetch(), 2500);
       searchParams.delete("checkout");
       searchParams.delete("session_id");
