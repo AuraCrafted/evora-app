@@ -188,7 +188,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4" /> {atLimit ? "Limit reached" : "Add evora"}
+                  <Plus className="h-4 w-4" /> {atLimit ? "Limit reached" : "Add spin"}
                 </>
               )}
             </Button>
