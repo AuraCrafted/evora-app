@@ -1,174 +1,99 @@
-// Sound + haptics utility, Web Audio API generated tones (no asset files needed)
+// Sound + haptics facade. Real synthesis lives in `@/lib/sounds`.
+// This module keeps the legacy `sfx.*` API working while routing every
+// event through the centralized sound manager.
 
-let ctx: AudioContext | null = null;
-let muted = false;
-
-const MUTE_KEY = "nudge.muted.v1";
-
-if (typeof window !== "undefined") {
-  muted = localStorage.getItem(MUTE_KEY) === "true";
-}
-
-function getCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  if (muted) return null;
-  if (!ctx) {
-    try {
-      const AC = window.AudioContext || (window as any).webkitAudioContext;
-      ctx = new AC();
-    } catch {
-      return null;
-    }
-  }
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
-  return ctx;
-}
-
-export function setMuted(value: boolean) {
-  muted = value;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(MUTE_KEY, String(value));
-  }
-}
-
-export function isMuted() {
-  return muted;
-}
-
-interface ToneOptions {
-  freq: number;
-  duration: number;
-  type?: OscillatorType;
-  volume?: number;
-  attack?: number;
-  release?: number;
-  delay?: number;
-  freqEnd?: number;
-}
-
-function tone({
-  freq,
-  duration,
-  type = "sine",
-  volume = 0.18,
-  attack = 0.005,
-  release = 0.08,
-  delay = 0,
-  freqEnd,
-}: ToneOptions) {
-  const ac = getCtx();
-  if (!ac) return;
-  const start = ac.currentTime + delay;
-  const end = start + duration;
-  const safeAttack = Math.min(attack, duration * 0.3);
-  const safeRelease = Math.min(release, duration * 0.5);
-  const sustainStart = Math.max(start + safeAttack, end - safeRelease);
-
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, start);
-  if (freqEnd !== undefined) {
-    osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), end);
-  }
-  gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(volume, start + safeAttack);
-  gain.gain.setValueAtTime(volume, sustainStart);
-  gain.gain.exponentialRampToValueAtTime(0.0001, end);
-
-  osc.connect(gain).connect(ac.destination);
-  osc.start(start);
-  osc.stop(end + 0.02);
-}
+import {
+  playSound,
+  isSoundEnabled,
+  setSoundEnabled,
+  primeAudio,
+} from "@/lib/sounds";
+import { haptic as nativeHaptic } from "@/lib/native";
 
 function vibrate(pattern: number | number[]) {
-  // Prefer native iOS haptics when running inside Capacitor.
   if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
-    // Dynamic import keeps the web bundle from pulling the plugin.
-    import("@/lib/native")
-      .then(({ haptic }) => {
-        const len = Array.isArray(pattern)
-          ? pattern.reduce((a, b) => a + b, 0)
-          : pattern;
-        if (len >= 80) haptic("heavy");
-        else if (len >= 30) haptic("medium");
-        else haptic("light");
-      })
-      .catch(() => {});
+    const len = Array.isArray(pattern) ? pattern.reduce((a, b) => a + b, 0) : pattern;
+    if (len >= 80) nativeHaptic("heavy");
+    else if (len >= 30) nativeHaptic("medium");
+    else nativeHaptic("light");
     return;
   }
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     try {
       navigator.vibrate(pattern);
     } catch {
-      // ignore
+      /* ignore */
     }
   }
 }
 
-// === Public sound effects ===
+// === Legacy mute helpers (still used by BottomNav toggle) ===
+export function setMuted(value: boolean) {
+  setSoundEnabled(!value);
+}
+export function isMuted() {
+  return !isSoundEnabled();
+}
 
+// === Legacy `sfx` API ===
+// Maps to the new centralized sound events. Keeps existing call sites working
+// while components migrate to the richer `sfx.tab`, `sfx.coachMessage`, etc.
 export const sfx = {
-  // Clickable tap, short tick
   tap() {
-    tone({ freq: 520, duration: 0.06, type: "triangle", volume: 0.1 });
-    vibrate(8);
+    playSound("tap");
+    vibrate(6);
   },
-
-  // Dice rolling, tumbling rattle of short blips
+  tab() {
+    playSound("tab");
+    vibrate(6);
+  },
   rollStart() {
-    const beats = 8;
-    for (let i = 0; i < beats; i++) {
-      const f = 180 + Math.random() * 320;
-      tone({
-        freq: f,
-        duration: 0.05,
-        type: "square",
-        volume: 0.08,
-        delay: i * 0.11,
-      });
-    }
-    vibrate([20, 40, 20, 40, 20, 40, 20, 60]);
+    primeAudio();
+    playSound("roll");
+    vibrate([15, 25, 15, 25, 15, 40]);
   },
-
-  // Dice landed, soft confirming thud + bell
   rollLand() {
-    tone({ freq: 220, duration: 0.18, type: "sine", volume: 0.18, freqEnd: 140 });
-    tone({ freq: 660, duration: 0.25, type: "sine", volume: 0.1, delay: 0.05 });
-    tone({ freq: 990, duration: 0.3, type: "sine", volume: 0.07, delay: 0.08 });
-    vibrate([30, 30, 60]);
+    playSound("rollLand");
+    vibrate([20, 20, 40]);
   },
-
-  // Accept, bright rising chime
   accept() {
-    tone({ freq: 523.25, duration: 0.12, type: "sine", volume: 0.16 });
-    tone({ freq: 659.25, duration: 0.14, type: "sine", volume: 0.16, delay: 0.08 });
-    tone({ freq: 783.99, duration: 0.22, type: "sine", volume: 0.18, delay: 0.16 });
-    vibrate([15, 25, 35]);
+    playSound("accept");
+    vibrate([12, 18, 24]);
   },
-
-  // Reject, soft falling note
   reject() {
-    tone({ freq: 440, duration: 0.1, type: "sine", volume: 0.1, freqEnd: 330 });
-    vibrate(20);
+    playSound("skip");
+    vibrate(14);
   },
-
-  // Upgrade success, celebratory arpeggio
+  skip() {
+    playSound("skip");
+    vibrate(14);
+  },
   celebrate() {
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-      tone({ freq: f, duration: 0.18, type: "triangle", volume: 0.15, delay: i * 0.08 });
-    });
-    vibrate([20, 30, 20, 30, 20, 60]);
+    playSound("complete");
+    vibrate([15, 20, 15, 30]);
   },
-
-  // Timer complete, repeating alarm chime
+  streak() {
+    playSound("streak");
+    vibrate([15, 20, 15, 20, 40]);
+  },
+  coachMessage() {
+    playSound("coachMessage");
+  },
+  purchase() {
+    playSound("purchase");
+    vibrate([20, 30, 60]);
+  },
+  error() {
+    playSound("error");
+    vibrate([30, 40]);
+  },
+  onboarding() {
+    playSound("onboarding");
+    vibrate([15, 25, 15, 40]);
+  },
   timerDone() {
-    for (let i = 0; i < 3; i++) {
-      const base = i * 0.45;
-      tone({ freq: 880, duration: 0.18, type: "sine", volume: 0.22, delay: base });
-      tone({ freq: 1318.51, duration: 0.22, type: "sine", volume: 0.2, delay: base + 0.18 });
-    }
-    vibrate([120, 80, 120, 80, 200]);
+    playSound("timerDone");
+    vibrate([100, 60, 100, 60, 160]);
   },
 };
 
@@ -193,7 +118,7 @@ export function setTimerSoundEnabled(value: boolean) {
 
 export function playTimerComplete() {
   if (!timerSoundEnabled) {
-    vibrate([120, 80, 120, 80, 200]);
+    vibrate([100, 60, 100, 60, 160]);
     return;
   }
   sfx.timerDone();

@@ -230,7 +230,7 @@ const Roll = () => {
 
   const handleTimerComplete = () => {
     celebrateAccept();
-    sfx.celebrate();
+    sfx.streak();
     setActiveTask(null);
   };
 

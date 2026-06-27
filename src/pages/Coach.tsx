@@ -206,11 +206,13 @@ const Coach = () => {
         saveThreads(out);
         return out;
       });
+      sfx.coachMessage();
     } catch (err) {
       console.error(err);
       toast.error("Coach is taking a breath.", {
         description: (err as Error).message || "Please try again in a moment.",
       });
+      sfx.error();
     } finally {
       setSending(false);
       inputRef.current?.focus();

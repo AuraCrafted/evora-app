@@ -19,6 +19,11 @@ export async function haptic(
     | "selection" = "light",
 ): Promise<void> {
   if (!isNative()) return;
+  // Respect the user's haptics preference.
+  if (typeof window !== "undefined") {
+    const pref = localStorage.getItem("evora.haptics.enabled.v1");
+    if (pref === "false") return;
+  }
   try {
     const { Haptics, ImpactStyle, NotificationType } = await import(
       "@capacitor/haptics"

@@ -59,7 +59,7 @@ export const BottomNav = ({ streak }: Props) => {
             to={to}
             end={end}
             onClick={() => {
-              sfx.tap();
+              sfx.tab();
               haptic("selection");
             }}
             className={({ isActive }) =>
