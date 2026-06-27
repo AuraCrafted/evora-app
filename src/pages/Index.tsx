@@ -16,18 +16,38 @@ import { useSpins } from "@/hooks/useSpins";
 import { useEnergy } from "@/hooks/useEnergy";
 import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { useCustomSuggestions } from "@/hooks/useCustomSuggestions";
-import { suggestions, Suggestion, Category, categoryLabels } from "@/data/suggestions";
+import { usePreferences } from "@/hooks/usePreferences";
+import { useTaskFeedback, type FeedbackKind } from "@/hooks/useTaskFeedback";
+import { suggestions, Suggestion, Category, getMeta } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
+import { pickRanked } from "@/lib/ranker";
+import { supabase } from "@/integrations/supabase/client";
 
 const MILESTONES = [3, 7, 14, 30] as const;
 const ROLL_DURATION = 1100;
+const AI_TASKS_KEY = "evora.aiTasks.v1";
+const AI_FEEDBACK_THRESHOLD = 10;
 
-function pickRandom(pool: Suggestion[], excludeId?: string): Suggestion {
-  const filtered = excludeId && pool.length > 1 ? pool.filter((s) => s.id !== excludeId) : pool;
-  return filtered[Math.floor(Math.random() * filtered.length)];
+function loadAiTasks(): Suggestion[] {
+  try {
+    const raw = localStorage.getItem(AI_TASKS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, 30) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAiTasks(t: Suggestion[]) {
+  try {
+    localStorage.setItem(AI_TASKS_KEY, JSON.stringify(t.slice(0, 30)));
+  } catch {
+    /* noop */
+  }
 }
 
 function formatTimeLeft(ms: number): string {
