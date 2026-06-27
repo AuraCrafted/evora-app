@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Goal, TaskType } from "@/data/suggestions";
 
 const KEY = "evora.preferences.v1";
+const PREFS_EVENT = "evora:prefs-changed";
 
 export type Interest =
   | "fitness"
@@ -45,12 +46,25 @@ function load(): Preferences {
   }
 }
 
-function save(p: Preferences) {
+function save(p: Preferences, reason: "update" | "complete" | "reset" = "update") {
   try {
+    if (reason === "complete") {
+      console.log("[ONBOARDING DEBUG] Saving preferences", p);
+    }
     localStorage.setItem(KEY, JSON.stringify(p));
-    window.dispatchEvent(new CustomEvent("evora:prefs-changed"));
-  } catch {
-    /* noop */
+    if (reason === "complete") {
+      const saved = load();
+      console.log("[ONBOARDING DEBUG] Preferences saved", saved);
+      console.log("[ONBOARDING DEBUG] completedAt value", saved.completedAt);
+      console.log("[ONBOARDING DEBUG] Dispatch onboarding complete event");
+    }
+    window.dispatchEvent(new CustomEvent(PREFS_EVENT, { detail: { reason, prefs: p } }));
+    return p;
+  } catch (error) {
+    if (reason === "complete") {
+      console.error("[ONBOARDING DEBUG] Preferences save failed", error);
+    }
+    return p;
   }
 }
 
@@ -59,28 +73,30 @@ export function usePreferences() {
 
   useEffect(() => {
     const sync = () => setPrefs(load());
-    window.addEventListener("evora:prefs-changed", sync);
+    window.addEventListener(PREFS_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("evora:prefs-changed", sync);
+      window.removeEventListener(PREFS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
 
-  const update = (patch: Partial<Preferences>) =>
-    setPrefs((p) => {
-      const next = { ...p, ...patch };
-      save(next);
-      return next;
-    });
-  const complete = (patch: Partial<Preferences> = {}) =>
-    setPrefs((p) => {
-      const next = { ...p, ...patch, completedAt: Date.now() };
-      save(next);
-      return next;
-    });
+  const update = (patch: Partial<Preferences>) => {
+    const next = { ...load(), ...patch };
+    save(next);
+    setPrefs(next);
+    return next;
+  };
+
+  const complete = (patch: Partial<Preferences> = {}) => {
+    const next = { ...load(), ...patch, completedAt: Date.now() };
+    save(next, "complete");
+    setPrefs(next);
+    return next;
+  };
+
   const reset = () => {
-    save(EMPTY);
+    save(EMPTY, "reset");
     setPrefs(EMPTY);
   };
 
