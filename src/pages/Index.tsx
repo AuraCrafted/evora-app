@@ -123,8 +123,9 @@ const Roll = () => {
     return contextFilter(basePool, {
       useTimeOfDay: isPro,
       energy: energyAware ? energy : undefined,
+      quickStart,
     });
-  }, [basePool, isPro, energyAware, energy]);
+  }, [basePool, isPro, energyAware, energy, quickStart]);
 
   // Fetch AI-personalized tasks once the user has given enough feedback.
   useEffect(() => {
