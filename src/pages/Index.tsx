@@ -68,6 +68,7 @@ const Roll = () => {
     isPro,
     streak,
     nextResetMs,
+    recentIds,
     recordSpin,
     recordDecision,
     grantBonusSpin,
@@ -76,6 +77,10 @@ const Roll = () => {
   const { tasteAvailable, consumeTaste } = useEnergyTaste();
   const energyAware = isPro || tasteAvailable;
   const { items: customSuggestions } = useCustomSuggestions();
+  const { prefs } = usePreferences();
+  const { feedback, record: recordFeedback } = useTaskFeedback();
+  const [aiTasks, setAiTasks] = useState<Suggestion[]>(() => loadAiTasks());
+  const aiFetchingRef = useRef(false);
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -110,17 +115,43 @@ const Roll = () => {
 
   const basePool = useMemo(() => {
     if (category === "custom") return customSuggestions;
-    if (category === "any") return [...suggestions, ...customSuggestions];
-    return suggestions.filter((s) => s.category === category);
-  }, [category, customSuggestions]);
+    if (category === "any") return [...suggestions, ...customSuggestions, ...aiTasks];
+    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
+  }, [category, customSuggestions, aiTasks]);
 
   const filteredPool = useMemo(() => {
     return contextFilter(basePool, {
       useTimeOfDay: isPro,
       energy: energyAware ? energy : undefined,
-      quickStart,
     });
-  }, [basePool, isPro, energyAware, energy, quickStart]);
+  }, [basePool, isPro, energyAware, energy]);
+
+  // Fetch AI-personalized tasks once the user has given enough feedback.
+  useEffect(() => {
+    if (aiFetchingRef.current) return;
+    if (!prefs.completedAt) return;
+    if (feedback.count < AI_FEEDBACK_THRESHOLD) return;
+    // Refresh when we have fewer than 6 cached or the cache is older than a day.
+    const last = Number(localStorage.getItem("evora.aiTasks.ts") || 0);
+    if (aiTasks.length >= 6 && Date.now() - last < 24 * 60 * 60 * 1000) return;
+    aiFetchingRef.current = true;
+    supabase.functions
+      .invoke("generate-task", {
+        body: { prefs, energy, recentTitles: recentIds.slice(0, 8) },
+      })
+      .then(({ data, error }) => {
+        if (error || !data?.tasks) return;
+        const next = [...data.tasks, ...aiTasks].slice(0, 30);
+        setAiTasks(next);
+        saveAiTasks(next);
+        localStorage.setItem("evora.aiTasks.ts", String(Date.now()));
+      })
+      .catch(() => {})
+      .finally(() => {
+        aiFetchingRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.completedAt, feedback.count]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
