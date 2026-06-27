@@ -247,10 +247,34 @@ const Roll = () => {
     setActiveTask(null);
   };
 
-  const handleReject = () => {
+  const handleFeedback = (kind: FeedbackKind) => {
     if (!current) return;
+    const meta = getMeta(current);
+    const tags = [...current.tags, current.category, meta.type, ...meta.goals];
+    recordFeedback(current.id, tags, kind);
+
+    if (kind === "did") {
+      sfx.accept();
+      if (currentEntryId) recordDecision(currentEntryId, true);
+      setActiveTask(current);
+      setCurrent(null);
+      setCurrentEntryId(null);
+      setHasRerolled(false);
+      return;
+    }
+
+    if (kind === "later") {
+      // Dismiss, no reroll, doesn't penalize streak.
+      sfx.tap();
+      setCurrent(null);
+      setCurrentEntryId(null);
+      setHasRerolled(false);
+      return;
+    }
+
+    // dislike or more → reroll if allowed
     sfx.reject();
-    if (currentEntryId) recordDecision(currentEntryId, false);
+    if (currentEntryId) recordDecision(currentEntryId, kind === "dislike" ? false : null);
     if ((hasRerolled && !isPro) || !canSpin) {
       if (!canSpin) {
         if (!isPro) {
