@@ -75,12 +75,24 @@ const Settings = () => {
   const { tier, isPro } = useSubscription();
   const iap = useIAP();
   const [restoring, setRestoring] = useState(false);
+  const [sound, setSound] = useState(getSoundSettings());
 
-  const handleRestore = async () => {
-    sfx.tap();
-    haptic("light");
-    setRestoring(true);
-    try {
+  useEffect(() => subscribeSoundSettings(setSound), []);
+
+  const handleToggleSound = (v: boolean) => {
+    setSoundEnabled(v);
+    if (v) playSound("tab");
+    haptic("selection");
+  };
+
+  const handleToggleHaptics = (v: boolean) => {
+    setHapticsEnabled(v);
+    if (v) haptic("light");
+  };
+
+  const handleVolume = (vals: number[]) => {
+    setVolume((vals[0] ?? 70) / 100);
+  };
       await iap.restore();
       haptic("success");
       toast.success("Purchases restored.");
