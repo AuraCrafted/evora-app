@@ -85,7 +85,7 @@ const plans: Plan[] = [
     features: [
       "Unlimited rolls",
       "Choose your category",
-      "Custom evoras",
+      "Custom spins",
       "⏰ Time-of-day filtering",
       "🔋 Energy-aware tasks (low / normal / push)",
       "🏷️ Tag your custom evoras",
