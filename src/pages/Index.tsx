@@ -113,21 +113,34 @@ const Roll = () => {
 
   const tod = currentTimeOfDay();
 
-  const basePool = useMemo(() => {
-    if (category === "custom") return customSuggestions;
-    if (category === "any") return [...suggestions, ...customSuggestions, ...aiTasks];
-    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
-  }, [category, customSuggestions, aiTasks]);
+  // Map UI category to the centralized roll-engine mode + built-in pool.
+  const rollMode: "builtin" | "custom" | "mixed" =
+    category === "custom" ? "custom" : category === "any" ? "mixed" : "builtin";
 
-  const filteredPool = useMemo(() => {
-    return contextFilter(basePool, {
+  const builtInPool = useMemo(() => {
+    if (category === "custom") return [];
+    if (category === "any") return [...suggestions, ...aiTasks];
+    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
+  }, [category, aiTasks]);
+
+  const filterOpts = useMemo(
+    () => ({
       useTimeOfDay: isPro,
       energy: energyAware ? energy : undefined,
       quickStart,
-    });
-  }, [basePool, isPro, energyAware, energy, quickStart]);
+    }),
+    [isPro, energyAware, energy, quickStart],
+  );
 
-  const rollPool = category === "custom" ? customSuggestions : filteredPool;
+  // Eligible pool for the current mode, used for UI hints + empty-state checks.
+  const rollPool = useMemo(() => {
+    return buildEligiblePool({
+      mode: rollMode,
+      builtInSuggestions: builtInPool,
+      customSuggestions,
+      filters: filterOpts,
+    });
+  }, [rollMode, builtInPool, customSuggestions, filterOpts]);
 
   // Fetch AI-personalized tasks once the user has given enough feedback.
   useEffect(() => {
