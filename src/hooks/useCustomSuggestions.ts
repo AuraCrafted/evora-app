@@ -23,10 +23,10 @@ export const customSuggestionSchema = z.object({
     .optional()
     .or(z.literal("")),
   duration: z
-    .string()
-    .trim()
-    .nonempty({ message: "How long will this take?" })
-    .max(20, { message: "Keep duration short, e.g. '5 min'" }),
+    .number({ invalid_type_error: "Duration must be a number." })
+    .int({ message: "Duration must be a whole number." })
+    .min(1, { message: "Duration must be at least 1 minute." })
+    .max(240, { message: "Duration must be 240 minutes or less." }),
 });
 
 export type CustomSuggestionInput = z.infer<typeof customSuggestionSchema>;
@@ -106,13 +106,13 @@ export function useCustomSuggestions() {
         return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
       }
       const id = `cu-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      const minutes = parseInt(parsed.data.duration, 10) || 5;
+      const minutes = parsed.data.duration;
       const next: Suggestion = {
         id,
         emoji: parsed.data.emoji,
         title: parsed.data.title,
         description: parsed.data.description?.trim() || "Your own evora.",
-        duration: parsed.data.duration,
+        duration: `${minutes} min`,
         minutes,
         effort: minutes <= 5 ? "low" : minutes <= 15 ? "medium" : "high",
         timeOfDay: ["morning", "midday", "evening", "night"],
@@ -139,7 +139,8 @@ export function useCustomSuggestions() {
                 emoji: parsed.data.emoji,
                 title: parsed.data.title,
                 description: parsed.data.description?.trim() || "Your own evora.",
-                duration: parsed.data.duration,
+                duration: `${parsed.data.duration} min`,
+                minutes: parsed.data.duration,
               }
             : s,
         ),

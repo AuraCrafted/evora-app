@@ -15,7 +15,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-const EMPTY = { emoji: "", title: "", description: "", duration: "" };
+const EMPTY = { emoji: "", title: "", description: "", duration: "" as string };
 
 interface FieldErrors {
   emoji?: string;
@@ -47,7 +47,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
       emoji: s.emoji,
       title: s.title,
       description: s.description === "Your own evora." ? "" : s.description,
-      duration: s.duration,
+      duration: String(s.minutes ?? ""),
     });
     setErrors({});
   };
@@ -61,7 +61,12 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = customSuggestionSchema.safeParse(form);
+    const trimmed = form.duration.trim();
+    const durationNum = /^\d+$/.test(trimmed) ? parseInt(trimmed, 10) : Number.NaN;
+    const parsed = customSuggestionSchema.safeParse({
+      ...form,
+      duration: Number.isFinite(durationNum) ? durationNum : Number.NaN,
+    });
     if (!parsed.success) {
       const fieldErrors: FieldErrors = {};
       for (const issue of parsed.error.issues) {
@@ -130,15 +135,25 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
               />
             </div>
             <div>
-              <Label htmlFor="cs-duration" className="text-xs">Duration</Label>
-              <Input
-                id="cs-duration"
-                value={form.duration}
-                onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                placeholder="5 min"
-                maxLength={20}
-                aria-invalid={!!errors.duration}
-              />
+              <Label htmlFor="cs-duration" className="text-xs">Duration (min)</Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  id="cs-duration"
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  min={1}
+                  max={240}
+                  step={1}
+                  value={form.duration}
+                  onChange={(e) =>
+                    setForm({ ...form, duration: e.target.value.replace(/[^\d]/g, "") })
+                  }
+                  placeholder="5"
+                  aria-invalid={!!errors.duration}
+                />
+                <span className="text-xs text-muted-foreground">min</span>
+              </div>
             </div>
           </div>
           {(errors.emoji || errors.duration) && (
