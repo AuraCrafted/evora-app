@@ -231,7 +231,6 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
     const localSnapshot = loadLocal(userId);
     console.info("[CUSTOM SPINS SYNC] Fetching account spins", {
-      userId,
       localCount: localSnapshot.length,
     });
     const { data, error } = await supabase
@@ -244,7 +243,6 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
     if (error) {
       console.error("[CUSTOM SPINS SYNC] Failed to fetch account spins", {
-        userId,
         error,
       });
       setLoading(false);
@@ -257,7 +255,6 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     const cloudIds = new Set(cloud.map((s) => s.id));
     const localOnly = localSnapshot.filter((s) => !cloudIds.has(s.id));
     console.info("[CUSTOM SPINS SYNC] Account spins loaded", {
-      userId,
       cloudCount: cloud.length,
       localOnlyCount: localOnly.length,
     });
@@ -271,7 +268,6 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
       if (upErr) {
         console.error("[CUSTOM SPINS SYNC] Failed to upload local spins", {
-          userId,
           error: upErr,
         });
         setLoading(false);
@@ -292,7 +288,6 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     setLoading(false);
     setSyncStatus("synced");
     console.info("[CUSTOM SPINS SYNC] Sync complete", {
-      userId,
       syncedCount: merged.length,
     });
   }, []);
