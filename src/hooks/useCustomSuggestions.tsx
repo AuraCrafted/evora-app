@@ -44,8 +44,8 @@ type Row = {
   tags: string[] | null;
 };
 
-type MutationResult<T = undefined> =
-  | ({ ok: true; error?: undefined } & (T extends undefined ? Record<string, never> : T))
+type MutationResult<T extends object = object> =
+  | ({ ok: true; error?: undefined } & T)
   | { ok: false; error: string };
 
 interface CustomSuggestionsContextValue {
