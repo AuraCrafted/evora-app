@@ -22,8 +22,8 @@ import { suggestions, Suggestion, Category, getMeta } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
-import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
-import { pickRanked } from "@/lib/ranker";
+import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
+import { buildEligiblePool, selectSpin } from "@/lib/rollEngine";
 import { supabase } from "@/integrations/supabase/client";
 
 const MILESTONES = [3, 7, 14, 30] as const;
@@ -113,21 +113,34 @@ const Roll = () => {
 
   const tod = currentTimeOfDay();
 
-  const basePool = useMemo(() => {
-    if (category === "custom") return customSuggestions;
-    if (category === "any") return [...suggestions, ...customSuggestions, ...aiTasks];
-    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
-  }, [category, customSuggestions, aiTasks]);
+  // Map UI category to the centralized roll-engine mode + built-in pool.
+  const rollMode: "builtin" | "custom" | "mixed" =
+    category === "custom" ? "custom" : category === "any" ? "mixed" : "builtin";
 
-  const filteredPool = useMemo(() => {
-    return contextFilter(basePool, {
+  const builtInPool = useMemo(() => {
+    if (category === "custom") return [];
+    if (category === "any") return [...suggestions, ...aiTasks];
+    return [...suggestions, ...aiTasks].filter((s) => s.category === category);
+  }, [category, aiTasks]);
+
+  const filterOpts = useMemo(
+    () => ({
       useTimeOfDay: isPro,
       energy: energyAware ? energy : undefined,
       quickStart,
-    });
-  }, [basePool, isPro, energyAware, energy, quickStart]);
+    }),
+    [isPro, energyAware, energy, quickStart],
+  );
 
-  const rollPool = category === "custom" ? customSuggestions : filteredPool;
+  // Eligible pool for the current mode, used for UI hints + empty-state checks.
+  const rollPool = useMemo(() => {
+    return buildEligiblePool({
+      mode: rollMode,
+      builtInSuggestions: builtInPool,
+      customSuggestions,
+      filters: filterOpts,
+    });
+  }, [rollMode, builtInPool, customSuggestions, filterOpts]);
 
   // Fetch AI-personalized tasks once the user has given enough feedback.
   useEffect(() => {
@@ -169,34 +182,22 @@ const Roll = () => {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
-      let next: Suggestion | null = null;
-
-      if (category === "custom") {
-        const customSpins = customSuggestions;
-        const randomIndex = Math.floor(Math.random() * customSpins.length);
-        next = customSpins[randomIndex] ?? null;
-
-        // Temporary debug logging for iPhone/My Spins verification.
-        // eslint-disable-next-line no-console
-        console.debug("[MY SPINS ROLL]", {
-          totalCustomSpins: customSpins.length,
-          eligibleSpinIds: customSpins.map((spin) => spin.id),
-          selectedRandomIndex: randomIndex,
-          selectedSpinId: next?.id ?? null,
-          contextFilteredCount: filteredPool.length,
-          contextFilteredIds: filteredPool.map((spin) => spin.id),
-          filtersBypassed: customSpins.length !== filteredPool.length,
-        });
-      } else {
-        next =
-          pickRanked(filteredPool, {
-            energy: energyAware ? energy : undefined,
-            prefs,
-            feedback,
-            recentIds,
-            excludeId,
-          }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
-      }
+      const { spin: next } = selectSpin({
+        mode: rollMode,
+        builtInSuggestions: builtInPool,
+        customSuggestions,
+        filters: filterOpts,
+        lastRolledId: excludeId ?? recentIds[0] ?? null,
+        ranker:
+          rollMode === "custom"
+            ? undefined
+            : {
+                prefs,
+                feedback,
+                recentIds,
+                energy: energyAware ? energy : undefined,
+              },
+      });
 
       if (!next) {
         setRolling(false);
