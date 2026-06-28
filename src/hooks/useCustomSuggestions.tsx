@@ -210,15 +210,18 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced" | "error">("syncing");
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [loadedOwner, setLoadedOwner] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
   const syncRunRef = useRef(0);
 
   // Keep localStorage as offline cache
   useEffect(() => {
+    const owner = user?.id ?? null;
     if (authLoading) return;
+    if (loadedOwner !== owner) return;
     if (loading || syncStatus === "syncing" || syncStatus === "error") return;
-    saveLocal(items, user?.id ?? null);
-  }, [items, user?.id, authLoading, loading, syncStatus]);
+    saveLocal(items, owner);
+  }, [items, user?.id, authLoading, loading, syncStatus, loadedOwner]);
 
   const syncFromCloud = useCallback(async (userId: string) => {
     const run = ++syncRunRef.current;
@@ -285,6 +288,7 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     setItems(merged);
     saveLocal(merged, userId);
     clearMigratedLegacy(userId);
+    setLoadedOwner(userId);
     setLoading(false);
     setSyncStatus("synced");
     console.info("[CUSTOM SPINS SYNC] Sync complete", {
@@ -316,6 +320,7 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     }
     syncRunRef.current += 1;
     setItems(loadLocal(null));
+    setLoadedOwner(null);
     setLoading(false);
     setSyncStatus("local");
     setSyncError(null);
