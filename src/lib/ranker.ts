@@ -10,7 +10,9 @@ interface RankInput {
   excludeId?: string;
 }
 
-const RECENCY_PENALTY = [60, 40, 24, 14, 8, 5, 3, 2, 1];
+// Softer recency curve so a small custom pool (e.g. 5 items) still cycles
+// through ALL entries rather than collapsing to the two least-recent ones.
+const RECENCY_PENALTY = [12, 9, 7, 5, 4, 3, 2, 2, 1, 1];
 
 function avoidMatches(s: Suggestion, prefs: Preferences): boolean {
   const m = getMeta(s);
@@ -77,10 +79,23 @@ export function pickRanked(pool: Suggestion[], input: RankInput): Suggestion | n
     .map((s) => ({ s, score: scoreSuggestion(s, input) }))
     .sort((a, b) => b.score - a.score);
 
-  // Weighted random over top 5 to keep variety.
-  const top = scored.slice(0, Math.min(5, scored.length));
+  // Widen the candidate window so small pools (e.g. 5 custom spins) include
+  // every eligible item. For large pools we still cap to keep variety
+  // focused on the strongest matches.
+  const windowSize =
+    scored.length <= 8 ? scored.length : Math.max(5, Math.ceil(scored.length * 0.5));
+  const top = scored.slice(0, windowSize);
+
+  // Debug: confirm pool size matches expectations (e.g. N custom => N).
+  if (typeof console !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.debug(
+      `[RANKER] input=${pool.length} eligible=${candidates.length} window=${top.length}`,
+    );
+  }
+
   const min = Math.min(...top.map((t) => t.score));
-  const weights = top.map((t) => Math.max(0.1, t.score - min + 1));
+  const weights = top.map((t) => Math.max(0.5, t.score - min + 1));
   const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
   for (let i = 0; i < top.length; i++) {
