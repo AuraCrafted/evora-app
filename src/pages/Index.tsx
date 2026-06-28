@@ -22,8 +22,7 @@ import { suggestions, Suggestion, Category, getMeta } from "@/data/suggestions";
 import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide-react";
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
-import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
-import { pickRanked } from "@/lib/ranker";
+import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 import { buildEligiblePool, selectSpin } from "@/lib/rollEngine";
 import { supabase } from "@/integrations/supabase/client";
 
