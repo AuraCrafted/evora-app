@@ -127,6 +127,8 @@ const Roll = () => {
     });
   }, [basePool, isPro, energyAware, energy, quickStart]);
 
+  const rollPool = category === "custom" ? customSuggestions : filteredPool;
+
   // Fetch AI-personalized tasks once the user has given enough feedback.
   useEffect(() => {
     if (aiFetchingRef.current) return;
@@ -167,14 +169,40 @@ const Roll = () => {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
-      const next =
-        pickRanked(filteredPool, {
-          energy: energyAware ? energy : undefined,
-          prefs,
-          feedback,
-          recentIds,
-          excludeId,
-        }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
+      let next: Suggestion | null = null;
+
+      if (category === "custom") {
+        const customSpins = customSuggestions;
+        const randomIndex = Math.floor(Math.random() * customSpins.length);
+        next = customSpins[randomIndex] ?? null;
+
+        // Temporary debug logging for iPhone/My Spins verification.
+        // eslint-disable-next-line no-console
+        console.debug("[MY SPINS ROLL]", {
+          totalCustomSpins: customSpins.length,
+          eligibleSpinIds: customSpins.map((spin) => spin.id),
+          selectedRandomIndex: randomIndex,
+          selectedSpinId: next?.id ?? null,
+          contextFilteredCount: filteredPool.length,
+          contextFilteredIds: filteredPool.map((spin) => spin.id),
+          filtersBypassed: customSpins.length !== filteredPool.length,
+        });
+      } else {
+        next =
+          pickRanked(filteredPool, {
+            energy: energyAware ? energy : undefined,
+            prefs,
+            feedback,
+            recentIds,
+            excludeId,
+          }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
+      }
+
+      if (!next) {
+        setRolling(false);
+        setShowCustomDialog(true);
+        return;
+      }
       setFace(Math.floor(Math.random() * 6) + 1);
       setCurrent(next);
       setRolling(false);
@@ -193,7 +221,7 @@ const Roll = () => {
 
   const handleRoll = () => {
     sfx.tap();
-    if (filteredPool.length === 0) {
+    if (rollPool.length === 0) {
       setShowCustomDialog(true);
       return;
     }
@@ -220,7 +248,7 @@ const Roll = () => {
     if (showRewardedAd) return;
     if (!autoRollAfterReward) return;
     setAutoRollAfterReward(false);
-    if (canSpin && filteredPool.length > 0) {
+    if (canSpin && rollPool.length > 0) {
       setHasRerolled(false);
       triggerRoll();
     }
