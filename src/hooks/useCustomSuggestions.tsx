@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { z } from "zod";
 import type { Suggestion } from "@/data/suggestions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const STORAGE_KEY = "nudge.customSuggestions.v1";
+const STORAGE_OWNER_KEY = "nudge.customSuggestions.owner.v1";
 const MAX_CUSTOM = 50;
 
 export const customSuggestionSchema = z.object({
@@ -130,9 +132,13 @@ function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion |
   };
 }
 
-function loadLocal(): Suggestion[] {
+function storageKeyForUser(userId: string | null) {
+  return userId ? `${STORAGE_KEY}.${userId}` : STORAGE_KEY;
+}
+
+function readStoredSuggestions(key: string): Suggestion[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -144,9 +150,41 @@ function loadLocal(): Suggestion[] {
   }
 }
 
-function saveLocal(items: Suggestion[]) {
+function mergeById(lists: Suggestion[][]): Suggestion[] {
+  const map = new Map<string, Suggestion>();
+  for (const list of lists) {
+    for (const item of list) map.set(item.id, item);
+  }
+  return Array.from(map.values());
+}
+
+function loadLocal(userId: string | null = null): Suggestion[] {
+  if (!userId) {
+    const owner = localStorage.getItem(STORAGE_OWNER_KEY);
+    return owner && owner !== "anonymous" ? [] : readStoredSuggestions(STORAGE_KEY);
+  }
+
+  const accountItems = readStoredSuggestions(storageKeyForUser(userId));
+  const legacyOwner = localStorage.getItem(STORAGE_OWNER_KEY);
+  const shouldMigrateLegacy = !legacyOwner || legacyOwner === userId || legacyOwner === "anonymous";
+  return shouldMigrateLegacy
+    ? mergeById([readStoredSuggestions(STORAGE_KEY), accountItems])
+    : accountItems;
+}
+
+function saveLocal(items: Suggestion[], userId: string | null = null) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    localStorage.setItem(storageKeyForUser(userId), JSON.stringify(items));
+    localStorage.setItem(STORAGE_OWNER_KEY, userId ?? "anonymous");
+  } catch {
+    /* noop */
+  }
+}
+
+function clearMigratedLegacy(userId: string) {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(STORAGE_OWNER_KEY, userId);
   } catch {
     /* noop */
   }
@@ -167,7 +205,8 @@ function suggestionToRow(s: Suggestion, userId: string) {
 }
 
 export function CustomSuggestionsProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Suggestion[]>(() => loadLocal());
+  const { user, loading: authLoading } = useAuth();
+  const [items, setItems] = useState<Suggestion[]>(() => loadLocal(null));
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced" | "error">("syncing");
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -176,8 +215,9 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
   // Keep localStorage as offline cache
   useEffect(() => {
-    saveLocal(items);
-  }, [items]);
+    if (authLoading) return;
+    saveLocal(items, user?.id ?? null);
+  }, [items, user?.id, authLoading]);
 
   const syncFromCloud = useCallback(async (userId: string) => {
     const run = ++syncRunRef.current;
@@ -185,7 +225,11 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     setSyncStatus("syncing");
     setSyncError(null);
 
-    const localSnapshot = loadLocal();
+    const localSnapshot = loadLocal(userId);
+    console.info("[CUSTOM SPINS SYNC] Fetching account spins", {
+      userId,
+      localCount: localSnapshot.length,
+    });
     const { data, error } = await supabase
       .from("custom_suggestions")
       .select("*")
@@ -195,6 +239,10 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     if (run !== syncRunRef.current) return;
 
     if (error) {
+      console.error("[CUSTOM SPINS SYNC] Failed to fetch account spins", {
+        userId,
+        error,
+      });
       setLoading(false);
       setSyncStatus("error");
       setSyncError(error.message);
@@ -204,6 +252,11 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
     const cloud = ((data ?? []) as Row[]).map(rowToSuggestion);
     const cloudIds = new Set(cloud.map((s) => s.id));
     const localOnly = localSnapshot.filter((s) => !cloudIds.has(s.id));
+    console.info("[CUSTOM SPINS SYNC] Account spins loaded", {
+      userId,
+      cloudCount: cloud.length,
+      localOnlyCount: localOnly.length,
+    });
 
     if (localOnly.length > 0) {
       const { error: upErr } = await supabase
@@ -213,6 +266,10 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
       if (run !== syncRunRef.current) return;
 
       if (upErr) {
+        console.error("[CUSTOM SPINS SYNC] Failed to upload local spins", {
+          userId,
+          error: upErr,
+        });
         setLoading(false);
         setSyncStatus("error");
         setSyncError(upErr.message);
@@ -223,15 +280,22 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
     const mergedMap = new Map<string, Suggestion>();
     for (const s of [...localOnly, ...cloud]) mergedMap.set(s.id, s);
-    setItems(Array.from(mergedMap.values()));
+    const merged = Array.from(mergedMap.values());
+    setItems(merged);
+    saveLocal(merged, userId);
+    clearMigratedLegacy(userId);
     setLoading(false);
     setSyncStatus("synced");
+    console.info("[CUSTOM SPINS SYNC] Sync complete", {
+      userId,
+      syncedCount: merged.length,
+    });
   }, []);
 
   const refresh = useCallback(async () => {
     const uid = userIdRef.current;
     if (!uid) {
-      setItems(loadLocal());
+      setItems(loadLocal(null));
       setLoading(false);
       setSyncStatus("local");
       setSyncError(null);
@@ -242,40 +306,37 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
 
   // Sync with the user's account on auth changes.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const uid = data.session?.user.id ?? null;
-      userIdRef.current = uid;
-      if (uid) {
-        void syncFromCloud(uid);
-      } else {
-        setItems(loadLocal());
-        setLoading(false);
-        setSyncStatus("local");
-      }
-    });
+    if (authLoading) return;
+    const uid = user?.id ?? null;
+    userIdRef.current = uid;
+    if (uid) {
+      void syncFromCloud(uid);
+      return;
+    }
+    syncRunRef.current += 1;
+    setItems(loadLocal(null));
+    setLoading(false);
+    setSyncStatus("local");
+    setSyncError(null);
+  }, [user?.id, authLoading, syncFromCloud]);
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const uid = session?.user.id ?? null;
-      userIdRef.current = uid;
-      if (uid) {
-        setTimeout(() => void syncFromCloud(uid), 0);
-      } else {
-        syncRunRef.current += 1;
-        setItems(loadLocal());
-        setLoading(false);
-        setSyncStatus("local");
-        setSyncError(null);
+  useEffect(() => {
+    const syncOnResume = () => {
+      if (document.visibilityState === "visible" && userIdRef.current) {
+        void syncFromCloud(userIdRef.current);
       }
-    });
-
+    };
+    window.addEventListener("focus", syncOnResume);
+    document.addEventListener("visibilitychange", syncOnResume);
     return () => {
-      sub.subscription.unsubscribe();
+      window.removeEventListener("focus", syncOnResume);
+      document.removeEventListener("visibilitychange", syncOnResume);
     };
   }, [syncFromCloud]);
 
   useEffect(() => {
     const syncLocal = () => {
-      if (!userIdRef.current) setItems(loadLocal());
+      if (!userIdRef.current) setItems(loadLocal(null));
     };
     window.addEventListener("storage", syncLocal);
     return () => {
