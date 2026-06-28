@@ -216,8 +216,9 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
   // Keep localStorage as offline cache
   useEffect(() => {
     if (authLoading) return;
+    if (loading || syncStatus === "syncing" || syncStatus === "error") return;
     saveLocal(items, user?.id ?? null);
-  }, [items, user?.id, authLoading]);
+  }, [items, user?.id, authLoading, loading, syncStatus]);
 
   const syncFromCloud = useCallback(async (userId: string) => {
     const run = ++syncRunRef.current;
@@ -467,14 +468,14 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
       loading,
       syncStatus,
       syncError,
-      isSignedIn: !!userIdRef.current,
+      isSignedIn: !!user,
       add,
       update,
       remove,
       refresh,
       max: MAX_CUSTOM,
     }),
-    [items, loading, syncStatus, syncError, add, update, remove, refresh],
+    [items, loading, syncStatus, syncError, user, add, update, remove, refresh],
   );
 
   return (
