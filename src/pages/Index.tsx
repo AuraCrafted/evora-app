@@ -24,6 +24,7 @@ import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 import { contextFilter, currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 import { pickRanked } from "@/lib/ranker";
+import { buildEligiblePool, selectSpin } from "@/lib/rollEngine";
 import { supabase } from "@/integrations/supabase/client";
 
 const MILESTONES = [3, 7, 14, 30] as const;
