@@ -9,6 +9,7 @@ import { useCustomSuggestions, customSuggestionSchema } from "@/hooks/useCustomS
 import type { Suggestion } from "@/data/suggestions";
 import { sfx } from "@/lib/feedback";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface Props {
   open: boolean;
@@ -25,11 +26,13 @@ interface FieldErrors {
 }
 
 export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
-  const { items, add, update, remove, max } = useCustomSuggestions();
+  const { items, add, update, remove, max, loading, syncStatus, syncError, isSignedIn, refresh } =
+    useCustomSuggestions();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [saving, setSaving] = useState(false);
 
   // Reset form when the dialog closes
   useEffect(() => {
@@ -59,7 +62,7 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
     setErrors({});
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = form.duration.trim();
     const durationNum = /^\d+$/.test(trimmed) ? parseInt(trimmed, 10) : Number.NaN;
@@ -78,8 +81,10 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
     }
     setErrors({});
 
+    setSaving(true);
     if (editingId) {
-      const res = update(editingId, parsed.data);
+      const res = await update(editingId, parsed.data);
+      setSaving(false);
       if (!res.ok) {
         toast({ title: "Couldn't save", description: res.error, variant: "destructive" });
         return;
@@ -87,7 +92,8 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
       sfx.accept();
       toast({ title: "Spin updated" });
     } else {
-      const res = add(parsed.data);
+      const res = await add(parsed.data);
+      setSaving(false);
       if (!res.ok) {
         toast({ title: "Couldn't add", description: res.error, variant: "destructive" });
         return;
@@ -99,9 +105,13 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
     setForm(EMPTY);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     sfx.reject();
-    remove(id);
+    const res = await remove(id);
+    if (!res.ok) {
+      toast({ title: "Couldn't delete", description: res.error, variant: "destructive" });
+      return;
+    }
     if (editingId === id) cancelEdit();
   };
 
@@ -119,6 +129,28 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
             Make the dice roll your own ideas. {items.length}/{max} saved.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="rounded-2xl bg-secondary p-3 text-xs text-muted-foreground">
+          {loading || syncStatus === "syncing" ? (
+            "Syncing your spins…"
+          ) : isSignedIn && syncStatus === "synced" ? (
+            "Synced to your account."
+          ) : isSignedIn && syncStatus === "error" ? (
+            <div className="flex items-center justify-between gap-3">
+              <span>{syncError || "Couldn't sync your spins."}</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => void refresh()}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <span>
+              Sign in to keep custom spins after reinstalling or changing devices.{" "}
+              <Link to="/auth?mode=signin&redirect=/roll" className="font-medium text-primary">
+                Sign in
+              </Link>
+            </span>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-2 space-y-3">
           <div className="grid grid-cols-[80px_1fr] gap-2">
@@ -195,15 +227,15 @@ export const CustomSuggestionsDialog = ({ open, onOpenChange }: Props) => {
               variant="hero"
               size="sm"
               className="flex-1"
-              disabled={atLimit}
+              disabled={atLimit || saving}
             >
               {editingId ? (
                 <>
-                  <Pencil className="h-4 w-4" /> Save changes
+                  <Pencil className="h-4 w-4" /> {saving ? "Saving…" : "Save changes"}
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4" /> {atLimit ? "Limit reached" : "Add spin"}
+                  <Plus className="h-4 w-4" /> {saving ? "Saving…" : atLimit ? "Limit reached" : "Add spin"}
                 </>
               )}
             </Button>
