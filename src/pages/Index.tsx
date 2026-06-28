@@ -182,34 +182,22 @@ const Roll = () => {
         clearInterval(tickRef.current);
         tickRef.current = null;
       }
-      let next: Suggestion | null = null;
-
-      if (category === "custom") {
-        const customSpins = customSuggestions;
-        const randomIndex = Math.floor(Math.random() * customSpins.length);
-        next = customSpins[randomIndex] ?? null;
-
-        // Temporary debug logging for iPhone/My Spins verification.
-        // eslint-disable-next-line no-console
-        console.debug("[MY SPINS ROLL]", {
-          totalCustomSpins: customSpins.length,
-          eligibleSpinIds: customSpins.map((spin) => spin.id),
-          selectedRandomIndex: randomIndex,
-          selectedSpinId: next?.id ?? null,
-          contextFilteredCount: filteredPool.length,
-          contextFilteredIds: filteredPool.map((spin) => spin.id),
-          filtersBypassed: customSpins.length !== filteredPool.length,
-        });
-      } else {
-        next =
-          pickRanked(filteredPool, {
-            energy: energyAware ? energy : undefined,
-            prefs,
-            feedback,
-            recentIds,
-            excludeId,
-          }) ?? filteredPool[Math.floor(Math.random() * filteredPool.length)];
-      }
+      const { spin: next } = selectSpin({
+        mode: rollMode,
+        builtInSuggestions: builtInPool,
+        customSuggestions,
+        filters: filterOpts,
+        lastRolledId: excludeId ?? recentIds[0] ?? null,
+        ranker:
+          rollMode === "custom"
+            ? undefined
+            : {
+                prefs,
+                feedback,
+                recentIds,
+                energy: energyAware ? energy : undefined,
+              },
+      });
 
       if (!next) {
         setRolling(false);
