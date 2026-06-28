@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import type { Suggestion } from "@/data/suggestions";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "nudge.customSuggestions.v1";
 const MAX_CUSTOM = 50;
+const SYNC_EVENT = "evora:custom-spins-changed";
 
 export const customSuggestionSchema = z.object({
   emoji: z
@@ -42,6 +43,25 @@ type Row = {
   time_of_day: string[] | null;
   tags: string[] | null;
 };
+
+type MutationResult<T = undefined> =
+  | ({ ok: true; error?: undefined } & (T extends undefined ? Record<string, never> : T))
+  | { ok: false; error: string };
+
+interface CustomSuggestionsContextValue {
+  items: Suggestion[];
+  loading: boolean;
+  syncStatus: "local" | "syncing" | "synced" | "error";
+  syncError: string | null;
+  isSignedIn: boolean;
+  add: (input: CustomSuggestionInput) => Promise<MutationResult<{ id: string }>>;
+  update: (id: string, input: CustomSuggestionInput) => Promise<MutationResult>;
+  remove: (id: string) => Promise<MutationResult>;
+  refresh: () => Promise<void>;
+  max: number;
+}
+
+const CustomSuggestionsContext = createContext<CustomSuggestionsContextValue | null>(null);
 
 function rowToSuggestion(r: Row): Suggestion {
   const minutes = r.minutes;
@@ -125,56 +145,115 @@ function loadLocal(): Suggestion[] {
   }
 }
 
-export function useCustomSuggestions() {
+function saveLocal(items: Suggestion[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    window.dispatchEvent(new CustomEvent(SYNC_EVENT));
+  } catch {
+    /* noop */
+  }
+}
+
+function suggestionToRow(s: Suggestion, userId: string) {
+  return {
+    id: s.id,
+    user_id: userId,
+    emoji: s.emoji,
+    title: s.title,
+    description: s.description,
+    minutes: s.minutes,
+    effort: s.effort,
+    time_of_day: s.timeOfDay as unknown as string[],
+    tags: s.tags as unknown as string[],
+  };
+}
+
+export function CustomSuggestionsProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<Suggestion[]>(() => loadLocal());
+  const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced" | "error">("syncing");
+  const [syncError, setSyncError] = useState<string | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const syncRunRef = useRef(0);
 
   // Keep localStorage as offline cache
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    saveLocal(items);
   }, [items]);
 
-  // Sync with Supabase on auth changes
-  useEffect(() => {
-    let cancelled = false;
+  const syncFromCloud = useCallback(async (userId: string) => {
+    const run = ++syncRunRef.current;
+    setLoading(true);
+    setSyncStatus("syncing");
+    setSyncError(null);
 
-    const syncFromCloud = async (userId: string) => {
-      const { data, error } = await supabase
+    const localSnapshot = loadLocal();
+    const { data, error } = await supabase
+      .from("custom_suggestions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (run !== syncRunRef.current) return;
+
+    if (error) {
+      setLoading(false);
+      setSyncStatus("error");
+      setSyncError(error.message);
+      return;
+    }
+
+    const cloud = ((data ?? []) as Row[]).map(rowToSuggestion);
+    const cloudIds = new Set(cloud.map((s) => s.id));
+    const localOnly = localSnapshot.filter((s) => !cloudIds.has(s.id));
+
+    if (localOnly.length > 0) {
+      const { error: upErr } = await supabase
         .from("custom_suggestions")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (error || cancelled) return;
-      const cloud = (data as Row[]).map(rowToSuggestion);
+        .upsert(localOnly.map((s) => suggestionToRow(s, userId)), { onConflict: "id" });
 
-      // Push any local-only items (from before sign-in) up to cloud
-      const cloudIds = new Set(cloud.map((s) => s.id));
-      const localOnly = loadLocal().filter((s) => !cloudIds.has(s.id));
-      if (localOnly.length > 0) {
-        const rows = localOnly.map((s) => ({
-          id: s.id,
-          user_id: userId,
-          emoji: s.emoji,
-          title: s.title,
-          description: s.description,
-          minutes: s.minutes,
-          effort: s.effort,
-          time_of_day: s.timeOfDay as unknown as string[],
-          tags: s.tags as unknown as string[],
-        }));
-        const { error: upErr } = await supabase.from("custom_suggestions").upsert(rows);
-        if (!upErr) {
-          setItems([...localOnly, ...cloud]);
-          return;
-        }
+      if (run !== syncRunRef.current) return;
+
+      if (upErr) {
+        setLoading(false);
+        setSyncStatus("error");
+        setSyncError(upErr.message);
+        setItems(cloud.length > 0 ? cloud : localSnapshot);
+        return;
       }
-      setItems(cloud);
-    };
+    }
 
+    const mergedMap = new Map<string, Suggestion>();
+    for (const s of [...localOnly, ...cloud]) mergedMap.set(s.id, s);
+    setItems(Array.from(mergedMap.values()));
+    setLoading(false);
+    setSyncStatus("synced");
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const uid = userIdRef.current;
+    if (!uid) {
+      setItems(loadLocal());
+      setLoading(false);
+      setSyncStatus("local");
+      setSyncError(null);
+      return;
+    }
+    await syncFromCloud(uid);
+  }, [syncFromCloud]);
+
+  // Sync with the user's account on auth changes.
+  useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user.id ?? null;
       userIdRef.current = uid;
-      if (uid) void syncFromCloud(uid);
+      if (uid) {
+        void syncFromCloud(uid);
+      } else {
+        setItems(loadLocal());
+        setLoading(false);
+        setSyncStatus("local");
+      }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -182,21 +261,36 @@ export function useCustomSuggestions() {
       userIdRef.current = uid;
       if (uid) {
         setTimeout(() => void syncFromCloud(uid), 0);
+      } else {
+        syncRunRef.current += 1;
+        setItems(loadLocal());
+        setLoading(false);
+        setSyncStatus("local");
+        setSyncError(null);
       }
     });
 
     return () => {
-      cancelled = true;
       sub.subscription.unsubscribe();
+    };
+  }, [syncFromCloud]);
+
+  useEffect(() => {
+    const syncLocal = () => {
+      if (!userIdRef.current) setItems(loadLocal());
+    };
+    window.addEventListener("storage", syncLocal);
+    window.addEventListener(SYNC_EVENT, syncLocal);
+    return () => {
+      window.removeEventListener("storage", syncLocal);
+      window.removeEventListener(SYNC_EVENT, syncLocal);
     };
   }, []);
 
   const add = useCallback(
-    (
-      input: CustomSuggestionInput,
-    ): { ok: true; id: string; error?: undefined } | { ok: false; error: string; id?: undefined } => {
+    async (input: CustomSuggestionInput): Promise<MutationResult<{ id: string }>> => {
       if (items.length >= MAX_CUSTOM) {
-        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom evoras.` };
+        return { ok: false, error: `You can save up to ${MAX_CUSTOM} custom spins.` };
       }
       const parsed = customSuggestionSchema.safeParse(input);
       if (!parsed.success) {
@@ -220,17 +314,16 @@ export function useCustomSuggestions() {
 
       const uid = userIdRef.current;
       if (uid) {
-        void supabase.from("custom_suggestions").insert({
-          id,
-          user_id: uid,
-          emoji: next.emoji,
-          title: next.title,
-          description: next.description,
-          minutes: next.minutes,
-          effort: next.effort,
-          time_of_day: next.timeOfDay as unknown as string[],
-          tags: next.tags as unknown as string[],
-        });
+        const { error } = await supabase.from("custom_suggestions").insert(suggestionToRow(next, uid));
+        if (error) {
+          setItems((prev) => prev.filter((s) => s.id !== id));
+          setSyncStatus("error");
+          setSyncError(error.message);
+          return { ok: false, error: "Couldn't sync this spin to your account. Please try again." };
+        }
+        setSyncStatus("synced");
+      } else {
+        setSyncStatus("local");
       }
       return { ok: true, id };
     },
@@ -238,11 +331,12 @@ export function useCustomSuggestions() {
   );
 
   const update = useCallback(
-    (id: string, input: CustomSuggestionInput): { ok: boolean; error?: string } => {
+    async (id: string, input: CustomSuggestionInput): Promise<MutationResult> => {
       const parsed = customSuggestionSchema.safeParse(input);
       if (!parsed.success) {
         return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
       }
+      const previous = items;
       const minutes = parsed.data.duration;
       const description = parsed.data.description?.trim() || "Your own evora.";
       const effort: Suggestion["effort"] =
@@ -265,7 +359,7 @@ export function useCustomSuggestions() {
 
       const uid = userIdRef.current;
       if (uid) {
-        void supabase
+        const { error } = await supabase
           .from("custom_suggestions")
           .update({
             emoji: parsed.data.emoji,
@@ -276,19 +370,65 @@ export function useCustomSuggestions() {
           })
           .eq("id", id)
           .eq("user_id", uid);
+        if (error) {
+          setItems(previous);
+          setSyncStatus("error");
+          setSyncError(error.message);
+          return { ok: false, error: "Couldn't sync this change to your account. Please try again." };
+        }
+        setSyncStatus("synced");
+      } else {
+        setSyncStatus("local");
       }
       return { ok: true };
     },
-    [],
+    [items],
   );
 
-  const remove = useCallback((id: string) => {
+  const remove = useCallback(async (id: string): Promise<MutationResult> => {
+    const previous = items;
     setItems((prev) => prev.filter((s) => s.id !== id));
     const uid = userIdRef.current;
     if (uid) {
-      void supabase.from("custom_suggestions").delete().eq("id", id).eq("user_id", uid);
+      const { error } = await supabase.from("custom_suggestions").delete().eq("id", id).eq("user_id", uid);
+      if (error) {
+        setItems(previous);
+        setSyncStatus("error");
+        setSyncError(error.message);
+        return { ok: false, error: "Couldn't delete this spin from your account. Please try again." };
+      }
+      setSyncStatus("synced");
+    } else {
+      setSyncStatus("local");
     }
-  }, []);
+    return { ok: true };
+  }, [items]);
 
-  return { items, add, update, remove, max: MAX_CUSTOM };
+  const value = useMemo<CustomSuggestionsContextValue>(
+    () => ({
+      items,
+      loading,
+      syncStatus,
+      syncError,
+      isSignedIn: !!userIdRef.current,
+      add,
+      update,
+      remove,
+      refresh,
+      max: MAX_CUSTOM,
+    }),
+    [items, loading, syncStatus, syncError, add, update, remove, refresh],
+  );
+
+  return (
+    <CustomSuggestionsContext.Provider value={value}>{children}</CustomSuggestionsContext.Provider>
+  );
+}
+
+export function useCustomSuggestions() {
+  const ctx = useContext(CustomSuggestionsContext);
+  if (!ctx) {
+    throw new Error("useCustomSuggestions must be used inside CustomSuggestionsProvider");
+  }
+  return ctx;
 }
