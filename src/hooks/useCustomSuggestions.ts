@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Suggestion } from "@/data/suggestions";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "nudge.customSuggestions.v1";
 const MAX_CUSTOM = 50;
@@ -30,6 +31,43 @@ export const customSuggestionSchema = z.object({
 });
 
 export type CustomSuggestionInput = z.infer<typeof customSuggestionSchema>;
+
+type Row = {
+  id: string;
+  emoji: string;
+  title: string;
+  description: string | null;
+  minutes: number;
+  effort: string | null;
+  time_of_day: string[] | null;
+  tags: string[] | null;
+};
+
+function rowToSuggestion(r: Row): Suggestion {
+  const minutes = r.minutes;
+  const effort: Suggestion["effort"] =
+    r.effort === "low" || r.effort === "medium" || r.effort === "high"
+      ? r.effort
+      : minutes <= 5
+        ? "low"
+        : minutes <= 15
+          ? "medium"
+          : "high";
+  return {
+    id: r.id,
+    emoji: r.emoji,
+    title: r.title,
+    description: r.description || "Your own evora.",
+    duration: `${minutes} min`,
+    minutes,
+    effort,
+    timeOfDay: (r.time_of_day && r.time_of_day.length > 0
+      ? r.time_of_day
+      : ["morning", "midday", "evening", "night"]) as Suggestion["timeOfDay"],
+    tags: (r.tags && r.tags.length > 0 ? r.tags : ["quick"]) as Suggestion["tags"],
+    category: "custom",
+  };
+}
 
 function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion | null {
   if (
@@ -73,7 +111,7 @@ function migrate(s: Partial<Suggestion> & Record<string, unknown>): Suggestion |
   };
 }
 
-function load(): Suggestion[] {
+function loadLocal(): Suggestion[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -88,11 +126,70 @@ function load(): Suggestion[] {
 }
 
 export function useCustomSuggestions() {
-  const [items, setItems] = useState<Suggestion[]>(() => load());
+  const [items, setItems] = useState<Suggestion[]>(() => loadLocal());
+  const userIdRef = useRef<string | null>(null);
 
+  // Keep localStorage as offline cache
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+  // Sync with Supabase on auth changes
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncFromCloud = async (userId: string) => {
+      const { data, error } = await supabase
+        .from("custom_suggestions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error || cancelled) return;
+      const cloud = (data as Row[]).map(rowToSuggestion);
+
+      // Push any local-only items (from before sign-in) up to cloud
+      const cloudIds = new Set(cloud.map((s) => s.id));
+      const localOnly = loadLocal().filter((s) => !cloudIds.has(s.id));
+      if (localOnly.length > 0) {
+        const rows = localOnly.map((s) => ({
+          id: s.id,
+          user_id: userId,
+          emoji: s.emoji,
+          title: s.title,
+          description: s.description,
+          minutes: s.minutes,
+          effort: s.effort,
+          time_of_day: s.timeOfDay as unknown as string[],
+          tags: s.tags as unknown as string[],
+        }));
+        const { error: upErr } = await supabase.from("custom_suggestions").upsert(rows);
+        if (!upErr) {
+          setItems([...localOnly, ...cloud]);
+          return;
+        }
+      }
+      setItems(cloud);
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user.id ?? null;
+      userIdRef.current = uid;
+      if (uid) void syncFromCloud(uid);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const uid = session?.user.id ?? null;
+      userIdRef.current = uid;
+      if (uid) {
+        setTimeout(() => void syncFromCloud(uid), 0);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const add = useCallback(
     (
@@ -120,6 +217,21 @@ export function useCustomSuggestions() {
         category: "custom",
       };
       setItems((prev) => [next, ...prev]);
+
+      const uid = userIdRef.current;
+      if (uid) {
+        void supabase.from("custom_suggestions").insert({
+          id,
+          user_id: uid,
+          emoji: next.emoji,
+          title: next.title,
+          description: next.description,
+          minutes: next.minutes,
+          effort: next.effort,
+          time_of_day: next.timeOfDay as unknown as string[],
+          tags: next.tags as unknown as string[],
+        });
+      }
       return { ok: true, id };
     },
     [items.length],
@@ -131,6 +243,10 @@ export function useCustomSuggestions() {
       if (!parsed.success) {
         return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
       }
+      const minutes = parsed.data.duration;
+      const description = parsed.data.description?.trim() || "Your own evora.";
+      const effort: Suggestion["effort"] =
+        minutes <= 5 ? "low" : minutes <= 15 ? "medium" : "high";
       setItems((prev) =>
         prev.map((s) =>
           s.id === id
@@ -138,13 +254,29 @@ export function useCustomSuggestions() {
                 ...s,
                 emoji: parsed.data.emoji,
                 title: parsed.data.title,
-                description: parsed.data.description?.trim() || "Your own evora.",
-                duration: `${parsed.data.duration} min`,
-                minutes: parsed.data.duration,
+                description,
+                duration: `${minutes} min`,
+                minutes,
+                effort,
               }
             : s,
         ),
       );
+
+      const uid = userIdRef.current;
+      if (uid) {
+        void supabase
+          .from("custom_suggestions")
+          .update({
+            emoji: parsed.data.emoji,
+            title: parsed.data.title,
+            description,
+            minutes,
+            effort,
+          })
+          .eq("id", id)
+          .eq("user_id", uid);
+      }
       return { ok: true };
     },
     [],
@@ -152,6 +284,10 @@ export function useCustomSuggestions() {
 
   const remove = useCallback((id: string) => {
     setItems((prev) => prev.filter((s) => s.id !== id));
+    const uid = userIdRef.current;
+    if (uid) {
+      void supabase.from("custom_suggestions").delete().eq("id", id).eq("user_id", uid);
+    }
   }, []);
 
   return { items, add, update, remove, max: MAX_CUSTOM };
