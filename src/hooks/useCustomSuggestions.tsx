@@ -245,6 +245,8 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
       console.error("[CUSTOM SPINS SYNC] Failed to fetch account spins", {
         error,
       });
+      setItems(localSnapshot);
+      setLoadedOwner(userId);
       setLoading(false);
       setSyncStatus("error");
       setSyncError(error.message);
@@ -274,6 +276,7 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
         setSyncStatus("error");
         setSyncError(upErr.message);
         setItems(cloud.length > 0 ? cloud : localSnapshot);
+        setLoadedOwner(userId);
         return;
       }
     }
