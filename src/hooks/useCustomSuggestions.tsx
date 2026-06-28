@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "nudge.customSuggestions.v1";
 const MAX_CUSTOM = 50;
-const SYNC_EVENT = "evora:custom-spins-changed";
 
 export const customSuggestionSchema = z.object({
   emoji: z
@@ -148,7 +147,6 @@ function loadLocal(): Suggestion[] {
 function saveLocal(items: Suggestion[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent(SYNC_EVENT));
   } catch {
     /* noop */
   }
@@ -280,10 +278,8 @@ export function CustomSuggestionsProvider({ children }: { children: React.ReactN
       if (!userIdRef.current) setItems(loadLocal());
     };
     window.addEventListener("storage", syncLocal);
-    window.addEventListener(SYNC_EVENT, syncLocal);
     return () => {
       window.removeEventListener("storage", syncLocal);
-      window.removeEventListener(SYNC_EVENT, syncLocal);
     };
   }, []);
 
