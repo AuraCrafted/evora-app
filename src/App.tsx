@@ -55,28 +55,30 @@ const App = () => (
       <HashRouter>
         <AuthProvider>
           <CustomSuggestionsProvider>
-            <PaymentTestModeBanner />
-            <PrivacyConsent />
-            <WelcomeTutorial />
-            <OnboardingGate>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/roll" element={<Roll />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/plans" element={<Plans />} />
-                <Route path="/feedback" element={<Feedback />} />
-                <Route path="/coach" element={<Coach />} />
-                <Route path="/coach/:threadId" element={<Coach />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/refunds" element={<Refunds />} />
-                <Route path="/settings" element={<Settings />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </OnboardingGate>
+            <SpinsProvider>
+              <PaymentTestModeBanner />
+              <PrivacyConsent />
+              <WelcomeTutorial />
+              <OnboardingGate>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/roll" element={<Roll />} />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/plans" element={<Plans />} />
+                  <Route path="/feedback" element={<Feedback />} />
+                  <Route path="/coach" element={<Coach />} />
+                  <Route path="/coach/:threadId" element={<Coach />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/refunds" element={<Refunds />} />
+                  <Route path="/settings" element={<Settings />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </OnboardingGate>
+            </SpinsProvider>
           </CustomSuggestionsProvider>
         </AuthProvider>
       </HashRouter>
