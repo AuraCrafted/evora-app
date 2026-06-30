@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Send, Sparkles, Trash2, Menu, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Send, Sparkles, Trash2, Menu, Lock, Cloud, CloudOff } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { BottomNav } from "@/components/BottomNav";
 import { useSpins } from "@/hooks/useSpins";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { sfx } from "@/lib/feedback";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const THREADS_KEY = "evora.coach.threads.v1";
+const LEGACY_THREADS_KEY = "evora.coach.threads.v1";
+const threadsKeyFor = (userId: string | null) =>
+  userId ? `evora.coach.threads.v2.${userId}` : "evora.coach.threads.v2.anon";
 
 interface ChatMessage {
   id: string;
@@ -27,20 +30,37 @@ interface Thread {
   messages: ChatMessage[];
 }
 
-function loadThreads(): Thread[] {
+function loadThreadsLocal(userId: string | null): Thread[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(THREADS_KEY);
+    const key = threadsKeyFor(userId);
+    let raw = localStorage.getItem(key);
+    // One-time migration of the legacy single-key store into the anon namespace.
+    if (!raw && !userId) {
+      const legacy = localStorage.getItem(LEGACY_THREADS_KEY);
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem(LEGACY_THREADS_KEY);
+        raw = legacy;
+      }
+    }
     if (!raw) return [];
     const arr = JSON.parse(raw) as Thread[];
-    return Array.isArray(arr) ? arr : [];
+    const out = Array.isArray(arr) ? arr : [];
+    console.info("[COACH HYDRATE] local", { userId, threadCount: out.length });
+    return out;
   } catch {
     return [];
   }
 }
 
-function saveThreads(threads: Thread[]) {
-  localStorage.setItem(THREADS_KEY, JSON.stringify(threads));
+function saveThreadsLocal(userId: string | null, threads: Thread[]) {
+  try {
+    localStorage.setItem(threadsKeyFor(userId), JSON.stringify(threads));
+    console.info("[COACH SAVE] local", { userId, threadCount: threads.length });
+  } catch (err) {
+    console.error("[COACH SAVE] local failed", err);
+  }
 }
 
 function newId() {
@@ -54,21 +74,131 @@ function titleFromMessage(text: string) {
 
 const Coach = () => {
   const { tier, streak } = useSpins();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { threadId } = useParams<{ threadId?: string }>();
 
-  const [threads, setThreads] = useState<Thread[]>(() => loadThreads());
+  const [threads, setThreads] = useState<Thread[]>(() => loadThreadsLocal(null));
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [syncedUser, setSyncedUser] = useState<string | null | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const isYearly = tier === "year";
+  const userId = user?.id ?? null;
+
+  // Hydrate from local cache for the current user, then sync from cloud if signed in.
+  useEffect(() => {
+    if (authLoading) return;
+    const cached = loadThreadsLocal(userId);
+    setThreads(cached);
+    setSyncedUser(userId === null ? null : undefined);
+
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      console.info("[COACH SYNC] fetching cloud threads", { userId });
+      const { data: threadRows, error: tErr } = await supabase
+        .from("coach_threads")
+        .select("id, title, updated_at")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false });
+      if (cancelled) return;
+      if (tErr) {
+        console.error("[COACH SYNC] threads fetch failed", tErr);
+        return;
+      }
+      const { data: msgRows, error: mErr } = await supabase
+        .from("coach_messages")
+        .select("id, thread_id, role, content, ts")
+        .eq("user_id", userId)
+        .order("ts", { ascending: true });
+      if (cancelled) return;
+      if (mErr) {
+        console.error("[COACH SYNC] messages fetch failed", mErr);
+        return;
+      }
+
+      const byThread = new Map<string, ChatMessage[]>();
+      for (const m of msgRows ?? []) {
+        const arr = byThread.get(m.thread_id) ?? [];
+        arr.push({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          ts: Number(m.ts),
+        });
+        byThread.set(m.thread_id, arr);
+      }
+
+      const cloud: Thread[] = (threadRows ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        updatedAt: new Date(t.updated_at).getTime(),
+        messages: byThread.get(t.id) ?? [],
+      }));
+
+      // Push any local-only threads (anon legacy or offline-created) up to cloud.
+      const cloudIds = new Set(cloud.map((t) => t.id));
+      const localOnly = cached.filter((t) => !cloudIds.has(t.id) && t.messages.length > 0);
+      if (localOnly.length > 0) {
+        console.info("[COACH SYNC] pushing local-only threads", {
+          count: localOnly.length,
+        });
+        await supabase.from("coach_threads").upsert(
+          localOnly.map((t) => ({
+            id: t.id,
+            user_id: userId,
+            title: t.title,
+            updated_at: new Date(t.updatedAt).toISOString(),
+          })),
+          { onConflict: "id" },
+        );
+        const msgs = localOnly.flatMap((t) =>
+          t.messages.map((m) => ({
+            id: m.id,
+            thread_id: t.id,
+            user_id: userId,
+            role: m.role,
+            content: m.content,
+            ts: m.ts,
+          })),
+        );
+        if (msgs.length > 0) {
+          await supabase.from("coach_messages").upsert(msgs, { onConflict: "id" });
+        }
+      }
+
+      const merged = [...localOnly, ...cloud].sort((a, b) => b.updatedAt - a.updatedAt);
+      console.info("[COACH SYNC] complete", {
+        cloudThreads: cloud.length,
+        localOnly: localOnly.length,
+      });
+      if (cancelled) return;
+      setThreads(merged);
+      saveThreadsLocal(userId, merged);
+      setSyncedUser(userId);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, authLoading]);
+
+  // Persist any thread changes for the current user to the local cache.
+  useEffect(() => {
+    if (authLoading) return;
+    if (syncedUser === undefined) return; // wait until initial cloud sync attempted
+    saveThreadsLocal(userId, threads);
+  }, [threads, userId, authLoading, syncedUser]);
 
   // Bootstrap: if no threadId in URL, pick latest or create one.
   useEffect(() => {
     if (!isYearly) return;
+    if (authLoading) return;
+    if (syncedUser === undefined) return;
     if (threadId) return;
     if (threads.length === 0) {
       const t: Thread = {
@@ -77,15 +207,12 @@ const Coach = () => {
         updatedAt: Date.now(),
         messages: [],
       };
-      const next = [t];
-      setThreads(next);
-      saveThreads(next);
+      setThreads([t]);
       navigate(`/coach/${t.id}`, { replace: true });
     } else {
       navigate(`/coach/${threads[0].id}`, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threadId, isYearly]);
+  }, [threadId, isYearly, authLoading, syncedUser, threads, navigate]);
 
   const activeThread = useMemo(
     () => threads.find((t) => t.id === threadId) ?? null,
@@ -99,6 +226,39 @@ const Coach = () => {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [activeThread?.messages.length, sending]);
+
+  const persistThreadRow = useCallback(
+    async (t: Thread) => {
+      if (!userId) return;
+      const { error } = await supabase.from("coach_threads").upsert(
+        {
+          id: t.id,
+          user_id: userId,
+          title: t.title,
+          updated_at: new Date(t.updatedAt).toISOString(),
+        },
+        { onConflict: "id" },
+      );
+      if (error) console.error("[COACH CLOUD] thread upsert failed", error);
+    },
+    [userId],
+  );
+
+  const persistMessage = useCallback(
+    async (threadIdArg: string, m: ChatMessage) => {
+      if (!userId) return;
+      const { error } = await supabase.from("coach_messages").insert({
+        id: m.id,
+        thread_id: threadIdArg,
+        user_id: userId,
+        role: m.role,
+        content: m.content,
+        ts: m.ts,
+      });
+      if (error) console.error("[COACH CLOUD] message insert failed", error);
+    },
+    [userId],
+  );
 
   if (!isYearly) {
     return (
@@ -138,20 +298,30 @@ const Coach = () => {
   const createThread = () => {
     sfx.tap();
     const t: Thread = { id: newId(), title: "New chat", updatedAt: Date.now(), messages: [] };
-    const next = [t, ...threads];
-    setThreads(next);
-    saveThreads(next);
+    setThreads((prev) => [t, ...prev]);
     setSidebarOpen(false);
+    void persistThreadRow(t);
     navigate(`/coach/${t.id}`);
   };
 
   const deleteThread = (id: string) => {
-    const next = threads.filter((t) => t.id !== id);
-    setThreads(next);
-    saveThreads(next);
-    if (id === threadId) {
-      if (next.length > 0) navigate(`/coach/${next[0].id}`, { replace: true });
-      else navigate(`/coach`, { replace: true });
+    setThreads((prev) => {
+      const next = prev.filter((t) => t.id !== id);
+      if (id === threadId) {
+        if (next.length > 0) navigate(`/coach/${next[0].id}`, { replace: true });
+        else navigate(`/coach`, { replace: true });
+      }
+      return next;
+    });
+    if (userId) {
+      void supabase
+        .from("coach_threads")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId)
+        .then(({ error }) => {
+          if (error) console.error("[COACH CLOUD] thread delete failed", error);
+        });
     }
   };
 
@@ -174,11 +344,13 @@ const Coach = () => {
       messages: [...activeThread.messages, userMsg],
       updatedAt: Date.now(),
     };
-    const nextThreads = threads.map((t) => (t.id === activeThread.id ? updated : t));
-    setThreads(nextThreads);
-    saveThreads(nextThreads);
+    setThreads((prev) => prev.map((t) => (t.id === activeThread.id ? updated : t)));
     setInput("");
     setSending(true);
+
+    // Fire-and-forget cloud writes
+    void persistThreadRow(updated);
+    void persistMessage(updated.id, userMsg);
 
     try {
       const { data, error } = await supabase.functions.invoke("coach-chat", {
@@ -201,11 +373,9 @@ const Coach = () => {
         messages: [...updated.messages, assistantMsg],
         updatedAt: Date.now(),
       };
-      setThreads((prev) => {
-        const out = prev.map((t) => (t.id === withAssistant.id ? withAssistant : t));
-        saveThreads(out);
-        return out;
-      });
+      setThreads((prev) => prev.map((t) => (t.id === withAssistant.id ? withAssistant : t)));
+      void persistThreadRow(withAssistant);
+      void persistMessage(withAssistant.id, assistantMsg);
       sfx.coachMessage();
     } catch (err) {
       console.error(err);
@@ -246,8 +416,17 @@ const Coach = () => {
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <div className="font-display text-base font-semibold leading-tight">Coach</div>
-            <div className="text-[11px] text-muted-foreground">Your gentle guide</div>
+            <div className="font-display text-base font-semibold leading-tight flex items-center gap-1.5">
+              Coach
+              {userId ? (
+                <Cloud className="h-3 w-3 text-muted-foreground" aria-label="Synced to your account" />
+              ) : (
+                <CloudOff className="h-3 w-3 text-muted-foreground" aria-label="Local only" />
+              )}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {userId ? "Synced to your account" : "Sign in to sync across devices"}
+            </div>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={createThread}>
