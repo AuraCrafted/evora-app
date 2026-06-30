@@ -20,6 +20,7 @@ import { WelcomeTutorial } from "./components/WelcomeTutorial";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { CustomSuggestionsProvider } from "./hooks/useCustomSuggestions";
+import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import { readPreferences, usePreferences } from "./hooks/usePreferences";
 
