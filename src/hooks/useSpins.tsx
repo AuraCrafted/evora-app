@@ -1,4 +1,13 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Suggestion } from "@/data/suggestions";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -47,11 +56,28 @@ function startOfDay(ts: number = Date.now()): number {
 function load(): SpinState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) throw new Error("empty");
+    if (!raw) {
+      console.info("[SPINS HYDRATE] no saved state, starting fresh");
+      throw new Error("empty");
+    }
     const parsed = JSON.parse(raw) as SpinState;
     const today = startOfDay();
+    console.info("[SPINS HYDRATE] loaded", {
+      historyCount: parsed.history?.length ?? 0,
+      used: parsed.used,
+      bonus: parsed.bonus,
+      sameDay: parsed.dayStart === today,
+    });
     if (parsed.dayStart !== today) {
-      return { dayStart: today, used: 0, bonus: 0, history: parsed.history ?? [] };
+      // New day: reset daily counters but PRESERVE history, hiddenBeforeTs, recentIds
+      return {
+        dayStart: today,
+        used: 0,
+        bonus: 0,
+        history: parsed.history ?? [],
+        hiddenBeforeTs: parsed.hiddenBeforeTs,
+        recentIds: parsed.recentIds ?? [],
+      };
     }
     return { bonus: 0, ...parsed };
   } catch {
@@ -76,18 +102,72 @@ function calcStreak(history: HistoryEntry[]): number {
   return streak;
 }
 
-export function useSpins() {
+export interface SpinsContextValue {
+  used: number;
+  total: number;
+  remaining: number;
+  bonus: number;
+  canSpin: boolean;
+  isPro: boolean;
+  history: HistoryEntry[];
+  allHistory: HistoryEntry[];
+  recentIds: string[];
+  streak: number;
+  completed: number;
+  nextResetMs: number;
+  hasNudgedToday: boolean;
+  tier: PlanTier;
+  setTier: (t: PlanTier) => void;
+  recordSpin: (s: Suggestion) => string;
+  recordDecision: (entryId: string, accepted: boolean) => void;
+  grantBonusSpin: () => void;
+  upgrade: (next?: PlanTier) => void;
+  downgrade: () => void;
+  clearHistory: () => void;
+}
+
+const SpinsContext = createContext<SpinsContextValue | null>(null);
+
+export function SpinsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SpinState>(() => load());
   const sub = useSubscription();
-  // Tier is now strictly derived from the server-backed subscription.
-  // Unauthenticated or unsubscribed users are always "free", there's no
-  // localStorage override path that could grant pro features.
   const tier: PlanTier = sub.isPro ? sub.tier : "free";
   const isPro = tier !== "free";
+  const hydratedRef = useRef(false);
 
+  // Persist on every change. Skip the very first synchronous mount to avoid
+  // pointlessly rewriting localStorage with what we just loaded.
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (!hydratedRef.current) {
+      hydratedRef.current = true;
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      console.info("[SPINS SAVE]", {
+        historyCount: state.history.length,
+        used: state.used,
+        bonus: state.bonus,
+      });
+    } catch (err) {
+      console.error("[SPINS SAVE] failed", err);
+    }
   }, [state]);
+
+  // If another tab/window writes (rare on mobile but cheap to support).
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        const next = JSON.parse(e.newValue) as SpinState;
+        setState(next);
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const baseRemaining = Math.max(0, FREE_ROLLS_PER_DAY - state.used);
   const remaining = isPro ? Infinity : baseRemaining + state.bonus;
@@ -110,7 +190,6 @@ export function useSpins() {
         RECENT_MAX,
       );
       const baseHistory = [entry, ...s.history].slice(0, 200);
-      // Consume bonus spins before the daily quota.
       if (s.bonus > 0) {
         return { ...s, bonus: s.bonus - 1, history: baseHistory, recentIds };
       }
@@ -130,12 +209,9 @@ export function useSpins() {
     }));
   }, []);
 
-  // Tier mutations are no-ops on the client. Real tier changes happen via
-  // Stripe checkout/cancel flows, which update the subscriptions row server-side.
   const setTier = useCallback((_next: PlanTier) => {
-    // intentionally no-op: tier is server-authoritative
+    // tier is server-authoritative
   }, []);
-
 
   const upgrade = useCallback(
     (next: PlanTier = "month") => {
@@ -149,13 +225,14 @@ export function useSpins() {
   }, [setTier]);
 
   const clearHistory = useCallback(() => {
-    // Hide recent rolls from the list without discarding the underlying data,
-    // so streak, completed count, yes rate and other lifetime stats are preserved.
     setState((s) => ({ ...s, hiddenBeforeTs: Date.now() }));
   }, []);
 
   const streak = useMemo(() => calcStreak(state.history), [state.history]);
-  const completed = useMemo(() => state.history.filter((h) => h.accepted).length, [state.history]);
+  const completed = useMemo(
+    () => state.history.filter((h) => h.accepted).length,
+    [state.history],
+  );
   const nextResetMs = state.dayStart + 24 * 60 * 60 * 1000 - Date.now();
   const hasNudgedToday = useMemo(() => {
     const today = startOfDay();
@@ -169,7 +246,7 @@ export function useSpins() {
     [state.history, state.hiddenBeforeTs],
   );
 
-  return {
+  const value: SpinsContextValue = {
     used: state.used,
     total: FREE_ROLLS_PER_DAY,
     remaining,
@@ -192,4 +269,14 @@ export function useSpins() {
     downgrade,
     clearHistory,
   };
+
+  return <SpinsContext.Provider value={value}>{children}</SpinsContext.Provider>;
+}
+
+export function useSpins(): SpinsContextValue {
+  const ctx = useContext(SpinsContext);
+  if (!ctx) {
+    throw new Error("useSpins must be used within a SpinsProvider");
+  }
+  return ctx;
 }
