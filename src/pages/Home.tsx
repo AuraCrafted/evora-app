@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { EnergySelector } from "@/components/EnergySelector";
 import { InstallBanner } from "@/components/InstallBanner";
 import { useSpins } from "@/hooks/useSpins";
+import { useAuth } from "@/hooks/useAuth";
 import { useEnergy } from "@/hooks/useEnergy";
 import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
