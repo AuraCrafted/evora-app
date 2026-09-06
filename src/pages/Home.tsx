@@ -48,14 +48,14 @@ const Home = () => {
           </div>
         </div>
         {user ? (
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex justify-end">
             <button
               type="button"
               onClick={async () => {
                 sfx.tap();
                 await signOut();
               }}
-              className="flex-1 rounded-full border border-border bg-card text-sm font-medium py-2 soft-shadow active:scale-[0.99] transition-transform"
+              className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-4 py-1.5 soft-shadow active:scale-[0.99] transition-transform"
             >
               Sign out
             </button>
