@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { EnergySelector } from "@/components/EnergySelector";
 import { InstallBanner } from "@/components/InstallBanner";
 import { useSpins } from "@/hooks/useSpins";
+import { useAuth } from "@/hooks/useAuth";
 import { useEnergy } from "@/hooks/useEnergy";
 import { useEnergyTaste } from "@/hooks/useEnergyTaste";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
@@ -28,6 +29,7 @@ const Home = () => {
   const { streak, completed, remaining, total, isPro, hasNudgedToday } = useSpins();
   const { energy, setEnergy } = useEnergy();
   const { tasteAvailable } = useEnergyTaste();
+  const { user } = useAuth();
   const sliderUnlocked = isPro || tasteAvailable;
   const tod = currentTimeOfDay();
 
@@ -35,17 +37,32 @@ const Home = () => {
     <main className="min-h-screen flex flex-col">
       <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between">
+          <div className="text-[11px] font-medium text-muted-foreground rounded-full bg-card px-3 py-1.5 soft-shadow">
+            {timeOfDayLabel[tod]}
+          </div>
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-display text-xl font-semibold">Evora</span>
           </div>
-          <div className="text-[11px] font-medium text-muted-foreground rounded-full bg-card px-3 py-1.5 soft-shadow">
-            {timeOfDayLabel[tod]}
-          </div>
         </div>
+        {!user && (
+          <div className="mt-3 flex items-center gap-2">
+            <Link to="/auth?mode=signin&redirect=/" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full rounded-full">
+                Sign in
+              </Button>
+            </Link>
+            <Link to="/auth?mode=signup&redirect=/" className="flex-1">
+              <Button variant="hero" size="sm" className="w-full rounded-full">
+                Sign up
+              </Button>
+            </Link>
+          </div>
+        )}
       </header>
+
 
       <InstallBanner />
 
