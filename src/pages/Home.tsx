@@ -29,6 +29,7 @@ const Home = () => {
   const { streak, completed, remaining, total, isPro, hasNudgedToday } = useSpins();
   const { energy, setEnergy } = useEnergy();
   const { tasteAvailable } = useEnergyTaste();
+  const { user } = useAuth();
   const sliderUnlocked = isPro || tasteAvailable;
   const tod = currentTimeOfDay();
 
