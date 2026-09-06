@@ -60,6 +60,8 @@ const App = () => (
               <PaymentTestModeBanner />
               <PrivacyConsent />
               <WelcomeTutorial />
+              <WelcomeAuthDialog />
+
               <OnboardingGate>
                 <Routes>
                   <Route path="/" element={<Home />} />
