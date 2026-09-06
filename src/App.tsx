@@ -17,6 +17,7 @@ import Settings from "./pages/Settings.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { WelcomeTutorial } from "./components/WelcomeTutorial";
+import { WelcomeAuthDialog } from "./components/WelcomeAuthDialog";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { CustomSuggestionsProvider } from "./hooks/useCustomSuggestions";
