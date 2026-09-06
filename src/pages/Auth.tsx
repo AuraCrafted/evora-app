@@ -14,7 +14,7 @@ export default function Auth() {
   const { user } = useAuth();
   const initialMode = (params.get("mode") === "signup" ? "signup" : "signin") as "signin" | "signup";
   const redirect = params.get("redirect") || "/plans";
-  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -27,7 +27,14 @@ export default function Auth() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (error) throw error;
+        toast.success("Reset link sent. Check your email.");
+        setMode("signin");
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -35,11 +42,12 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("Account created. You're in.");
+        navigate(redirect, { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        navigate(redirect, { replace: true });
       }
-      navigate(redirect, { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Something went wrong.");
     } finally {
@@ -57,32 +65,53 @@ export default function Auth() {
           <span className="font-display text-xl font-semibold">Evora</span>
         </Link>
         <h1 className="font-display text-2xl font-semibold text-center mb-1">
-          {mode === "signup" ? "Create your account" : "Welcome back"}
+          {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset password" : "Welcome back"}
         </h1>
         <p className="text-center text-sm text-muted-foreground mb-6">
-          {mode === "signup" ? "Save your plan across devices." : "Sign in to manage your plan."}
+          {mode === "signup"
+            ? "Save your plan across devices."
+            : mode === "forgot"
+              ? "Enter your email and we'll send you a reset link."
+              : "Sign in to manage your plan."}
         </p>
         <form onSubmit={submit} className="space-y-4 bg-card border border-border rounded-3xl p-5 soft-shadow">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} />
-          </div>
+          {mode !== "forgot" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} />
+            </div>
+          )}
           <Button type="submit" variant="hero" className="w-full" disabled={submitting}>
-            {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+            {submitting
+              ? "Please wait…"
+              : mode === "forgot"
+                ? "Send reset link"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Sign in"}
           </Button>
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => setMode("forgot")}
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Forgot my password
+            </button>
+          )}
         </form>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
+          {mode === "forgot" ? "Remembered it?" : mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
             type="button"
-            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+            onClick={() => setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup")}
             className="text-primary font-medium hover:underline"
           >
-            {mode === "signup" ? "Sign in" : "Sign up"}
+            {mode === "forgot" ? "Sign in" : mode === "signup" ? "Sign in" : "Sign up"}
           </button>
         </p>
         <div className="mt-6 text-center">
