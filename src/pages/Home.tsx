@@ -47,7 +47,20 @@ const Home = () => {
             <span className="font-display text-xl font-semibold">Evora</span>
           </div>
         </div>
-        {!user && (
+        {user ? (
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                sfx.tap();
+                await signOut();
+              }}
+              className="flex-1 rounded-full border border-border bg-card text-sm font-medium py-2 soft-shadow active:scale-[0.99] transition-transform"
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
           <div className="mt-3 flex items-center gap-2">
             <Link to="/auth?mode=signin&redirect=/" className="flex-1">
               <Button variant="outline" size="sm" className="w-full rounded-full">
