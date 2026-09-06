@@ -14,7 +14,7 @@ export default function Auth() {
   const { user } = useAuth();
   const initialMode = (params.get("mode") === "signup" ? "signup" : "signin") as "signin" | "signup";
   const redirect = params.get("redirect") || "/plans";
-  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -27,7 +27,14 @@ export default function Auth() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (error) throw error;
+        toast.success("Reset link sent. Check your email.");
+        setMode("signin");
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -35,11 +42,12 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("Account created. You're in.");
+        navigate(redirect, { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        navigate(redirect, { replace: true });
       }
-      navigate(redirect, { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Something went wrong.");
     } finally {
