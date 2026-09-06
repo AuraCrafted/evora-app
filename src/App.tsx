@@ -10,6 +10,7 @@ import Plans from "./pages/Plans.tsx";
 import Feedback from "./pages/Feedback.tsx";
 import Coach from "./pages/Coach.tsx";
 import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import Terms from "./pages/Terms.tsx";
 import Refunds from "./pages/Refunds.tsx";
@@ -31,7 +32,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { isComplete } = usePreferences();
   const location = useLocation();
   const completedAt = readPreferences().completedAt;
-  const exempt = ["/onboarding", "/auth", "/privacy", "/terms", "/refunds"].some((p) =>
+  const exempt = ["/onboarding", "/auth", "/reset-password", "/privacy", "/terms", "/refunds"].some((p) =>
     location.pathname.startsWith(p),
   );
 
@@ -73,6 +74,7 @@ const App = () => (
                   <Route path="/coach" element={<Coach />} />
                   <Route path="/coach/:threadId" element={<Coach />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/refunds" element={<Refunds />} />
