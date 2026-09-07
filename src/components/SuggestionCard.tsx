@@ -11,7 +11,7 @@ interface Props {
 
 export const SuggestionCard = ({ suggestion, onFeedback, canReroll }: Props) => {
   return (
-    <div className="w-full max-w-md rounded-3xl bg-card p-7 soft-shadow animate-scale-in">
+    <div className="w-full max-w-md md:max-w-lg rounded-3xl bg-card p-7 soft-shadow animate-scale-in">
       <div className="flex items-center justify-between mb-5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
           {categoryLabels[suggestion.category]}

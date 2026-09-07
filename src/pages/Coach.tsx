@@ -263,7 +263,7 @@ const Coach = () => {
   if (!isYearly) {
     return (
       <main className="min-h-screen flex flex-col">
-        <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full">
+        <header className="px-5 pt-6 pb-3 max-w-2xl lg:max-w-4xl mx-auto w-full">
           <Link
             to="/"
             onClick={() => sfx.tap()}
@@ -400,7 +400,7 @@ const Coach = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-3 max-w-3xl mx-auto w-full flex items-center justify-between gap-2">
+      <header className="px-5 pt-6 pb-3 max-w-3xl lg:max-w-4xl mx-auto w-full flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -435,7 +435,7 @@ const Coach = () => {
         </Button>
       </header>
 
-      <div className="flex-1 max-w-3xl mx-auto w-full px-3 sm:px-5 pb-28 flex gap-4">
+      <div className="flex-1 max-w-3xl lg:max-w-4xl mx-auto w-full px-3 sm:px-5 pb-28 flex gap-4">
         {/* Sidebar */}
         <aside
           className={cn(

@@ -67,7 +67,7 @@ export const PlansSection = ({ isPro, onChoosePlan }: Props) => {
   return (
     <section
       id="plans"
-      className="px-5 py-12 max-w-2xl mx-auto w-full"
+      className="px-5 py-12 max-w-2xl lg:max-w-4xl mx-auto w-full"
       aria-labelledby="plans-heading"
     >
       <div className="text-center mb-8">
@@ -85,7 +85,7 @@ export const PlansSection = ({ isPro, onChoosePlan }: Props) => {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:gap-6">
         {plans.map((plan) => (
           <div
             key={plan.id}

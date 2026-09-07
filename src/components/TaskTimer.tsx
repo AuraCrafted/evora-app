@@ -129,7 +129,7 @@ export const TaskTimer = ({ suggestion, onComplete, onCancel }: Props) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 w-full max-w-md">
+      <div className="flex flex-col gap-3 w-full max-w-md md:max-w-lg">
         {done ? (
           <Button onClick={onComplete} variant="hero" size="lg" className="w-full">
             <Check className="h-5 w-5" />

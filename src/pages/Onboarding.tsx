@@ -113,7 +113,7 @@ const Onboarding = () => {
   };
 
   return (
-    <main className="min-h-screen flex flex-col pt-safe pb-safe px-5 max-w-2xl mx-auto w-full">
+    <main className="min-h-screen flex flex-col pt-safe pb-safe px-5 max-w-2xl lg:max-w-4xl mx-auto w-full">
       <header className="pt-8 pb-6">
         <div className="flex items-center gap-2 mb-4">
           <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">

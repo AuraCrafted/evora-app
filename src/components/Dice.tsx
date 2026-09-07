@@ -20,7 +20,7 @@ export const Dice = ({ rolling, face = 1, className }: DiceProps) => {
   return (
     <div
       className={cn(
-        "relative aspect-square w-full max-w-[260px] rounded-[2rem] gradient-dice dice-shadow",
+        "relative aspect-square w-full max-w-[260px] md:max-w-[340px] rounded-[2rem] gradient-dice dice-shadow",
         "flex items-center justify-center select-none",
         rolling && "animate-dice-roll",
         !rolling && "animate-float",

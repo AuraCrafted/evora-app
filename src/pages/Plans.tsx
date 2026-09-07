@@ -369,7 +369,7 @@ const Plans = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-3 max-w-2xl lg:max-w-4xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-6">
           <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
@@ -429,8 +429,8 @@ const Plans = () => {
         )}
       </header>
 
-      <section className="px-5 pt-4 pb-32 max-w-2xl mx-auto w-full">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <section className="px-5 pt-4 pb-32 max-w-2xl lg:max-w-4xl mx-auto w-full">
+        <div className="grid gap-4 sm:grid-cols-2 lg:gap-6">
           {plans.map((plan) => {
             const isCurrent = tier === plan.id;
             return (

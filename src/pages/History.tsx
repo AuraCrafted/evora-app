@@ -43,14 +43,14 @@ const HistoryPage = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-2 max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-2 max-w-2xl lg:max-w-4xl mx-auto w-full">
         <h1 className="font-display text-2xl font-semibold">Your journey</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Every yes builds momentum.
         </p>
       </header>
 
-      <section className="px-5 pt-4 max-w-2xl mx-auto w-full">
+      <section className="px-5 pt-4 max-w-2xl lg:max-w-4xl mx-auto w-full">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-3xl bg-card p-4 soft-shadow text-center">
@@ -112,7 +112,7 @@ const HistoryPage = () => {
       </section>
 
       {/* History list */}
-      <section className="px-5 pt-6 pb-32 max-w-2xl mx-auto w-full flex-1">
+      <section className="px-5 pt-6 pb-32 max-w-2xl lg:max-w-4xl mx-auto w-full flex-1">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-semibold">Recent rolls</h2>
           {history.length > 0 && (

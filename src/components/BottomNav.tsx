@@ -52,7 +52,7 @@ export const BottomNav = ({ streak }: Props) => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 pb-safe bg-background/80 backdrop-blur-xl border-t border-border/60">
-      <div className="mx-auto max-w-md px-2 pt-1.5 pb-1.5 flex items-center justify-between gap-0.5">
+      <div className="mx-auto max-w-md md:max-w-xl px-2 pt-1.5 pb-1.5 flex items-center justify-between gap-0.5">
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
