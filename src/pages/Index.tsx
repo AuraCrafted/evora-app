@@ -320,7 +320,7 @@ const Roll = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-3 flex items-center justify-between max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-3 flex items-center justify-between max-w-2xl lg:max-w-4xl mx-auto w-full">
         <Link
           to="/"
           onClick={() => sfx.tap()}
@@ -351,7 +351,7 @@ const Roll = () => {
 
       {/* Context badge */}
       {isPro && !current && !rolling && !activeTask && (
-        <div className="max-w-2xl mx-auto w-full px-5 mb-2">
+        <div className="max-w-2xl lg:max-w-4xl mx-auto w-full px-5 mb-2">
           <div className="text-center text-[11px] text-muted-foreground">
             Filtering for <span className="font-medium text-foreground">{timeOfDayLabel[tod].toLowerCase()}</span>
             {" · "}
@@ -361,7 +361,7 @@ const Roll = () => {
       )}
 
       {/* Category tabs */}
-      <div className="max-w-2xl mx-auto w-full">
+      <div className="max-w-2xl lg:max-w-4xl mx-auto w-full">
         <CategoryTabs
           value={category}
           onChange={setCategory}
@@ -372,7 +372,7 @@ const Roll = () => {
 
       {/* Quick start toggle (Weekly+) */}
       {!current && !rolling && !activeTask && (
-        <div className="max-w-2xl mx-auto w-full px-5 mt-3">
+        <div className="max-w-2xl lg:max-w-4xl mx-auto w-full px-5 mt-3">
           <button
             onClick={() => {
               if (!isPro) {
@@ -396,7 +396,7 @@ const Roll = () => {
         </div>
       )}
 
-      <section className="flex-1 flex flex-col items-center justify-center px-5 py-4 max-w-2xl mx-auto w-full">
+      <section className="flex-1 flex flex-col items-center justify-center px-5 py-4 max-w-2xl lg:max-w-4xl mx-auto w-full">
         {!current && !rolling && !activeTask && (
           <div className="text-center mb-6 animate-fade-in-up">
             <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-tight tracking-tight text-foreground">

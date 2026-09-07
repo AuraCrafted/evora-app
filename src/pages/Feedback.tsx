@@ -65,7 +65,7 @@ const FeedbackPage = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-3 max-w-2xl lg:max-w-4xl mx-auto w-full">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-2xl gradient-primary flex items-center justify-center soft-shadow">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
@@ -77,7 +77,7 @@ const FeedbackPage = () => {
         </p>
       </header>
 
-      <section className="flex-1 px-5 py-4 max-w-2xl mx-auto w-full space-y-6">
+      <section className="flex-1 px-5 py-4 max-w-2xl lg:max-w-4xl mx-auto w-full space-y-6">
         {/* Form */}
         <form
           onSubmit={handleSubmit}

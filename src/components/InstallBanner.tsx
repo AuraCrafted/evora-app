@@ -52,7 +52,7 @@ const InstallBannerContent = () => {
 
   return (
     <>
-      <div className="px-4 pt-3 max-w-2xl mx-auto w-full animate-fade-in-up">
+      <div className="px-4 pt-3 max-w-2xl lg:max-w-4xl mx-auto w-full animate-fade-in-up">
         <div className="rounded-2xl bg-card border border-border/60 soft-shadow p-3 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shrink-0">
             <Download className="h-4 w-4 text-primary-foreground" />

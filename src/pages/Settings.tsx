@@ -112,7 +112,7 @@ const Settings = () => {
 
   return (
     <main className="min-h-screen flex flex-col pt-safe">
-      <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full flex items-center gap-3">
+      <header className="px-5 pt-6 pb-3 max-w-2xl lg:max-w-4xl mx-auto w-full flex items-center gap-3">
         <button
           onClick={() => {
             sfx.tap();
@@ -131,7 +131,7 @@ const Settings = () => {
         </div>
       </header>
 
-      <section className="px-5 pt-2 pb-32 max-w-2xl mx-auto w-full space-y-5">
+      <section className="px-5 pt-2 pb-32 max-w-2xl lg:max-w-4xl mx-auto w-full space-y-5">
         {/* Account */}
         <div>
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">

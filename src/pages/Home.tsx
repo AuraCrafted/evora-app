@@ -35,7 +35,7 @@ const Home = () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <header className="px-5 pt-6 pb-3 max-w-2xl mx-auto w-full">
+      <header className="px-5 pt-6 pb-3 max-w-2xl lg:max-w-4xl mx-auto w-full">
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-medium text-muted-foreground rounded-full bg-card px-3 py-1.5 soft-shadow">
             {timeOfDayLabel[tod]}
@@ -79,7 +79,7 @@ const Home = () => {
 
       <InstallBanner />
 
-      <section className="flex-1 flex flex-col px-5 py-4 max-w-2xl mx-auto w-full">
+      <section className="flex-1 flex flex-col px-5 py-4 max-w-2xl lg:max-w-4xl mx-auto w-full">
         {/* Welcome */}
         <div className="mt-2 mb-6 animate-fade-in-up">
           <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight tracking-tight">
