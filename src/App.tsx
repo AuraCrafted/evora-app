@@ -24,6 +24,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { CustomSuggestionsProvider } from "./hooks/useCustomSuggestions";
 import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
+import { AppLoadingScreen } from "./components/AppLoadingScreen";
 import { readPreferences, usePreferences } from "./hooks/usePreferences";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AppLoadingScreen />
     <TooltipProvider>
       <Toaster />
       <Sonner />
