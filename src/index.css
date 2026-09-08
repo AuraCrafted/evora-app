@@ -209,10 +209,9 @@ body {
   width: clamp(10.5rem, 42vw, 18rem);
   aspect-ratio: 1.18 / 1;
   transform: translate(-50%, -50%);
-  perspective: 900px;
   opacity: 0;
   transition: opacity 400ms ease-out;
-  animation: loading-float 3.8s ease-in-out infinite;
+  animation: loading-float 2.8s ease-in-out infinite;
 }
 
 .app-loading-screen--ready .app-loading-background,
@@ -225,11 +224,10 @@ body {
   height: 100%;
   object-fit: contain;
   filter: var(--loading-glow);
-  transform-style: preserve-3d;
   will-change: transform, filter;
   user-select: none;
   -webkit-user-drag: none;
-  animation: loading-dice-turn 7s ease-in-out infinite;
+  animation: loading-dice-roll 2.4s linear infinite;
 }
 
 @keyframes loading-float {
@@ -237,10 +235,9 @@ body {
   50% { transform: translate(-50%, -50%) translateY(-0.75rem); }
 }
 
-@keyframes loading-dice-turn {
-  0% { transform: rotateX(-7deg) rotateY(-12deg) rotateZ(-2deg) scale(0.98); }
-  50% { transform: rotateX(8deg) rotateY(14deg) rotateZ(2deg) scale(1.02); }
-  100% { transform: rotateX(-7deg) rotateY(-12deg) rotateZ(-2deg) scale(0.98); }
+@keyframes loading-dice-roll {
+  from { transform: rotate(0deg) scale(0.98); }
+  to { transform: rotate(360deg) scale(0.98); }
 }
 
 @media (min-width: 768px) {
