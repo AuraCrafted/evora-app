@@ -7,6 +7,7 @@ const FADE_DURATION_MS = 700;
 
 export function AppLoadingScreen() {
   const [phase, setPhase] = useState<"visible" | "leaving" | "hidden">("visible");
+  const [artworkReady, setArtworkReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,6 +23,7 @@ export function AppLoadingScreen() {
       });
 
     Promise.all([preload(sunsetAsset.url), preload(diceAsset.url)]).then(() => {
+      if (!cancelled) setArtworkReady(true);
       const remaining = Math.max(0, MINIMUM_DISPLAY_MS - (performance.now() - startedAt));
       window.setTimeout(() => {
         if (!cancelled) setPhase("leaving");
@@ -43,7 +45,7 @@ export function AppLoadingScreen() {
 
   return (
     <div
-      className={`app-loading-screen ${phase === "leaving" ? "app-loading-screen--leaving" : ""}`}
+      className={`app-loading-screen ${artworkReady ? "app-loading-screen--ready" : ""} ${phase === "leaving" ? "app-loading-screen--leaving" : ""}`}
       role="status"
       aria-label="Evora is loading"
       aria-live="polite"

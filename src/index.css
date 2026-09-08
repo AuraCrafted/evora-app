@@ -198,6 +198,8 @@ body {
   object-position: center center;
   user-select: none;
   -webkit-user-drag: none;
+  opacity: 0;
+  transition: opacity 300ms ease-out;
 }
 
 .app-loading-dice-wrap {
@@ -208,7 +210,14 @@ body {
   aspect-ratio: 1.18 / 1;
   transform: translate(-50%, -50%);
   perspective: 900px;
+  opacity: 0;
+  transition: opacity 400ms ease-out;
   animation: loading-float 3.8s ease-in-out infinite;
+}
+
+.app-loading-screen--ready .app-loading-background,
+.app-loading-screen--ready .app-loading-dice-wrap {
+  opacity: 1;
 }
 
 .app-loading-dice {
