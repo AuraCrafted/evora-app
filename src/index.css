@@ -227,7 +227,7 @@ body {
   will-change: transform, filter;
   user-select: none;
   -webkit-user-drag: none;
-  animation: loading-dice-roll 2.4s linear infinite;
+  animation: loading-dice-roll 2.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
 }
 
 @keyframes loading-float {
@@ -236,8 +236,17 @@ body {
 }
 
 @keyframes loading-dice-roll {
-  from { transform: rotate(0deg) scale(0.98); }
-  to { transform: rotate(360deg) scale(0.98); }
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  10%  { transform: translate(-6px, -4px) rotate(72deg) scale(1.05); }
+  20%  { transform: translate(7px, 3px) rotate(160deg) scale(0.96); }
+  30%  { transform: translate(-5px, 5px) rotate(245deg) scale(1.08); }
+  40%  { transform: translate(6px, -6px) rotate(330deg) scale(0.94); }
+  50%  { transform: translate(-7px, 2px) rotate(420deg) scale(1.06); }
+  60%  { transform: translate(5px, 5px) rotate(515deg) scale(0.97); }
+  70%  { transform: translate(-4px, -5px) rotate(600deg) scale(1.04); }
+  80%  { transform: translate(3px, 3px) rotate(680deg) scale(0.98); }
+  90%  { transform: translate(-2px, -1px) rotate(740deg) scale(1.02); }
+  100% { transform: translate(0, 0) rotate(800deg) scale(1); }
 }
 
 @media (min-width: 768px) {
