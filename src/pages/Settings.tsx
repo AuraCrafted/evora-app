@@ -88,6 +88,8 @@ const Settings = () => {
   const iap = useIAP();
   const [restoring, setRestoring] = useState(false);
   const [sound, setSound] = useState(getSoundSettings());
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => subscribeSoundSettings(setSound), []);
 
