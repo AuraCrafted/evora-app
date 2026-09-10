@@ -65,9 +65,12 @@ export default function Privacy() {
           <p>
             Subject to applicable law, you have the right to access, correct, delete, or export
             your data, restrict or object to processing, and withdraw consent at any time. You can
-            request a copy of your data, cancel your subscription from the Plans page, or delete
-            your account by contacting us via the Feedback page. If you are in the UK/EEA, you
-            also have the right to complain to your local supervisory authority.
+            delete your account directly in the app at any time from Settings, under Danger zone,
+            which permanently removes your account and the data tied to it. Note that deleting your
+            account does not cancel an App Store subscription; cancel that in Settings, Apple ID,
+            Subscriptions. You can also request a copy of your data or cancel your subscription
+            from the Plans page. If you are in the UK/EEA, you also have the right to complain to
+            your local supervisory authority.
           </p>
         </section>
 
