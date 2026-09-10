@@ -194,7 +194,7 @@ const Settings = () => {
                   {isPro ? (tier === "year" ? "Yearly" : "Monthly") : "Free"}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {isPro ? "All features unlocked" : "10 rolls / day"}
+                  {isPro ? "All features unlocked" : "5 rolls / day"}
                 </div>
               </div>
             </div>
