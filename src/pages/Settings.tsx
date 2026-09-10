@@ -255,6 +255,80 @@ const Settings = () => {
         </div>
 
 
+        {/* Danger zone */}
+        {user && (
+          <div>
+            <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+              Danger zone
+            </div>
+            <div className="rounded-2xl bg-card border border-destructive/40 soft-shadow overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  sfx.tap();
+                  setDeleteOpen(true);
+                }}
+                className="w-full text-left flex items-center gap-3 px-4 py-3.5 active:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+                <span className="flex-1 text-sm font-medium text-destructive">Delete account</span>
+              </button>
+            </div>
+            <p className="px-2 pt-2 text-[11px] text-muted-foreground">
+              Permanently deletes your account, your spins, your chats, and your progress.
+            </p>
+          </div>
+        )}
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-left">
+                  <p>
+                    This permanently deletes your Evora account and all data tied to it: your
+                    custom spins, coach chats, streak, and preferences. This cannot be undone.
+                  </p>
+                  {isPro && (
+                    <p className="rounded-xl bg-destructive/10 p-3 text-destructive">
+                      Heads up: deleting your Evora account does not cancel your App Store
+                      subscription. Cancel it in Settings → Apple ID → Subscriptions, or you may
+                      keep getting billed by Apple.
+                    </p>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Keep my account</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setDeleting(true);
+                  try {
+                    const { error } = await supabase.functions.invoke("delete-account");
+                    if (error) throw error;
+                    await signOut();
+                    setDeleteOpen(false);
+                    toast.success("Your account has been deleted.");
+                    navigate("/", { replace: true });
+                  } catch (err: any) {
+                    haptic("error");
+                    toast.error(err?.message || "Couldn't delete your account. Please try again.");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Legal */}
         <div>
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
