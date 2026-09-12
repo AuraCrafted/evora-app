@@ -8,7 +8,7 @@ export default function Privacy() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Privacy Notice</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: June 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: September 2026</p>
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground/90 leading-relaxed">
         <section>
@@ -22,7 +22,7 @@ export default function Privacy() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">2. What we collect</h2>
           <p>
-            We collect the email and password you provide at sign-up, the nudges you accept or
+            We collect the email address and authentication information you provide at sign-up, the nudges you accept or
             skip, your streak data, your selected energy and preferences, support messages, and
             basic device/usage information (e.g. device identifiers, IP address) needed to keep
             the app working.
@@ -47,7 +47,8 @@ export default function Privacy() {
             operate the app (hosting, analytics, support tooling); (b) our payment processor, for
             subscription management, payments, tax compliance, and invoicing; (c) professional
             advisers (legal, accounting); and (d) authorities where required by law. We never sell
-            your data.
+            your data. We require service providers that process personal data on our behalf to
+            provide protections consistent with this Privacy Notice and applicable law.
           </p>
         </section>
 
