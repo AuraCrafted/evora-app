@@ -38,7 +38,7 @@ const plans: Plan[] = [
       "Unlimited rolls",
       "🔋 Full energy-aware tasks",
       "⏰ Time-of-day filtering",
-      "💬 Unlimited Nudge Coach chats",
+      "💬 Unlimited Evora Coach chats",
       "Ad-free",
     ],
   },

@@ -175,8 +175,8 @@ export function AdDialog({
   if (mode === "rewarded") {
     const perks = [
       { icon: InfinityIcon, title: "Unlimited rolls", desc: "Never hit a daily cap again." },
-      { icon: Wand2, title: "Custom evoras", desc: "Build your own personal task library." },
-      { icon: Clock, title: "Smart timing", desc: "Nudges tuned to your time & energy." },
+      { icon: Wand2, title: "Custom spins", desc: "Build your own personal task library." },
+      { icon: Clock, title: "Smart timing", desc: "Rolls tuned to your time & energy." },
       { icon: ShieldOff, title: "Zero ads", desc: "Clean, distraction-free momentum." },
     ];
 
