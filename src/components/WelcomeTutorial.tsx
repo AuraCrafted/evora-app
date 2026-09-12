@@ -12,11 +12,11 @@ type Phase = "tutorial" | "done";
 const steps = [
   {
     title: "Pick your energy",
-    body: "On the home screen, tell Nudge how you're feeling. We'll match suggestions to your vibe (Monthly+).",
+    body: "On the home screen, tell Evora how you're feeling. We'll match suggestions to your vibe (Monthly+).",
   },
   {
     title: "Swipe to roll",
-    body: "On the Roll screen, swipe the dice with your finger. Nudge picks one small action that fits right now.",
+    body: "On the Roll screen, swipe the dice with your finger. Evora picks one small action that fits right now.",
   },
   {
     title: "Accept or skip",

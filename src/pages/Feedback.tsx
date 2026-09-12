@@ -73,7 +73,7 @@ const FeedbackPage = () => {
           <span className="font-display text-xl font-semibold">Feedback</span>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Help shape Nudge. Your suggestions stay on this device.
+          Help shape Evora. Your suggestions stay on this device.
         </p>
       </header>
 
@@ -123,7 +123,7 @@ const FeedbackPage = () => {
               id="fb-msg"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="What would make Nudge better for you?"
+              placeholder="What would make Evora better for you?"
               maxLength={500}
               rows={4}
               className="mt-2"
