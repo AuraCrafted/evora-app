@@ -220,10 +220,6 @@ const Coach = () => {
   );
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [threadId]);
-
-  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [activeThread?.messages.length, sending]);
 
