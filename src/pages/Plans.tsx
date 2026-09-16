@@ -34,10 +34,10 @@ import { toast } from "sonner";
 const APPLE_PRODUCT_BY_PLAN: Partial<
   Record<PlanTier | "monthly" | "yearly", IAPProductId>
 > = {
-  month: "com.thiskid7.evora.monthly",
-  monthly: "com.thiskid7.evora.monthly",
-  year: "com.thiskid7.evora.yearly",
-  yearly: "com.thiskid7.evora.yearly",
+  month: "evora_id_monthly",
+  monthly: "evora_id_monthly",
+  year: "evora_id_yearly",
+  yearly: "evora_id_yearly",
 };
 
 const appleProductIdForPlan = (planId?: PlanTier | "monthly" | "yearly") =>
@@ -170,8 +170,8 @@ const Plans = () => {
       planId: selectedPlan?.id,
       planName: selectedPlan?.name,
       appleMapping: {
-        monthly: "com.thiskid7.evora.monthly",
-        yearly: "com.thiskid7.evora.yearly",
+        monthly: "evora_id_monthly",
+        yearly: "evora_id_yearly",
       },
     });
     console.log("[IAP DEBUG] isNative:", {

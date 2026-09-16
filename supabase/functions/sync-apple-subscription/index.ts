@@ -11,8 +11,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const APPLE_PRODUCT_TO_PRICE_ID: Record<string, string> = {
-  "com.thiskid7.evora.monthly": "evora_monthly",
-  "com.thiskid7.evora.yearly": "evora_yearly",
+  "evora_id_monthly": "evora_monthly",
+  "evora_id_yearly": "evora_yearly",
 };
 
 Deno.serve(async (req) => {

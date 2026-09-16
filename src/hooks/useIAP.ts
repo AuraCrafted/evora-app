@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
-  "com.thiskid7.evora.monthly",
-  "com.thiskid7.evora.yearly",
+  "evora_id_monthly",
+  "evora_id_yearly",
 ] as const;
 
 export type IAPProductId = (typeof IAP_PRODUCT_IDS)[number];
@@ -22,8 +22,8 @@ export interface IAPProduct {
 export function priceIdForApple(
   productId: string,
 ): "evora_monthly" | "evora_yearly" | null {
-  if (productId === "com.thiskid7.evora.monthly") return "evora_monthly";
-  if (productId === "com.thiskid7.evora.yearly") return "evora_yearly";
+  if (productId === "evora_id_monthly") return "evora_monthly";
+  if (productId === "evora_id_yearly") return "evora_yearly";
   return null;
 }
 
