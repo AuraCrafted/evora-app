@@ -20,6 +20,8 @@ export type SoundEvent =
   | "purchase"      // subscription purchase success
   | "error"         // failed action
   | "onboarding"    // onboarding complete welcome
+  | "startup"       // app loading screen
+  | "shutdown"      // paid plan cancelled
   | "timerDone";    // task timer reached zero
 
 interface Settings {
@@ -219,22 +221,31 @@ function voice(event: SoundEvent) {
       tone({ freq: 1320, duration: 0.05, type: "sine", volume: 0.03, delay: 0.005, release: 0.04 });
       return;
 
-    case "roll":
-      // wooden tumble: a few muted noise clacks of varying pitch
-      for (let i = 0; i < 5; i++) {
-        const delay = i * 0.085;
-        noise({ duration: 0.07, volume: 0.07 + Math.random() * 0.04, delay, filterFreq: 700 + Math.random() * 600 });
+    case "roll": {
+      // wooden tumble that lasts the full length of the dice spin (~1.1s),
+      // clacks slow down slightly as the dice loses momentum.
+      let delay = 0;
+      for (let i = 0; i < 11 && delay < 1.05; i++) {
+        const fade = 1 - i / 13; // quieter as it settles
+        noise({
+          duration: 0.07,
+          volume: (0.07 + Math.random() * 0.04) * fade,
+          delay,
+          filterFreq: 700 + Math.random() * 600,
+        });
         tone({
           freq: 180 + Math.random() * 80,
           duration: 0.08,
           type: "sine",
-          volume: 0.05,
+          volume: 0.05 * fade,
           delay,
           freqEnd: 120,
           filterFreq: 1500,
         });
+        delay += 0.075 + i * 0.008;
       }
       return;
+    }
 
     case "rollLand":
       // soft settle: low thump + tiny shimmer
@@ -330,6 +341,38 @@ function voice(event: SoundEvent) {
         });
       });
       return;
+
+    case "startup": {
+      // divine, soothing swell: slow airy pad rising through a major 9 chord
+      const chord = [261.63, 392, 523.25, 659.25, 783.99, 1046.5];
+      chord.forEach((f, i) => {
+        tone({
+          freq: f,
+          duration: 2.2 - i * 0.12,
+          type: "sine",
+          volume: 0.07 - i * 0.008,
+          delay: i * 0.22,
+          attack: 0.5,
+          release: 1.2,
+          filterFreq: 3200,
+        });
+      });
+      // faint shimmer high above, like light through the sunset
+      tone({ freq: 1567.98, duration: 1.6, type: "sine", volume: 0.025, delay: 0.9, attack: 0.5, release: 1.0 });
+      tone({ freq: 2093, duration: 1.4, type: "sine", volume: 0.015, delay: 1.2, attack: 0.5, release: 0.9 });
+      // warm breath underneath
+      noise({ duration: 1.8, volume: 0.02, filterFreq: 420 });
+      return;
+    }
+
+    case "shutdown": {
+      // powering down: gentle descending glide with the pad dimming out
+      tone({ freq: 523.25, duration: 0.9, type: "sine", volume: 0.09, freqEnd: 196, attack: 0.03, release: 0.6, filterFreq: 2200 });
+      tone({ freq: 392, duration: 1.1, type: "sine", volume: 0.07, freqEnd: 147, delay: 0.12, attack: 0.04, release: 0.8, filterFreq: 1600 });
+      tone({ freq: 196, duration: 1.3, type: "sine", volume: 0.06, freqEnd: 87, delay: 0.26, attack: 0.05, release: 1.0, filterFreq: 900 });
+      noise({ duration: 0.9, volume: 0.03, delay: 0.3, filterFreq: 350 });
+      return;
+    }
 
     case "timerDone":
       // soft 3-note bell, never harsh

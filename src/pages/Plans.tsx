@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { sfx } from "@/lib/feedback";
+import { playSound } from "@/lib/sounds";
 import { toast } from "sonner";
 
 const APPLE_PRODUCT_BY_PLAN: Partial<
@@ -353,6 +354,7 @@ const Plans = () => {
       }
       const { error } = await supabase.functions.invoke("cancel-subscription");
       if (error) throw error;
+      playSound("shutdown");
       toast.success("Cancellation scheduled.", {
         description: periodEnd
           ? `You keep access until ${new Date(periodEnd).toLocaleDateString()}.`

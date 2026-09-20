@@ -13,6 +13,7 @@ import {
   Volume2,
   Vibrate,
   Trash2,
+  MessageSquarePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -268,6 +269,19 @@ const Settings = () => {
           </p>
         </div>
 
+
+        {/* Feedback */}
+        <div>
+          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+            Feedback
+          </div>
+          <div className="rounded-2xl bg-card border border-border/60 soft-shadow overflow-hidden divide-y divide-border/60">
+            <Row icon={MessageSquarePlus} label="Report a bug or share an idea" to="/feedback" />
+          </div>
+          <p className="px-2 pt-2 text-[11px] text-muted-foreground">
+            Tell us what's broken, what you love, or what Evora should do next.
+          </p>
+        </div>
 
         {/* Danger zone */}
         {user && (
