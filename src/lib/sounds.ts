@@ -20,6 +20,8 @@ export type SoundEvent =
   | "purchase"      // subscription purchase success
   | "error"         // failed action
   | "onboarding"    // onboarding complete welcome
+  | "startup"       // app loading screen
+  | "shutdown"      // paid plan cancelled
   | "timerDone";    // task timer reached zero
 
 interface Settings {
@@ -219,22 +221,31 @@ function voice(event: SoundEvent) {
       tone({ freq: 1320, duration: 0.05, type: "sine", volume: 0.03, delay: 0.005, release: 0.04 });
       return;
 
-    case "roll":
-      // wooden tumble: a few muted noise clacks of varying pitch
-      for (let i = 0; i < 5; i++) {
-        const delay = i * 0.085;
-        noise({ duration: 0.07, volume: 0.07 + Math.random() * 0.04, delay, filterFreq: 700 + Math.random() * 600 });
+    case "roll": {
+      // wooden tumble that lasts the full length of the dice spin (~1.1s),
+      // clacks slow down slightly as the dice loses momentum.
+      let delay = 0;
+      for (let i = 0; i < 11 && delay < 1.05; i++) {
+        const fade = 1 - i / 13; // quieter as it settles
+        noise({
+          duration: 0.07,
+          volume: (0.07 + Math.random() * 0.04) * fade,
+          delay,
+          filterFreq: 700 + Math.random() * 600,
+        });
         tone({
           freq: 180 + Math.random() * 80,
           duration: 0.08,
           type: "sine",
-          volume: 0.05,
+          volume: 0.05 * fade,
           delay,
           freqEnd: 120,
           filterFreq: 1500,
         });
+        delay += 0.075 + i * 0.008;
       }
       return;
+    }
 
     case "rollLand":
       // soft settle: low thump + tiny shimmer
