@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import sunsetAsset from "@/assets/evora-sunset.webp";
 import diceAsset from "@/assets/evora-dice.webp";
-import { playSound, primeAudio } from "@/lib/sounds";
+import { playSound, primeAudio, isAudioUnlocked } from "@/lib/sounds";
 
 const MINIMUM_DISPLAY_MS = 1800;
 const FADE_DURATION_MS = 700;
@@ -40,17 +40,21 @@ export function AppLoadingScreen() {
   // so fall back to the first interaction if the immediate attempt is silent.
   useEffect(() => {
     let played = false;
+    let sounded = false;
     const play = () => {
       if (played) return;
       played = true;
+      sounded = isAudioUnlocked();
       primeAudio();
       playSound("startup");
     };
     play();
     const onGesture = () => {
+      cleanup();
+      // The chime already played audibly; do not replay it on this gesture.
+      if (played && sounded) return;
       played = false;
       play();
-      cleanup();
     };
     const cleanup = () => {
       window.removeEventListener("pointerdown", onGesture);
