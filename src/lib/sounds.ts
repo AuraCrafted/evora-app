@@ -400,6 +400,11 @@ export function playSound(event: SoundEvent) {
   }
 }
 
+/** Whether the audio context is already running (i.e. not blocked by autoplay policy). */
+export function isAudioUnlocked() {
+  return !!ctx && ctx.state === "running";
+}
+
 /** Preload / warm up the audio context after a user gesture. */
 export function primeAudio() {
   ac();
