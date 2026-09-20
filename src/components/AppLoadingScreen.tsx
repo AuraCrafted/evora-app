@@ -36,6 +36,35 @@ export function AppLoadingScreen() {
     };
   }, []);
 
+  // Soothing startup chime. Browsers may block audio before the first touch,
+  // so fall back to the first interaction if the immediate attempt is silent.
+  useEffect(() => {
+    let played = false;
+    const play = () => {
+      if (played) return;
+      played = true;
+      primeAudio();
+      playSound("startup");
+    };
+    play();
+    const onGesture = () => {
+      played = false;
+      play();
+      cleanup();
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+    };
+    window.addEventListener("pointerdown", onGesture, { once: true });
+    window.addEventListener("keydown", onGesture, { once: true });
+    const timeout = window.setTimeout(cleanup, 6000);
+    return () => {
+      window.clearTimeout(timeout);
+      cleanup();
+    };
+  }, []);
+
   useEffect(() => {
     if (phase !== "leaving") return;
     const timeout = window.setTimeout(() => setPhase("hidden"), FADE_DURATION_MS);
