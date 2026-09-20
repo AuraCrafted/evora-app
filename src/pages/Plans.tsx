@@ -353,6 +353,7 @@ const Plans = () => {
       }
       const { error } = await supabase.functions.invoke("cancel-subscription");
       if (error) throw error;
+      playSound("shutdown");
       toast.success("Cancellation scheduled.", {
         description: periodEnd
           ? `You keep access until ${new Date(periodEnd).toLocaleDateString()}.`
