@@ -175,6 +175,21 @@ const Home = () => {
           </ul>
         </div>
 
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {[
+            { to: "/recap", emoji: "📅", title: "Weekly Recap", sub: "Your week, at a glance" },
+            { to: "/journeys", emoji: "🛤️", title: "Journeys", sub: "Guided small steps" },
+          ].map((c) => (
+            <Link key={c.to} to={c.to} onClick={() => sfx.tap()}>
+              <div className="h-full rounded-3xl bg-card p-4 soft-shadow active:scale-[0.99] transition-transform">
+                <div className="text-2xl mb-1">{c.emoji}</div>
+                <div className="font-semibold text-sm">{c.title}</div>
+                <div className="text-xs text-muted-foreground">{tier === "year" ? c.sub : "Yearly"}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
         {!isPro && (
           <Link to="/plans" onClick={() => sfx.tap()} className="block mt-4">
             <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-4 soft-shadow active:scale-[0.99] transition-transform">
