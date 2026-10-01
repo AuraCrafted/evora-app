@@ -3,6 +3,7 @@ import { contextFilter, type FilterOptions } from "@/lib/context";
 import { pickRanked } from "@/lib/ranker";
 import type { Preferences } from "@/hooks/usePreferences";
 import type { FeedbackState } from "@/hooks/useTaskFeedback";
+import type { SmartProfile } from "@/lib/smartSpins";
 
 /**
  * Centralized roll engine. All roll modes route through `selectSpin`
@@ -28,6 +29,7 @@ export interface SelectSpinInput {
     feedback: FeedbackState;
     recentIds: string[];
     energy?: number;
+    smart?: SmartProfile;
   };
 }
 
@@ -86,6 +88,7 @@ export function selectSpin(input: SelectSpinInput): SelectSpinResult {
           feedback: input.ranker.feedback,
           recentIds: input.ranker.recentIds,
           excludeId: undefined,
+          smart: input.ranker.smart,
         }) ?? uniformPick(eligible);
     } else {
       spin = uniformPick(eligible);

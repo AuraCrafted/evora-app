@@ -107,8 +107,9 @@ const plans: Plan[] = [
     features: [
       "Everything in Monthly",
       "🤖 AI Coach, your personal guide",
-      "🔥 Personal Action System (your own taxonomy)",
-      "🛤️ Guided Paths (slump, focus, less scrolling)",
+      "🧠 Smart Spins that learn from you",
+      "📅 Weekly Recap of your progress",
+      "🛤️ Journeys (out of a rut, social, new things, energy)",
       "🪞 Reflection layer after tasks",
       "📈 Insights dashboard",
       "Save 54% vs monthly",
