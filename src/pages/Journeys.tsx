@@ -74,7 +74,7 @@ const Journeys = () => {
                           onClick={() => {
                             toggleStep(j.id, i, j.steps.length);
                             haptic("light");
-                            if (!isDone) sfx.success?.();
+                            if (!isDone) sfx.accept();
                             else sfx.tap();
                           }}
                           className={cn(
