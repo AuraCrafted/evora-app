@@ -24,6 +24,7 @@ import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
 import { buildEligiblePool, selectSpin } from "@/lib/rollEngine";
+import { buildSmartProfile } from "@/lib/smartSpins";
 import { supabase } from "@/integrations/supabase/client";
 
 const MILESTONES = [3, 7, 14, 30] as const;
@@ -72,7 +73,13 @@ const Roll = () => {
     recordSpin,
     recordDecision,
     grantBonusSpin,
+    tier,
+    allHistory,
   } = useSpins();
+  const smartProfile = useMemo(
+    () => (tier === "year" ? buildSmartProfile(allHistory) : undefined),
+    [tier, allHistory],
+  );
   const { energy } = useEnergy();
   const { tasteAvailable, consumeTaste } = useEnergyTaste();
   const energyAware = isPro || tasteAvailable;
@@ -196,6 +203,7 @@ const Roll = () => {
                 feedback,
                 recentIds,
                 energy: energyAware ? energy : undefined,
+                smart: smartProfile,
               },
       });
 

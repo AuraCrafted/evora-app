@@ -1,6 +1,7 @@
 import { type Suggestion, getMeta } from "@/data/suggestions";
 import type { Preferences } from "@/hooks/usePreferences";
 import type { FeedbackState } from "@/hooks/useTaskFeedback";
+import { smartBoost, type SmartProfile } from "@/lib/smartSpins";
 
 interface RankInput {
   energy?: number;
@@ -8,6 +9,8 @@ interface RankInput {
   feedback: FeedbackState;
   recentIds: string[]; // most recent first
   excludeId?: string;
+  /** Yearly Smart Spins profile learned from past spins. */
+  smart?: SmartProfile;
 }
 
 // Softer recency curve so a small custom pool (e.g. 5 items) still cycles
@@ -54,6 +57,9 @@ function scoreSuggestion(s: Suggestion, input: RankInput): number {
   // Anti-repeat
   const idx = recentIds.indexOf(s.id);
   if (idx >= 0) score -= RECENCY_PENALTY[idx] ?? 1;
+
+  // Smart Spins (Yearly): learned affinity from past accepts/skips
+  if (input.smart) score += smartBoost(s, input.smart);
 
   // AI tasks get a small boost so personalized picks surface
   if (s.ai) score += 4;

@@ -14,6 +14,8 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import Terms from "./pages/Terms.tsx";
 import Refunds from "./pages/Refunds.tsx";
+import Recap from "./pages/Recap.tsx";
+import Journeys from "./pages/Journeys.tsx";
 import Settings from "./pages/Settings.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -80,6 +82,8 @@ const App = () => (
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/refunds" element={<Refunds />} />
+                  <Route path="/recap" element={<Recap />} />
+                  <Route path="/journeys" element={<Journeys />} />
                   <Route path="/settings" element={<Settings />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
