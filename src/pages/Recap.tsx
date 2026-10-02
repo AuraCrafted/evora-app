@@ -73,7 +73,7 @@ const Recap = () => {
   });
 
   const suggestions: string[] = [];
-  if (topTime) suggestions.push(`You show up most in the ${timeOfDayLabel(topTime as never).toLowerCase()}. Try rolling then on purpose.`);
+  if (topTime) suggestions.push(`You show up most in the ${timeOfDayLabel[topTime as keyof typeof timeOfDayLabel].toLowerCase()}. Try rolling then on purpose.`);
   if (r.untried) suggestions.push(`You have not tried anything in ${categoryLabels[r.untried as Category]} this week. Give one a roll.`);
   if (r.skippedCats[0] && r.skippedCats[0][1] >= 2)
     suggestions.push(`You often skip ${categoryLabels[r.skippedCats[0][0] as Category]}. Smart Spins will show those less.`);
@@ -135,7 +135,7 @@ const Recap = () => {
               {topCat && (
                 <li>{categoryEmoji[topCat]} Your favorite: <b>{categoryLabels[topCat]}</b> ({r.cats[0][1]} done)</li>
               )}
-              {topTime && <li>🕰️ Best time: <b>{timeOfDayLabel(topTime as never)}</b></li>}
+              {topTime && <li>🕰️ Best time: <b>{timeOfDayLabel[topTime as keyof typeof timeOfDayLabel]}</b></li>}
               <li>🎲 {r.week.length} rolls, {r.done.length} done, {r.skipped} skipped</li>
             </ul>
           )}
