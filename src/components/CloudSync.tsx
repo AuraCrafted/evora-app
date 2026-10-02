@@ -106,6 +106,7 @@ export const CloudSync = () => {
   }, []);
 
   useEffect(() => {
+    console.info("[CLOUD SYNC] auth", { loading, signedIn: !!user });
     if (loading) return;
     const uid = user?.id ?? null;
     const prev = userRef.current;
@@ -130,6 +131,7 @@ export const CloudSync = () => {
         console.error("[CLOUD SYNC] pull failed", error);
         return;
       }
+      console.info("[CLOUD SYNC] pulled", data?.length ?? 0);
       const cloud = new Map((data ?? []).map((r) => [r.key, r.value]));
       readyRef.current = true;
       for (const key of KEYS) {
