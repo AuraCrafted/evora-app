@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     await admin.from("coach_messages").delete().eq("user_id", userId);
     await admin.from("coach_threads").delete().eq("user_id", userId);
     await admin.from("custom_suggestions").delete().eq("user_id", userId);
+    await admin.from("user_state").delete().eq("user_id", userId);
     await admin.from("subscriptions").delete().eq("user_id", userId);
     await admin.from("profiles").delete().eq("id", userId);
 

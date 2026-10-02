@@ -43,6 +43,12 @@ export function useTaskFeedback() {
     }
   }, [state]);
 
+  useEffect(() => {
+    const on = (e: StorageEvent) => { if (e.key === KEY) setState(load()); };
+    window.addEventListener("storage", on);
+    return () => window.removeEventListener("storage", on);
+  }, []);
+
   const record = useCallback(
     (suggestionId: string, tags: string[], kind: FeedbackKind) => {
       const w = KIND_WEIGHT[kind];

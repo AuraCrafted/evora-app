@@ -24,6 +24,12 @@ export function useJourneys() {
     }
   }, [progress]);
 
+  useEffect(() => {
+    const on = (e: StorageEvent) => { if (e.key === KEY) setProgress(load()); };
+    window.addEventListener("storage", on);
+    return () => window.removeEventListener("storage", on);
+  }, []);
+
   const toggleStep = useCallback((journeyId: string, index: number, total: number) => {
     setProgress((p) => {
       const arr = (p[journeyId] ?? Array(total).fill(null)).slice();
