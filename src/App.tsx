@@ -23,6 +23,7 @@ import { WelcomeTutorial } from "./components/WelcomeTutorial";
 import { WelcomeAuthDialog } from "./components/WelcomeAuthDialog";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
+import { CloudSync } from "./components/CloudSync";
 import { CustomSuggestionsProvider } from "./hooks/useCustomSuggestions";
 import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
@@ -60,6 +61,7 @@ const App = () => (
       <Sonner />
       <HashRouter>
         <AuthProvider>
+          <CloudSync />
           <CustomSuggestionsProvider>
             <SpinsProvider>
               <PaymentTestModeBanner />
