@@ -11,7 +11,8 @@ const SPINS = "nudge.spins.v3";
 const PREFS = "evora.preferences.v1";
 const FEEDBACK = "evora.feedback.v1";
 const JOURNEYS = "evora.journeys.v1";
-const KEYS = [SPINS, PREFS, FEEDBACK, JOURNEYS];
+const AI_JOURNEYS = "evora.aiJourneys.v1";
+const KEYS = [SPINS, PREFS, FEEDBACK, JOURNEYS, AI_JOURNEYS];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -59,6 +60,14 @@ function merge(key: string, local: Json | null, cloud: Json | null): Json | null
         out[id] = Array.from({ length: len }, (_, i) => steps[i] ?? c[i] ?? null);
       }
       return out;
+    }
+    case AI_JOURNEYS: {
+      const byId = new Map<string, Json>();
+      for (const j of [...(cloud.journeys ?? []), ...(local.journeys ?? [])]) {
+        const prev = byId.get(j.id);
+        if (!prev || (j.updatedAt ?? 0) >= (prev.updatedAt ?? 0)) byId.set(j.id, j);
+      }
+      return { journeys: [...byId.values()].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)) };
     }
   }
   return local;
@@ -118,6 +127,7 @@ export const CloudSync = () => {
         writeLocal(SPINS, { dayStart: new Date().setHours(0, 0, 0, 0), used: 0, bonus: 0, history: [] });
         writeLocal(FEEDBACK, { byId: {}, byTag: {}, count: 0 });
         writeLocal(JOURNEYS, {});
+        writeLocal(AI_JOURNEYS, { journeys: [] });
       }
       return;
     }
