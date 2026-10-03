@@ -106,7 +106,6 @@ export const CloudSync = () => {
   }, []);
 
   useEffect(() => {
-    console.info("[CLOUD SYNC] auth", { loading, signedIn: !!user });
     if (loading) return;
     const uid = user?.id ?? null;
     const prev = userRef.current;

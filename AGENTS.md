@@ -1,0 +1,1 @@
+- Device-local app data (spins/streak, preferences, feedback, journeys) syncs per account via the `user_state` table through `CloudSync`; why: data must follow the user's email across devices.
