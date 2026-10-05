@@ -405,6 +405,18 @@ export function isAudioUnlocked() {
   return !!ctx && ctx.state === "running";
 }
 
+// The startup chime must sound exactly once per app load, even if the
+// loading screen remounts (e.g. React StrictMode double-mount in dev).
+let startupPlayed = false;
+
+/** Play the startup chime once per page load; later calls are ignored. */
+export function playStartupOnce() {
+  if (startupPlayed) return false;
+  startupPlayed = true;
+  playSound("startup");
+  return true;
+}
+
 /** Preload / warm up the audio context after a user gesture. */
 export function primeAudio() {
   ac();
