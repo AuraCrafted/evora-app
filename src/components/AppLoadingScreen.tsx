@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import sunsetAsset from "@/assets/evora-sunset.webp";
 import diceAsset from "@/assets/evora-dice.webp";
-import { playSound, primeAudio, isAudioUnlocked } from "@/lib/sounds";
+import { playStartupOnce, primeAudio, isAudioUnlocked } from "@/lib/sounds";
 
 const MINIMUM_DISPLAY_MS = 1800;
 const FADE_DURATION_MS = 700;
