@@ -36,37 +36,13 @@ export function AppLoadingScreen() {
     };
   }, []);
 
-  // Soothing startup chime. Browsers may block audio before the first touch,
-  // so fall back to the first interaction if the immediate attempt is silent.
+  // Soothing startup chime, attempted exactly once on load. The gesture
+  // fallback is intentionally removed: replaying on the first tap caused a
+  // second, overlapping chime. If the browser blocks autoplay, the chime is
+  // simply skipped for that load.
   useEffect(() => {
-    let played = false;
-    let sounded = false;
-    const play = () => {
-      if (played) return;
-      played = true;
-      sounded = isAudioUnlocked();
-      primeAudio();
-      playStartupOnce();
-    };
-    play();
-    const onGesture = () => {
-      cleanup();
-      // The chime already played audibly; do not replay it on this gesture.
-      if (played && sounded) return;
-      played = false;
-      play();
-    };
-    const cleanup = () => {
-      window.removeEventListener("pointerdown", onGesture);
-      window.removeEventListener("keydown", onGesture);
-    };
-    window.addEventListener("pointerdown", onGesture, { once: true });
-    window.addEventListener("keydown", onGesture, { once: true });
-    const timeout = window.setTimeout(cleanup, 6000);
-    return () => {
-      window.clearTimeout(timeout);
-      cleanup();
-    };
+    primeAudio();
+    playStartupOnce();
   }, []);
 
   useEffect(() => {
