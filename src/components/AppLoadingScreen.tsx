@@ -46,7 +46,7 @@ export function AppLoadingScreen() {
       played = true;
       sounded = isAudioUnlocked();
       primeAudio();
-      playSound("startup");
+      playStartupOnce();
     };
     play();
     const onGesture = () => {
