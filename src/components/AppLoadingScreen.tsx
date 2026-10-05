@@ -36,9 +36,13 @@ export function AppLoadingScreen() {
     };
   }, []);
 
-  // Soothing startup chime. Browsers may block audio before the first touch,
-  // so fall back to the first interaction if the immediate attempt is silent.
+  // Soothing startup chime, timed to the moment the dice fades in over the
+  // sunset. Browsers may block audio before the first touch, so if the
+  // immediate attempt is silent we retry on the first tap — but only while
+  // the welcome screen is still up. Once the app is showing, the chime is
+  // skipped entirely so it never plays over the user's interactions.
   useEffect(() => {
+    if (!artworkReady || phase !== "visible") return;
     let played = false;
     let sounded = false;
     const play = () => {
@@ -50,24 +54,17 @@ export function AppLoadingScreen() {
     };
     play();
     const onGesture = () => {
-      cleanup();
-      // The chime already played audibly; do not replay it on this gesture.
       if (played && sounded) return;
       played = false;
       play();
     };
-    const cleanup = () => {
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    return () => {
       window.removeEventListener("pointerdown", onGesture);
       window.removeEventListener("keydown", onGesture);
     };
-    window.addEventListener("pointerdown", onGesture, { once: true });
-    window.addEventListener("keydown", onGesture, { once: true });
-    const timeout = window.setTimeout(cleanup, 6000);
-    return () => {
-      window.clearTimeout(timeout);
-      cleanup();
-    };
-  }, []);
+  }, [artworkReady, phase]);
 
   useEffect(() => {
     if (phase !== "leaving") return;
