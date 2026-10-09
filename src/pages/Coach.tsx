@@ -273,15 +273,15 @@ const Coach = () => {
           <div className="h-16 w-16 rounded-3xl gradient-primary flex items-center justify-center mb-5 soft-shadow">
             <Lock className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-2xl font-semibold mb-2">AI Coach is a Yearly perk</h1>
+          <h1 className="font-display text-2xl font-semibold mb-2">AI Coach is an Evolve perk</h1>
           <p className="text-muted-foreground text-[15px] mb-6">
             Your warm, grounded guide that helps you turn vague feelings into one small next step ,
-            available on the Yearly plan.
+            available on the Evolve plan.
           </p>
           <Link to="/plans" className="w-full">
             <Button variant="hero" size="lg" className="w-full">
               <Sparkles className="h-4 w-4" />
-              See Yearly plan
+              See Evolve plan
             </Button>
           </Link>
         </section>

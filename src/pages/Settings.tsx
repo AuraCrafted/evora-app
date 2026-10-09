@@ -192,7 +192,7 @@ const Settings = () => {
               <Sparkles className="h-4 w-4 text-primary" />
               <div className="flex-1">
                 <div className="text-sm font-medium">
-                  {isPro ? (tier === "year" ? "Yearly" : "Monthly") : "Free"}
+                  {isPro ? (tier === "year" ? "Evora Evolve" : "Evora Elevate") : "Free"}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   {isPro ? "All features unlocked" : "5 rolls / day"}

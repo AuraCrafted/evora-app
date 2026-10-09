@@ -75,10 +75,10 @@ const plans: Plan[] = [
   },
   {
     id: "month",
-    name: "Monthly",
-    price: "$8.99",
+    name: "Evora Elevate",
+    price: "$9.99",
     period: "/ month",
-    perDay: "$0.30/day",
+    perDay: "Billed monthly",
     badge: "Most useful",
     highlight: true,
     tagline: "Right-Time Rolls, context-aware.",
@@ -97,22 +97,21 @@ const plans: Plan[] = [
   },
   {
     id: "year",
-    name: "Yearly",
-    price: "$49.99",
-    period: "/ year",
-    perDay: "$0.14/day",
-    badge: "Best value",
+    name: "Evora Evolve",
+    price: "$24.99",
+    period: "/ month",
+    perDay: "Billed monthly",
+    badge: "Most complete",
     tagline: "A long-term action system.",
     priceId: "evora_yearly",
     features: [
-      "Everything in Monthly",
+      "Everything in Elevate",
       "🤖 AI Coach, your personal guide",
       "🧠 Smart Spins that learn from you",
       "📅 Weekly Recap of your progress",
       "🛤️ Journeys (out of a rut, social, new things, energy)",
       "🪞 Reflection layer after tasks",
       "📈 Insights dashboard",
-      "Save 54% vs monthly",
     ],
   },
 ];
@@ -409,7 +408,7 @@ const Plans = () => {
             <Sparkles className="h-4 w-4 text-primary" />
             <div className="text-sm flex-1">
               <span className="font-semibold text-foreground">
-                You're on {tier === "year" ? "Yearly" : "Monthly"}.
+                You're on {tier === "year" ? "Evora Evolve" : "Evora Elevate"}.
               </span>{" "}
               <span className="text-muted-foreground">
                 {cancelAtPeriodEnd && periodEnd

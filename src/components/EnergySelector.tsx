@@ -113,7 +113,7 @@ export const EnergySelector = ({
 
       {locked && (
         <p className="text-[11px] text-muted-foreground text-center mt-3">
-          Energy-aware rolls are part of Monthly+
+          Energy-aware rolls are part of Elevate+
         </p>
       )}
     </div>

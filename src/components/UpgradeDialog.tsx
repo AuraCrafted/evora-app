@@ -14,8 +14,8 @@ interface Plan {
 }
 
 const plans: Plan[] = [
-  { id: "month", name: "Monthly", price: "$8.99", period: "/ month", badge: "Popular", perDay: "$0.30/day" },
-  { id: "year", name: "Yearly", price: "$49.99", period: "/ year", badge: "Best value", perDay: "$0.14/day" },
+  { id: "month", name: "Evora Elevate", price: "$9.99", period: "/ month", badge: "Popular", perDay: "Billed monthly" },
+  { id: "year", name: "Evora Evolve", price: "$24.99", period: "/ month", badge: "Most complete", perDay: "Billed monthly" },
 ];
 
 interface Props {

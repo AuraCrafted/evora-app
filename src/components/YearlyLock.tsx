@@ -21,7 +21,7 @@ export const YearlyLock = ({ title, body, streak }: { title: string; body: strin
       <Link to="/plans" className="w-full">
         <Button variant="hero" size="lg" className="w-full">
           <Sparkles className="h-4 w-4" />
-          See Yearly plan
+          See Evolve plan
         </Button>
       </Link>
     </section>
