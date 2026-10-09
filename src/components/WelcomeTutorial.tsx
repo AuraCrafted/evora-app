@@ -12,7 +12,7 @@ type Phase = "tutorial" | "done";
 const steps = [
   {
     title: "Pick your energy",
-    body: "On the home screen, tell Evora how you're feeling. We'll match suggestions to your vibe (Monthly+).",
+    body: "On the home screen, tell Evora how you're feeling. We'll match suggestions to your vibe (Elevate+).",
   },
   {
     title: "Swipe to roll",

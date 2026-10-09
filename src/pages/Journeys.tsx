@@ -29,7 +29,7 @@ async function callCoach(body: Record<string, unknown>) {
       const j = await (error as { context?: Response }).context?.json();
       if (j?.error === "rate_limited") msg = "Too many requests. Wait a moment and try again.";
       if (j?.error === "credits_exhausted") msg = "AI is unavailable right now.";
-      if (j?.error === "forbidden") msg = "Journeys need an active Yearly plan.";
+      if (j?.error === "forbidden") msg = "Journeys need an active Evolve plan.";
     } catch { /* noop */ }
     throw new Error(msg);
   }
@@ -54,7 +54,7 @@ const Journeys = () => {
     return (
       <YearlyLock
         streak={streak}
-        title="Journeys are a Yearly perk"
+        title="Journeys are an Evolve perk"
         body="Personal, coach-guided programs built from a conversation about what you want to change."
       />
     );

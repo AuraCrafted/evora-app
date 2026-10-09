@@ -111,7 +111,7 @@ const Home = () => {
                 <>You've Used Today's Free Trial{"\n"}</>
               )}
               <Link to="/plans" className="underline-offset-2 hover:underline">
-                See Monthly To Get Full Access →
+                See Elevate To Get Full Access →
               </Link>
             </p>
           )}
@@ -184,7 +184,7 @@ const Home = () => {
               <div className="h-full rounded-3xl bg-card p-4 soft-shadow active:scale-[0.99] transition-transform">
                 <div className="text-2xl mb-1">{c.emoji}</div>
                 <div className="font-semibold text-sm">{c.title}</div>
-                <div className="text-xs text-muted-foreground">{tier === "year" ? c.sub : "Yearly"}</div>
+                <div className="text-xs text-muted-foreground">{tier === "year" ? c.sub : "Evolve"}</div>
               </div>
             </Link>
           ))}
@@ -200,7 +200,7 @@ const Home = () => {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm">Right-Time Rolls</div>
                   <div className="text-xs text-muted-foreground">
-                    Tasks that match your time + energy. Monthly+.
+                    Tasks that match your time + energy. Elevate+.
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />

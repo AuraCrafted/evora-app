@@ -57,7 +57,7 @@ const Recap = () => {
     return (
       <YearlyLock
         streak={streak}
-        title="Weekly Recap is a Yearly perk"
+        title="Weekly Recap is an Evolve perk"
         body="A personal summary of your week, your progress, your patterns, and suggestions made for you."
       />
     );
