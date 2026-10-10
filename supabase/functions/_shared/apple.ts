@@ -76,11 +76,7 @@ function clientFor(env: Environment): AppStoreServerAPIClient {
 /** Reads the (unverified) environment claim only to pick the right verifier. */
 function claimedEnvironment(jws: string): Environment {
   try {
-    const payload = JSON.parse(
-      new TextDecoder().decode(
-        Uint8Array.from(atob(jws.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)),
-      ),
-    );
+    const payload = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
     if (payload?.environment === "Sandbox") return Environment.SANDBOX;
     if (payload?.environment === "Xcode") return Environment.XCODE;
     if (payload?.environment === "LocalTesting") return Environment.LOCAL_TESTING;
