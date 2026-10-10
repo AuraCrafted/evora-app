@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
+import type { StoreKitTransaction } from "evora-storekit";
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
@@ -32,99 +33,81 @@ export function isIAPPlatform(): boolean {
 }
 
 export class AppleIAPError extends Error {
-  productId?: string;
-  responseCode?: number | string;
-  raw?: unknown;
-
-  constructor(
-    message: string,
-    options: { productId?: string; responseCode?: number | string; raw?: unknown } = {},
-  ) {
+  code?: string;
+  constructor(message: string, code?: string) {
     super(message);
     this.name = "AppleIAPError";
-    this.productId = options.productId;
-    this.responseCode = options.responseCode;
-    this.raw = options.raw;
+    this.code = code;
   }
 }
 
-const cancellationCodes = new Set([
-  "2",
-  "paymentcancelled",
-  "paymentcanceled",
-  "skerrorpaymentcancelled",
-  "skerrorpaymentcanceled",
-  "usercancelled",
-  "usercanceled",
-  "e_user_cancelled",
-  "e_user_canceled",
-]);
-
 export function isApplePurchaseCancelled(error: unknown): boolean {
-  const err = error as any;
-  const raw = err?.raw ?? err?.cause ?? err;
-  const candidates = [
-    err?.responseCode,
-    err?.code,
-    err?.errorCode,
-    raw?.responseCode,
-    raw?.code,
-    raw?.errorCode,
-    raw?.data?.responseCode,
-    raw?.data?.code,
-    raw?.data?.errorCode,
-  ];
-
-  return candidates.some((candidate) => {
-    if (candidate === null || candidate === undefined) return false;
-    const normalized = String(candidate).replace(/[\s._-]/g, "").toLowerCase();
-    return cancellationCodes.has(normalized);
-  });
+  return (error as AppleIAPError)?.code === "cancelled";
 }
 
 export function appleIAPErrorMessage(error: unknown): string {
-  const err = error as any;
-  return (
-    err?.message ||
-    err?.responseMessage ||
-    err?.raw?.responseMessage ||
-    err?.raw?.message ||
-    "Apple purchase failed. Check the StoreKit configuration and try again."
-  );
+  return (error as Error)?.message || "Apple purchase failed. Please try again.";
 }
 
-type SubscriptionsModule = typeof import("@squareetlabs/capacitor-subscriptions");
-type SubsApi = SubscriptionsModule["Subscriptions"];
+const loadStoreKit = () => import("evora-storekit").then((m) => m.EvoraStoreKit);
 
-let subsPromise: Promise<SubsApi> | null = null;
-
-const loadSubscriptions = async (): Promise<SubsApi> => {
-  if (subsPromise) return subsPromise;
-  subsPromise = import("@squareetlabs/capacitor-subscriptions").then(
-    (m) => m.Subscriptions,
-  );
-  return subsPromise;
+export type VerifyResult = {
+  result: "active" | "inactive" | "none";
+  price_id: string | null;
+  current_period_end: string | null;
 };
 
-const syncEntitlement = async (payload: {
-  productId: string;
-  transactionId?: string | number | null;
-  expirationDateMs?: number | null;
-  isTrial?: boolean;
-}) => {
-  const { data, error } = await supabase.functions.invoke(
-    "sync-apple-subscription",
-    { body: payload },
-  );
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
-  return data;
-};
+/** Sends signed transactions to the server, which verifies them with Apple. */
+async function verifyWithServer(body: {
+  signedTransactions?: string[];
+  reconcile?: boolean;
+}): Promise<VerifyResult> {
+  const { data, error } = await supabase.functions.invoke("sync-apple-subscription", { body });
+  if (error) {
+    let msg = "Couldn't verify the purchase with Apple. Please try again.";
+    try {
+      const ctx = await (error as any).context?.json?.();
+      if (ctx?.error) msg = ctx.error;
+    } catch { /* keep default */ }
+    throw new AppleIAPError(msg, "verify");
+  }
+  if (data?.error) throw new AppleIAPError(data.error, data.code ?? "verify");
+  return data as VerifyResult;
+}
 
 /**
- * Native Apple In-App Purchases hook backed by StoreKit 2 via
- * @squareetlabs/capacitor-subscriptions (SPM-compatible, no Cordova).
- * Web and Android fall back to no-op so the existing Stripe flow keeps working.
+ * Verifies transactions with the server and only then finishes them in
+ * StoreKit, so an unconfirmed purchase is redelivered on the next launch.
+ */
+export async function processTransactions(txs: StoreKitTransaction[]): Promise<VerifyResult> {
+  if (!txs.length) return { result: "none", price_id: null, current_period_end: null };
+  const res = await verifyWithServer({ signedTransactions: txs.map((t) => t.jws) });
+  const sk = await loadStoreKit();
+  for (const t of txs) {
+    try {
+      await sk.finish({ transactionId: t.transactionId });
+    } catch (e) {
+      console.warn("[IAP] finish failed", t.transactionId, e);
+    }
+  }
+  return res;
+}
+
+/** Server-side re-check of stored Apple subscriptions (throttled on the server). */
+export async function reconcileAppleSubscription(): Promise<void> {
+  if (!isIAPPlatform()) return;
+  try {
+    await verifyWithServer({ reconcile: true });
+  } catch (e) {
+    console.warn("[IAP] reconcile failed", e);
+  }
+}
+
+export type RestoreOutcome = "restored" | "none";
+
+/**
+ * Native Apple In-App Purchases backed by Evora's StoreKit 2 bridge.
+ * Web and Android are no-ops so the existing Stripe flow keeps working.
  */
 export function useIAP() {
   const enabled = isIAPPlatform();
@@ -137,46 +120,21 @@ export function useIAP() {
       setLoading(false);
       return;
     }
-    console.info("[IAP] Loading Apple StoreKit products", {
-      platform: Capacitor.getPlatform(),
-      productIds: IAP_PRODUCT_IDS,
-    });
     try {
-      const Subscriptions = await loadSubscriptions();
-      const results = await Promise.all(
-        IAP_PRODUCT_IDS.map(async (id): Promise<IAPProduct | null> => {
-          try {
-            const res: any = await Subscriptions.getProductDetails({
-              productIdentifier: id,
-            });
-            const d = res?.data;
-            if (!d) return null;
-            const priceString: string = d.displayPrice ?? d.price ?? "";
-            const numeric = parseFloat(
-              priceString.replace(/[^0-9.,-]/g, "").replace(",", "."),
-            );
-            return {
-              identifier: d.id ?? id,
-              title: d.displayName ?? "",
-              description: d.description ?? "",
-              priceString,
-              price: Number.isFinite(numeric) ? numeric : 0,
-              currencyCode: d.currencyCode,
-            };
-          } catch (err) {
-            console.error("[IAP] getProductDetails failed", { productId: id, error: err });
-            return null;
-          }
-        }),
+      const sk = await loadStoreKit();
+      const res = await sk.getProducts({ ids: [...IAP_PRODUCT_IDS] });
+      setProducts(
+        res.products.map((p) => ({
+          identifier: p.id,
+          title: p.displayName,
+          description: p.description,
+          priceString: p.displayPrice,
+          price: p.price,
+          currencyCode: p.currencyCode,
+        })),
       );
-      const loadedProducts = results.filter((x): x is IAPProduct => x !== null);
-      console.info("[IAP] Loaded Apple StoreKit products", {
-        requestedProductIds: IAP_PRODUCT_IDS,
-        loadedProductIds: loadedProducts.map((product) => product.identifier),
-      });
-      setProducts(loadedProducts);
-    } catch (err) {
-      console.error("[IAP] loadProducts failed:", err);
+    } catch (e) {
+      console.error("[IAP] Failed to load products", e);
     } finally {
       setLoading(false);
     }
@@ -186,61 +144,32 @@ export function useIAP() {
     loadProducts();
   }, [loadProducts]);
 
+  /** Purchases, then waits for the server's verdict. Resolves only when Apple confirmed access. */
   const purchase = useCallback(
-    async (productId: IAPProductId) => {
-      if (!enabled) throw new Error("In-App Purchases are only available in the iOS app.");
+    async (productId: IAPProductId): Promise<VerifyResult> => {
+      if (!enabled) throw new AppleIAPError("In-App Purchases are only available in the iOS app.");
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) throw new AppleIAPError("Please sign in before purchasing.", "auth");
       setBusy(true);
-      console.info("[IAP] Starting Apple purchase", { productId });
       try {
-        const Subscriptions = await loadSubscriptions();
-        const res: any = await Subscriptions.purchaseProduct({
-          productIdentifier: productId,
-        });
-        console.info("[IAP] purchaseProduct response", { productId, response: res });
-        // responseCode: 0 success, others = failure / user cancelled
-        if (res?.responseCode !== 0) {
-          throw new AppleIAPError(res?.responseMessage || "Apple purchase failed.", {
-            productId,
-            responseCode: res?.responseCode,
-            raw: res,
-          });
+        const sk = await loadStoreKit();
+        const res = await sk.purchase({ productId, appAccountToken: userId });
+        if (res.status === "cancelled") throw new AppleIAPError("Purchase cancelled.", "cancelled");
+        if (res.status === "pending") {
+          throw new AppleIAPError(
+            "Your purchase is waiting for approval. Access unlocks once Apple confirms it.",
+            "pending",
+          );
         }
-        const transactionId = res?.data ?? null;
-
-        // Pull the latest transaction so we can populate expiry / trial state.
-        let expirationDateMs: number | null = null;
-        let isTrial = false;
-        try {
-          const latest: any = await Subscriptions.getLatestTransaction({
-            productIdentifier: productId,
-          });
-          console.info("[IAP] getLatestTransaction response", {
-            productId,
-            response: latest,
-          });
-          const tx = latest?.data;
-          if (tx?.expirationDate)
-            expirationDateMs = new Date(tx.expirationDate).getTime();
-          if (tx?.isTrial === true || tx?.offerType === "introductory") isTrial = true;
-        } catch (err) {
-          console.warn("[IAP] getLatestTransaction failed:", err);
+        if (res.status !== "success") {
+          throw new AppleIAPError(("message" in res && res.message) || "Apple purchase failed.", "failed");
         }
-
-        const synced = await syncEntitlement({
-          productId,
-          transactionId,
-          expirationDateMs,
-          isTrial,
-        });
-        console.info("[IAP] sync-apple-subscription success", { productId, synced });
-        return synced;
-      } catch (err) {
-        console.error("[IAP] purchase failed", {
-          productId,
-          cancelledByUser: isApplePurchaseCancelled(err),
-          error: err,
-        });
-        throw err;
+        const verdict = await processTransactions([res]);
+        if (verdict.result !== "active") {
+          throw new AppleIAPError("Apple didn't confirm an active subscription.", "inactive");
+        }
+        return verdict;
       } finally {
         setBusy(false);
       }
@@ -248,36 +177,18 @@ export function useIAP() {
     [enabled],
   );
 
-  const restore = useCallback(async () => {
-    if (!enabled) throw new Error("Restore is only available in the iOS app.");
+  /** AppStore.sync, then server verification of current entitlements. */
+  const restore = useCallback(async (): Promise<RestoreOutcome> => {
+    if (!enabled) throw new AppleIAPError("Restore is only available in the iOS app.");
     setBusy(true);
     try {
-      const Subscriptions = await loadSubscriptions();
-      const res: any = await Subscriptions.getCurrentEntitlements();
-      const entitlements: any[] = Array.isArray(res?.data) ? res.data : [];
-
-      // Pick the entitlement with the latest expirationDate.
-      let pick: any = null;
-      for (const e of entitlements) {
-        const exp = e?.expirationDate ? new Date(e.expirationDate).getTime() : 0;
-        const cur = pick?.expirationDate
-          ? new Date(pick.expirationDate).getTime()
-          : 0;
-        if (!pick || exp > cur) pick = e;
-      }
-
-      if (!pick) {
-        return await syncEntitlement({ productId: "", expirationDateMs: 0 });
-      }
-
-      return await syncEntitlement({
-        productId: pick.productIdentifier ?? pick.productId ?? "",
-        transactionId: pick.transactionId ?? null,
-        expirationDateMs: pick.expirationDate
-          ? new Date(pick.expirationDate).getTime()
-          : null,
-        isTrial: pick.isTrial === true || pick.offerType === "introductory",
-      });
+      const sk = await loadStoreKit();
+      await sk.sync();
+      const { transactions } = await sk.currentEntitlements();
+      const ours = transactions.filter((t) => priceIdForApple(t.productId));
+      if (!ours.length) return "none";
+      const verdict = await processTransactions(ours);
+      return verdict.result === "active" ? "restored" : "none";
     } finally {
       setBusy(false);
     }
