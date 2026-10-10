@@ -12,6 +12,7 @@ import {
   type JWSRenewalInfoDecodedPayload,
 } from "npm:@apple/app-store-server-library@3.1.0";
 import { Buffer } from "node:buffer";
+import { createPrivateKey } from "node:crypto";
 
 export const BUNDLE_ID = "app.lovable.5c75fe72ae1145bc8efdd365adcddfd1";
 
@@ -70,9 +71,17 @@ const clients = new Map<Environment, AppStoreServerAPIClient>();
 function clientFor(env: Environment): AppStoreServerAPIClient {
   let c = clients.get(env);
   if (!c) {
-    const key = normalizeP8(requireEnv("APPLE_IAP_PRIVATE_KEY"));
+    // Deno reports the P-256 curve as "p256"; jsonwebtoken expects "prime256v1".
+    const key = createPrivateKey(normalizeP8(requireEnv("APPLE_IAP_PRIVATE_KEY")));
+    const details = key.asymmetricKeyDetails;
+    if (details?.namedCurve === "p256") {
+      Object.defineProperty(key, "asymmetricKeyDetails", {
+        get: () => ({ ...details, namedCurve: "prime256v1" }),
+      });
+    }
     c = new AppStoreServerAPIClient(
-      key,
+      // deno-lint-ignore no-explicit-any
+      key as any,
       requireEnv("APPLE_IAP_KEY_ID"),
       requireEnv("APPLE_IAP_ISSUER_ID"),
       BUNDLE_ID,
