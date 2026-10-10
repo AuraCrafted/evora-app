@@ -31,7 +31,7 @@ const plans: Plan[] = [
     name: "Evora Elevate",
     price: "$9.99",
     period: "/ month",
-    perDay: "Billed monthly",
+    perDay: "Just $0.33 a day",
     badge: "Popular",
     highlight: true,
     features: [
@@ -46,7 +46,7 @@ const plans: Plan[] = [
     name: "Evora Evolve",
     price: "$24.99",
     period: "/ month",
-    perDay: "Billed monthly",
+    perDay: "Just $0.83 a day",
     badge: "Most complete",
     features: [
       "Everything in Elevate",
