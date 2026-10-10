@@ -8,6 +8,13 @@
       "when": 1790971689997,
       "tag": "0000_user_state_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791655099708,
+      "tag": "0001_apple_storekit_verification",
+      "breakpoints": true
     }
   ]
 }
