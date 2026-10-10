@@ -1,130 +1,102 @@
-// Upserts the caller's Apple subscription row from a StoreKit 2 entitlement
-// reported by @squareetlabs/capacitor-subscriptions on the client.
-//
-// NOTE: This trusts the client-reported entitlement. For production-grade
-// server verification, call Apple's App Store Server API
-// (`/inApps/v1/transactions/{transactionId}`) using a signed JWT built from
-// your App Store Connect API key, and replace the body of this function
-// with the verified transaction payload.
+// Verifies the caller's StoreKit 2 signed transactions with Apple and saves
+// Apple's authoritative subscription status. Also reconciles existing Apple
+// subscriptions on app open/resume. Never trusts client claims: if Apple
+// verification fails, nothing is written.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "npm:zod@3";
+import {
+  AppleConfigError,
+  Environment,
+  fetchAppleState,
+  OwnershipError,
+  saveAppleState,
+  verifyTransaction,
+  type AppleState,
+} from "../_shared/apple.ts";
 
-const APPLE_PRODUCT_TO_PRICE_ID: Record<string, string> = {
-  "evora_id_monthly": "evora_monthly",
-  "evora_id_yearly": "evora_yearly",
-};
+const Body = z.object({
+  signedTransactions: z.array(z.string().min(20).max(20000)).max(20).optional(),
+  reconcile: z.boolean().optional(),
+});
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const RECONCILE_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!token) return json({ error: "Unauthorized" }, 401);
+  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+  if (userErr || !userData.user) return json({ error: "Unauthorized" }, 401);
+  const userId = userData.user.id;
+
+  const parsed = Body.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return json({ error: "Invalid request" }, 400);
+  const { signedTransactions = [], reconcile = false } = parsed.data;
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const states: AppleState[] = [];
 
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !userData.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const user = userData.user;
-
-    const body = await req.json().catch(() => ({}));
-    const { productId, transactionId, expirationDateMs, isTrial } = body as {
-      productId?: string;
-      transactionId?: string | number | null;
-      expirationDateMs?: number | null;
-      isTrial?: boolean;
-    };
-
-    const { data: existing } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("environment", "live")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // No active entitlement -> mark current row canceled/expired.
-    if (!productId) {
-      if (existing) {
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "canceled",
-            current_period_end: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
+    for (const jws of signedTransactions) {
+      const { tx, env } = await verifyTransaction(jws);
+      if (tx.appAccountToken && tx.appAccountToken.toLowerCase() !== userId.toLowerCase()) {
+        return json({ error: "This purchase belongs to a different Evora account.", code: "ownership" }, 409);
       }
-      return new Response(JSON.stringify({ ok: true, status: "free" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const state = await fetchAppleState(String(tx.originalTransactionId), env);
+      if (state) {
+        await saveAppleState(supabase, userId, state);
+        states.push(state);
+      }
     }
 
-    const now = Date.now();
-    const expMs = typeof expirationDateMs === "number" ? expirationDateMs : null;
-    const expired = expMs !== null && expMs < now;
-    const status = expired ? "canceled" : isTrial ? "trialing" : "active";
-    const priceIdKey = APPLE_PRODUCT_TO_PRICE_ID[productId] || productId;
-
-    const payload = {
-      user_id: user.id,
-      product_id: productId,
-      price_id: priceIdKey,
-      status,
-      current_period_start: new Date(now).toISOString(),
-      current_period_end: expMs ? new Date(expMs).toISOString() : null,
-      cancel_at_period_end: false,
-      environment: "live",
-      stripe_subscription_id: transactionId ? `apple:${transactionId}` : `apple:${user.id}`,
-      stripe_customer_id: `apple:${user.id}`,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (existing) {
-      const { error } = await supabase
+    if (reconcile && signedTransactions.length === 0) {
+      const { data: rows } = await supabase
         .from("subscriptions")
-        .update(payload)
-        .eq("id", existing.id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from("subscriptions").insert(payload);
-      if (error) throw error;
+        .select("apple_original_transaction_id, apple_environment, last_verified_at")
+        .eq("user_id", userId)
+        .not("apple_original_transaction_id", "is", null);
+      for (const row of rows ?? []) {
+        const last = row.last_verified_at ? new Date(row.last_verified_at).getTime() : 0;
+        if (Date.now() - last < RECONCILE_MIN_INTERVAL_MS) continue;
+        const env = row.apple_environment === "Sandbox" ? Environment.SANDBOX : Environment.PRODUCTION;
+        const state = await fetchAppleState(row.apple_original_transaction_id, env);
+        if (state) {
+          await saveAppleState(supabase, userId, state);
+          states.push(state);
+        }
+      }
     }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        status,
-        product_id: productId,
-        price_id: priceIdKey,
-        current_period_end: payload.current_period_end,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    const active = states.find((s) => ["active", "trialing"].includes(s.status) &&
+      (!s.periodEnd || new Date(s.periodEnd).getTime() > Date.now()));
+    return json({
+      ok: true,
+      result: active ? "active" : states.length ? "inactive" : "none",
+      price_id: active?.priceId ?? null,
+      current_period_end: active?.periodEnd ?? null,
+      verified: states.length,
+    });
   } catch (err) {
-    console.error("[sync-apple-subscription]", err);
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    if (err instanceof OwnershipError) return json({ error: err.message, code: "ownership" }, 409);
+    if (err instanceof AppleConfigError) {
+      console.error("[sync-apple-subscription] config", err.message);
+      return json({ error: "Apple verification is not configured yet.", code: "config" }, 503);
+    }
+    console.error("[sync-apple-subscription] verification failed", err);
+    return json({ error: "Couldn't verify the purchase with Apple. Please try again.", code: "verify" }, 502);
   }
 });

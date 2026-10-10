@@ -1,1 +1,2 @@
 - Device-local app data (spins/streak, preferences, feedback, journeys) syncs per account via the `user_state` table through `CloudSync`; why: data must follow the user's email across devices.
+- Apple subscriptions use the in-repo StoreKit 2 bridge `native/evora-storekit` (file dependency, picked up by `npx cap sync ios`); access is granted only by `sync-apple-subscription`/`apple-notifications` after Apple signature + App Store Server API verification, and transactions are finished only after the server confirms; why: the client must never be trusted for entitlements.

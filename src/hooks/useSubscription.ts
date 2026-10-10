@@ -79,7 +79,13 @@ export function useSubscription() {
       const interval = setInterval(() => {
         refetch();
       }, 30000);
-      return () => clearInterval(interval);
+      // Fired after Apple-verified purchases, renewals and app resume checks.
+      const onChanged = () => refetch();
+      window.addEventListener("evora:subscription-changed", onChanged);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("evora:subscription-changed", onChanged);
+      };
     }
 
     const channel = supabase.channel(`subs-${user.id}-${Math.random().toString(36).slice(2, 8)}`);

@@ -17,14 +17,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
-  AppleIAPError,
   appleIAPErrorMessage,
   isApplePurchaseCancelled,
   useIAP,
   type IAPProductId,
 } from "@/hooks/useIAP";
-import { Capacitor } from "@capacitor/core";
-import { Subscriptions } from "@squareetlabs/capacitor-subscriptions";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -90,8 +87,6 @@ const plans: Plan[] = [
       "⏰ Time-of-day filtering",
       "🔋 Energy-aware tasks (low / normal / push)",
       "🏷️ Tag your custom spins",
-      "✋ Commit Mode (soft accountability)",
-      "📊 Activity patterns",
       "Ad-free",
     ],
   },
@@ -163,149 +158,30 @@ const Plans = () => {
 
   const confirmCheckout = async () => {
     const selectedPlan = pendingPlan;
-    const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+    if (!selectedPlan || !user) return;
 
-    console.log("[IAP DEBUG] Continue clicked");
-    console.log("[IAP DEBUG] selected plan:", {
-      planId: selectedPlan?.id,
-      planName: selectedPlan?.name,
-      appleMapping: {
-        monthly: "evora_id_monthly",
-        yearly: "evora_id_yearly",
-      },
-    });
-    console.log("[IAP DEBUG] isNative:", {
-      isNative,
-      isNativePlatform: Capacitor.isNativePlatform(),
-      platform: Capacitor.getPlatform(),
-    });
-    console.log("[IAP DEBUG] iap enabled:", iap.enabled);
-
-    if (!selectedPlan || !user) {
-      console.warn("[Checkout] Aborting, missing plan or user", {
-        pendingPlan: selectedPlan,
-        hasUser: !!user,
-      });
-      return;
-    }
-
-    // iOS native: Apple In-App Purchase
-    if (isNative) {
+    // iOS native: Apple In-App Purchase, verified by the server with Apple
+    if (iap.enabled) {
       const productId = appleProductIdForPlan(selectedPlan.id);
-      console.log("[IAP DEBUG] product id:", productId);
-      console.info("[IAP] Resolved Apple product ID for native iOS checkout", {
-        planId: selectedPlan.id,
-        productId,
-        mapping: APPLE_PRODUCT_BY_PLAN,
-      });
-      if (!productId) {
-        console.error("[IAP] Missing Apple product ID for selected plan", {
-          planId: selectedPlan.id,
-        });
-        toast.error("This plan is missing an Apple product ID.");
-        setPendingPlan(null);
-        return;
-      }
       setPendingPlan(null);
-
-      // Probe getProductDetails before purchase so we can log StoreKit availability.
-      try {
-        console.log("[IAP DEBUG] calling getProductDetails", { productId });
-        const probe: any = await Subscriptions.getProductDetails({
-          productIdentifier: productId,
-        });
-        console.info("[IAP] getProductDetails probe response", { productId, probe });
-        if (!probe?.data) {
-          toast.error("Apple product not found in StoreKit.", {
-            description:
-              "Add this product ID to your Xcode StoreKit configuration: " + productId,
-          });
-          return;
-        }
-      } catch (probeErr) {
-        console.error("[IAP] getProductDetails probe failed", { productId, probeErr });
-        toast.error("Couldn't reach Apple StoreKit.", {
-          description:
-            "Make sure a .storekit file is attached to your Run scheme and contains " +
-            productId,
-        });
+      if (!productId) {
+        toast.error("This plan isn't available in the App Store.");
         return;
       }
-
       try {
-        console.log("[IAP DEBUG] calling purchaseProduct", { productId });
-        const purchaseResponse: any = await Subscriptions.purchaseProduct({
-          productIdentifier: productId,
-        });
-        console.log("[IAP DEBUG] purchaseProduct result:", {
-          productId,
-          response: purchaseResponse,
-        });
-        if (purchaseResponse?.responseCode !== 0) {
-          throw new AppleIAPError(
-            purchaseResponse?.responseMessage || "Apple purchase failed.",
-            {
-              productId,
-              responseCode: purchaseResponse?.responseCode,
-              raw: purchaseResponse,
-            },
-          );
-        }
-
-        const transactionId = purchaseResponse?.data ?? null;
-        let expirationDateMs: number | null = null;
-        let isTrial = false;
-        try {
-          const latest: any = await Subscriptions.getLatestTransaction({
-            productIdentifier: productId,
-          });
-          console.info("[IAP] getLatestTransaction response", {
-            productId,
-            response: latest,
-          });
-          const tx = latest?.data;
-          if (tx?.expirationDate) expirationDateMs = new Date(tx.expirationDate).getTime();
-          if (tx?.isTrial === true || tx?.offerType === "introductory") isTrial = true;
-        } catch (latestErr) {
-          console.warn("[IAP] getLatestTransaction failed:", latestErr);
-        }
-
-        const { data, error } = await supabase.functions.invoke(
-          "sync-apple-subscription",
-          {
-            body: { productId, transactionId, expirationDateMs, isTrial },
-          },
-        );
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        console.info("[IAP] sync-apple-subscription success", { productId, synced: data });
-        toast.success("Purchase successful, activating your plan…");
+        await iap.purchase(productId);
+        toast.success(`${selectedPlan.name} is active. Enjoy!`);
         sfx.purchase();
-        setTimeout(() => refetch(), 1500);
+        refetch();
       } catch (e: any) {
-        const cancelledByUser = isApplePurchaseCancelled(e);
-        console.error("[IAP DEBUG] purchaseProduct error:", {
-          productId,
-          cancelledByUser,
-          error: e,
-        });
-        console.error("[IAP] Checkout failed", {
-          productId,
-          cancelledByUser,
-          error: e,
-        });
-        if (cancelledByUser) {
+        if (isApplePurchaseCancelled(e)) {
           toast.message("Purchase cancelled.");
           return;
         }
-        toast.error(appleIAPErrorMessage(e), {
-          description:
-            "Verify your Xcode StoreKit file contains this exact product ID: " + productId,
-        });
+        toast.error(appleIAPErrorMessage(e));
       }
       return;
     }
-
 
     // Web: Stripe embedded checkout
     if (!selectedPlan.priceId) return;
@@ -329,11 +205,15 @@ const Plans = () => {
     sfx.tap();
     setRestoring(true);
     try {
-      await iap.restore();
-      toast.success("Purchases restored.");
-      setTimeout(() => refetch(), 1000);
+      const outcome = await iap.restore();
+      if (outcome === "restored") {
+        toast.success("Your subscription has been restored.");
+        refetch();
+      } else {
+        toast.message("No active purchases found for this Apple ID.");
+      }
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't restore purchases.");
+      toast.error(appleIAPErrorMessage(e) || "Couldn't restore purchases.");
     } finally {
       setRestoring(false);
     }

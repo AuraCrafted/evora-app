@@ -24,6 +24,7 @@ import { WelcomeAuthDialog } from "./components/WelcomeAuthDialog";
 import { PrivacyConsent } from "./components/PrivacyConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { CloudSync } from "./components/CloudSync";
+import { AppIAPListener } from "./components/AppIAPListener";
 import { CustomSuggestionsProvider } from "./hooks/useCustomSuggestions";
 import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
@@ -62,6 +63,7 @@ const App = () => (
       <HashRouter>
         <AuthProvider>
           <CloudSync />
+          <AppIAPListener />
           <CustomSuggestionsProvider>
             <SpinsProvider>
               <PaymentTestModeBanner />

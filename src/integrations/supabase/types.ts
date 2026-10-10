@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      apple_notification_events: {
+        Row: {
+          environment: string | null
+          notification_type: string
+          notification_uuid: string
+          original_transaction_id: string | null
+          processed_at: string
+          signed_date: string | null
+          subtype: string | null
+        }
+        Insert: {
+          environment?: string | null
+          notification_type: string
+          notification_uuid: string
+          original_transaction_id?: string | null
+          processed_at?: string
+          signed_date?: string | null
+          subtype?: string | null
+        }
+        Update: {
+          environment?: string | null
+          notification_type?: string
+          notification_uuid?: string
+          original_transaction_id?: string | null
+          processed_at?: string
+          signed_date?: string | null
+          subtype?: string | null
+        }
+        Relationships: []
+      }
       coach_messages: {
         Row: {
           content: string
@@ -144,12 +174,16 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          apple_auto_renew: boolean | null
+          apple_environment: string | null
+          apple_original_transaction_id: string | null
           cancel_at_period_end: boolean | null
           created_at: string | null
           current_period_end: string | null
           current_period_start: string | null
           environment: string
           id: string
+          last_verified_at: string | null
           paddle_customer_id: string | null
           paddle_subscription_id: string | null
           price_id: string
@@ -161,12 +195,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          apple_auto_renew?: boolean | null
+          apple_environment?: string | null
+          apple_original_transaction_id?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           environment?: string
           id?: string
+          last_verified_at?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           price_id: string
@@ -178,12 +216,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          apple_auto_renew?: boolean | null
+          apple_environment?: string | null
+          apple_original_transaction_id?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           environment?: string
           id?: string
+          last_verified_at?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           price_id?: string
