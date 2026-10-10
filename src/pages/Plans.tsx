@@ -22,7 +22,6 @@ import {
   useIAP,
   type IAPProductId,
 } from "@/hooks/useIAP";
-import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
