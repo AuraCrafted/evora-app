@@ -99,6 +99,6 @@ Deno.serve(async (req) => {
     const e = err as { httpStatusCode?: number; apiError?: number; status?: number };
     const detail = e?.apiError ?? e?.httpStatusCode ?? e?.status ?? null;
     console.error("[sync-apple-subscription] verification failed", detail, err);
-    return json({ error: "Couldn't verify the purchase with Apple. Please try again.", code: "verify", detail }, 502);
+    return json({ error: "Couldn't verify the purchase with Apple. Please try again.", code: "verify", detail: detail ?? String((err as Error)?.message ?? err).slice(0, 160) }, 502);
   }
 });
