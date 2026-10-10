@@ -110,8 +110,7 @@ const plans: Plan[] = [
       "🧠 Smart Spins that learn from you",
       "📅 Weekly Recap of your progress",
       "🛤️ Journeys (out of a rut, social, new things, energy)",
-      "🪞 Reflection layer after tasks",
-      "📈 Insights dashboard",
+      "🪞 Journey check-ins and adaptive plans",
     ],
   },
 ];
