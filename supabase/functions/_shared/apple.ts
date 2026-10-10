@@ -56,11 +56,21 @@ export function verifierFor(env: Environment): SignedDataVerifier {
   return v;
 }
 
+/** Rebuilds a valid PEM from a .p8 pasted with spaces, "\\n" or no line breaks. */
+function normalizeP8(raw: string): string {
+  const body = raw
+    .replace(/\\n/g, "\n")
+    .replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "")
+    .replace(/[^A-Za-z0-9+/=]/g, "");
+  const lines = body.match(/.{1,64}/g) ?? [];
+  return `-----BEGIN PRIVATE KEY-----\n${lines.join("\n")}\n-----END PRIVATE KEY-----\n`;
+}
+
 const clients = new Map<Environment, AppStoreServerAPIClient>();
 function clientFor(env: Environment): AppStoreServerAPIClient {
   let c = clients.get(env);
   if (!c) {
-    const key = requireEnv("APPLE_IAP_PRIVATE_KEY").replace(/\\n/g, "\n");
+    const key = normalizeP8(requireEnv("APPLE_IAP_PRIVATE_KEY"));
     c = new AppStoreServerAPIClient(
       key,
       requireEnv("APPLE_IAP_KEY_ID"),
