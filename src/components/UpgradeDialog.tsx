@@ -32,9 +32,6 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgrade }: Props) => {
     const tier = (plan?.id === "year" ? "year" : "month") as "month" | "year";
     onUpgrade(tier);
     onOpenChange(false);
-    toast.success(`Welcome to Evora ${plan?.name}!`, {
-      description: "Unlimited rolls unlocked. Take it gently.",
-    });
   };
 
   return (

@@ -114,9 +114,13 @@ const Settings = () => {
     haptic("light");
     setRestoring(true);
     try {
-      await iap.restore();
-      haptic("success");
-      toast.success("Purchases restored.");
+      const outcome = await iap.restore();
+      if (outcome === "restored") {
+        haptic("success");
+        toast.success("Your subscription has been restored.");
+      } else {
+        toast.message("No active purchases found for this Apple ID.");
+      }
     } catch (e: any) {
       haptic("error");
       toast.error(e?.message || "Couldn't restore purchases.");
