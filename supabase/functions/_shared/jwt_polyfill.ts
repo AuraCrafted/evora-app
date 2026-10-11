@@ -1,15 +1,19 @@
-// Fills a Deno gap in node:crypto KeyObject so jsonwebtoken (used by Apple's
-// @apple/app-store-server-library) can verify ES256 signatures.
+// Fixes a Deno naming difference in node:crypto so jsonwebtoken (used by
+// Apple's @apple/app-store-server-library) accepts real P-256 keys.
 //
-// jsonwebtoken's validateAsymmetricKey reads keyObject.asymmetricKeyDetails
-// to confirm the EC curve matches the JWT "alg". Deno's KeyObject does not
-// expose asymmetricKeyDetails, so every ES256 verification failed with
+// Deno reports EC curves in KeyObject.asymmetricKeyDetails.namedCurve as
+// "p256"/"p384"/"p521", while Node (and jsonwebtoken's
+// validateAsymmetricKey) use the OpenSSL names "prime256v1"/"secp384r1"/
+// "secp521r1". Every ES256 verify/sign therefore failed with
 // '"alg" parameter "ES256" requires curve "prime256v1"'.
 //
-// This patch attaches real asymmetricKeyDetails (read from the key itself,
-// never assumed) to KeyObjects returned by createPublicKey/createPrivateKey.
-// No verification is weakened: jsonwebtoken still checks the curve against
-// the algorithm and verifies the signature cryptographically.
+// The patch wraps the asymmetricKeyDetails getter on the KeyObject
+// prototype, so it applies to every key regardless of how it was created
+// (including functions jsonwebtoken captured at module load). It only renames
+// the curve label reported by the runtime; the actual key and curve are
+// unchanged. Unknown curves pass through untouched, so jsonwebtoken still
+// rejects mismatched curves, and the signature is still verified
+// cryptographically.
 //
 // Import this module BEFORE @apple/app-store-server-library is used.
 
@@ -18,55 +22,37 @@ import nodeCrypto from "node:crypto";
 // deno-lint-ignore no-explicit-any
 const cryptoAny = nodeCrypto as any;
 
+const CURVE_ALIASES: Record<string, string> = {
+  p256: "prime256v1",
+  "p-256": "prime256v1",
+  p384: "secp384r1",
+  "p-384": "secp384r1",
+  p521: "secp521r1",
+  "p-521": "secp521r1",
+};
+
 if (!cryptoAny.__evoraJwtPolyfilled) {
-  const EC_CURVES: Record<string, string> = {
-    "1.2.840.10045.3.1.7": "prime256v1", // P-256
-    "1.3.132.0.34": "secp384r1", // P-384
-    "1.3.132.0.35": "secp521r1", // P-521
-  };
-
-  // deno-lint-ignore no-explicit-any
-  function attachDetails(keyObject: any): any {
-    if (!keyObject || keyObject.asymmetricKeyDetails) return keyObject;
-    try {
-      const jwk = keyObject.export({ format: "jwk" });
-      if (jwk?.kty === "EC" && typeof jwk.crv === "string") {
-        const namedCurve =
-          jwk.crv === "P-256" ? "prime256v1"
-          : jwk.crv === "P-384" ? "secp384r1"
-          : jwk.crv === "P-521" ? "secp521r1"
-          : undefined;
-        if (namedCurve) {
-          Object.defineProperty(keyObject, "asymmetricKeyDetails", {
-            value: { namedCurve },
-            enumerable: true,
-            configurable: true,
-          });
+  const { publicKey } = nodeCrypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  let proto = Object.getPrototypeOf(publicKey);
+  let desc: PropertyDescriptor | undefined;
+  while (proto && !(desc = Object.getOwnPropertyDescriptor(proto, "asymmetricKeyDetails"))) {
+    proto = Object.getPrototypeOf(proto);
+  }
+  if (proto && desc?.get) {
+    const originalGet = desc.get;
+    Object.defineProperty(proto, "asymmetricKeyDetails", {
+      configurable: true,
+      enumerable: desc.enumerable,
+      get() {
+        const details = originalGet.call(this);
+        if (details && typeof details.namedCurve === "string") {
+          const mapped = CURVE_ALIASES[details.namedCurve.toLowerCase()];
+          if (mapped) return { ...details, namedCurve: mapped };
         }
-      } else if (jwk?.kty === "RSA" && typeof jwk.n === "string") {
-        const modulusLength = jwk.n.replace(/=+$/, "").length * 6 -
-          (jwk.n.endsWith("==") ? 2 : jwk.n.endsWith("=") ? 1 : 0);
-        Object.defineProperty(keyObject, "asymmetricKeyDetails", {
-          value: { modulusLength: modulusLength * 8 },
-          enumerable: true,
-          configurable: true,
-        });
-      }
-    } catch {
-      // If details cannot be derived, leave the key untouched; verification
-      // will fail closed rather than silently accept a wrong curve.
-    }
-    return keyObject;
+        return details;
+      },
+    });
   }
-
-  for (const fn of ["createPublicKey", "createPrivateKey"] as const) {
-    const original = cryptoAny[fn];
-    if (typeof original !== "function") continue;
-    cryptoAny[fn] = function (...args: unknown[]) {
-      return attachDetails(original.apply(this, args));
-    };
-  }
-
   cryptoAny.__evoraJwtPolyfilled = true;
 }
 
