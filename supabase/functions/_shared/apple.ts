@@ -3,8 +3,10 @@
 // App Store Server API for the authoritative subscription status.
 // Never trusts client-supplied product IDs, dates or success flags.
 
-// Must load first: fills Deno gaps in node:crypto X509Certificate used by Apple's library.
+// Must load first: fills Deno gaps in node:crypto X509Certificate and
+// KeyObject used by Apple's library and jsonwebtoken.
 import "./x509_polyfill.ts";
+import "./jwt_polyfill.ts";
 import {
   AppStoreServerAPIClient,
   Environment,
@@ -17,7 +19,7 @@ import {
 import { Buffer } from "node:buffer";
 import { createPrivateKey } from "node:crypto";
 
-export const BUNDLE_ID = "app.lovable.5c75fe72ae1145bc8efdd365adcddfd1";
+export const BUNDLE_ID = "com.thiskid7.evora";
 
 // Apple product ID -> internal price key (unchanged mapping).
 export const APPLE_PRODUCT_TO_PRICE_ID: Record<string, string> = {

@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.generate-task]
 verify_jwt = false
+
+[functions.sync-apple-subscription]
+verify_jwt = false
+
+[functions.apple-notifications]
+verify_jwt = false
