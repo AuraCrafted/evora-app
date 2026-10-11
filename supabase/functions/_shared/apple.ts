@@ -217,7 +217,8 @@ export async function fetchAppleState(
   let end = tx.expiresDate ?? null;
   switch (status) {
     case Status.ACTIVE:
-      mapped = tx.offerType === 1 ? "trialing" : "active";
+      // Only an actual introductory free trial counts as "trialing"; paid intro offers are "active".
+      mapped = tx.offerType === 1 && String(tx.offerDiscountType ?? "") === "FREE_TRIAL" ? "trialing" : "active";
       break;
     case Status.BILLING_GRACE_PERIOD:
       mapped = "active";

@@ -25,7 +25,7 @@ import {
 } from "@/hooks/useIAP";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { sfx } from "@/lib/feedback";
 import { playSound } from "@/lib/sounds";
 import { toast } from "sonner";
@@ -126,7 +126,17 @@ const Plans = () => {
     isAppleVerified,
     appleAutoRenew,
     pendingChange,
+    status: subStatus,
   } = useSubscription();
+  // Apple-only trial info; never shown on web, never shown unless StoreKit confirms eligibility.
+  const appleProductFor = (plan?: Plan | null) => {
+    const id = appleProductIdForPlan(plan?.id);
+    return iap.enabled && id ? iap.products.find((p) => p.identifier === id) ?? null : null;
+  };
+  const trialFor = (plan?: Plan | null) => (isPro ? null : appleProductFor(plan)?.freeTrial ?? null);
+  const priceAfter = (plan?: Plan | null) => appleProductFor(plan)?.priceString ?? plan?.price ?? "";
+  const currentPlan = plans.find((p) => p.id === tier) ?? null;
+  const inTrial = subStatus === "trialing";
   // On iOS only show an end date Apple itself reported; never an assumed one.
   const trustedEnd = iap.enabled ? (isAppleVerified ? periodEnd : null) : periodEnd;
   const fmtEnd = trustedEnd ? new Date(trustedEnd).toLocaleDateString() : null;
@@ -337,7 +347,15 @@ const Plans = () => {
                 You're on {tier === "year" ? "Evora Evolve" : "Evora Elevate"}.
               </span>{" "}
               <span className="text-muted-foreground">
-                {renewalOff
+                {inTrial
+                  ? renewalOff
+                    ? fmtEnd
+                      ? `Free trial ends ${formatAppleDate(trustedEnd!)}, then you move to Free. Auto-renew is off.`
+                      : "Free trial. Auto-renew is off, so you'll move to Free when it ends."
+                    : fmtEnd
+                    ? `Free trial ends ${formatAppleDate(trustedEnd!)}, then ${priceAfter(currentPlan)}/month unless you cancel.`
+                    : `Free trial, then ${priceAfter(currentPlan)}/month unless you cancel.`
+                  : renewalOff
                   ? fmtEnd
                     ? `Auto-renew is off. Access until ${fmtEnd}.`
                     : "Auto-renew is off."
@@ -398,6 +416,11 @@ const Plans = () => {
                 </div>
 
                 <div className="text-xs text-muted-foreground mt-1">{plan.perDay}</div>
+                {trialFor(plan) && (
+                  <div className="mt-2 inline-flex self-start rounded-full bg-accent/60 border border-primary/30 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                    {trialFor(plan)!.label}, then {priceAfter(plan)}/month
+                  </div>
+                )}
                 <p className="text-sm text-foreground/80 mt-3 italic">{plan.tagline}</p>
 
                 <ul className="mt-4 space-y-2 flex-1">
@@ -441,7 +464,7 @@ const Plans = () => {
                     size="sm"
                     className="mt-5 w-full"
                   >
-                    {isPro ? `Switch to ${plan.name}` : `Choose ${plan.name}`}
+                    {isPro ? `Switch to ${plan.name}` : trialFor(plan) ? "Start free trial" : `Choose ${plan.name}`}
                   </Button>
                 )}
               </div>
@@ -467,7 +490,14 @@ const Plans = () => {
         )}
 
         <p className="text-center text-[11px] text-muted-foreground mt-6">
-          {iap.enabled ? "Billed by Apple. Cancel anytime in App Store settings." : "Secure checkout. Cancel anytime."}
+          {iap.enabled
+            ? "Subscriptions renew automatically each month at the listed price until cancelled. Payment is charged to your Apple ID at confirmation of purchase, or when any free trial ends. Cancel at least 24 hours before the end of the trial or current period in Settings → Apple ID → Subscriptions to avoid being charged."
+            : "Secure checkout. Cancel anytime."}
+        </p>
+        <p className="text-center text-[11px] text-muted-foreground mt-2">
+          <Link to="/terms" className="underline">Terms of Service</Link>
+          {" · "}
+          <Link to="/privacy" className="underline">Privacy Policy</Link>
         </p>
       </section>
 
@@ -483,13 +513,21 @@ const Plans = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isPro
-                ? "Your current plan will end and the new plan will start at checkout."
+                ? iap.enabled
+                  ? "Apple applies upgrades right away and downgrades at your next renewal. Evora shows the plan Apple confirms."
+                  : "Your current plan will end and the new plan will start at checkout."
+                : trialFor(pendingPlan)
+                ? `${trialFor(pendingPlan)!.label}, then ${priceAfter(pendingPlan)}/month. Renews automatically each month until cancelled. Cancel at least 24 hours before the trial ends in your Apple ID subscription settings to avoid being charged.`
+                : iap.enabled
+                ? `You'll be charged ${priceAfter(pendingPlan)}/month by Apple. Renews automatically until cancelled. Cancel anytime in your Apple ID subscription settings.`
                 : `You'll be charged ${pendingPlan?.price} ${pendingPlan?.period}. Cancel anytime.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Not now</AlertDialogCancel>
-            <Button type="button" onClick={confirmCheckout}>Continue to payment</Button>
+            <Button type="button" onClick={confirmCheckout}>
+              {trialFor(pendingPlan) ? "Start free trial" : "Continue to payment"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

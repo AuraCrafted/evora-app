@@ -50,16 +50,48 @@ public class EvoraStoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
         Task {
             do {
                 let products = try await Product.products(for: ids)
-                call.resolve(["products": products.map { p in
-                    [
+                var out: [[String: Any]] = []
+                for p in products {
+                    var item: [String: Any] = [
                         "id": p.id,
                         "displayName": p.displayName,
                         "description": p.description,
                         "displayPrice": p.displayPrice,
                         "price": NSDecimalNumber(decimal: p.price).doubleValue,
                         "currencyCode": p.priceFormatStyle.currencyCode
-                    ] as [String: Any]
-                }])
+                    ]
+                    // Introductory offer + subscription-group eligibility, straight from StoreKit 2.
+                    // Omitted entirely when Apple doesn't report them.
+                    if let sub = p.subscription {
+                        item["introEligible"] = await sub.isEligibleForIntroOffer
+                        if let intro = sub.introductoryOffer {
+                            let mode: String
+                            switch intro.paymentMode {
+                            case .freeTrial: mode = "freeTrial"
+                            case .payAsYouGo: mode = "payAsYouGo"
+                            case .payUpFront: mode = "payUpFront"
+                            default: mode = "unknown"
+                            }
+                            let unit: String
+                            switch intro.period.unit {
+                            case .day: unit = "day"
+                            case .week: unit = "week"
+                            case .month: unit = "month"
+                            case .year: unit = "year"
+                            @unknown default: unit = "unknown"
+                            }
+                            item["introOffer"] = [
+                                "paymentMode": mode,
+                                "periodValue": intro.period.value,
+                                "periodUnit": unit,
+                                "periodCount": intro.periodCount,
+                                "displayPrice": intro.displayPrice
+                            ] as [String: Any]
+                        }
+                    }
+                    out.append(item)
+                }
+                call.resolve(["products": out])
             } catch {
                 call.reject("Couldn't load products: \(error.localizedDescription)")
             }

@@ -9,6 +9,14 @@ export interface StoreKitTransaction {
   deviceError?: string;
 }
 
+export interface StoreKitIntroOffer {
+  paymentMode: "freeTrial" | "payAsYouGo" | "payUpFront" | "unknown";
+  periodValue: number;
+  periodUnit: "day" | "week" | "month" | "year" | "unknown";
+  periodCount: number;
+  displayPrice: string;
+}
+
 export interface StoreKitProduct {
   id: string;
   displayName: string;
@@ -16,6 +24,9 @@ export interface StoreKitProduct {
   displayPrice: string;
   price: number;
   currencyCode: string;
+  /** StoreKit's subscription-group eligibility; absent if Apple didn't report it. */
+  introEligible?: boolean;
+  introOffer?: StoreKitIntroOffer;
 }
 
 export type PurchaseResult =
