@@ -71,7 +71,7 @@ function normalizeP8(raw: string): string {
 }
 
 const clients = new Map<Environment, AppStoreServerAPIClient>();
-function clientFor(env: Environment): AppStoreServerAPIClient {
+export function clientFor(env: Environment): AppStoreServerAPIClient {
   let c = clients.get(env);
   if (!c) {
     // Deno reports the P-256 curve as "p256"; jsonwebtoken expects "prime256v1".
