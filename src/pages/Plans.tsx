@@ -53,6 +53,8 @@ interface Plan {
   tagline: string;
   features: string[];
   priceId?: "evora_monthly" | "evora_yearly";
+  /** Trial length configured in App Store Connect; shown only as a "may be eligible" note, never as a promise. */
+  trialDays?: number;
 }
 
 const plans: Plan[] = [
@@ -81,6 +83,7 @@ const plans: Plan[] = [
     highlight: true,
     tagline: "Right-Time Rolls, context-aware.",
     priceId: "evora_monthly",
+    trialDays: 7,
     features: [
       "Unlimited rolls",
       "Choose your category",
@@ -100,6 +103,7 @@ const plans: Plan[] = [
     badge: "Most complete",
     tagline: "A long-term action system.",
     priceId: "evora_yearly",
+    trialDays: 3,
     features: [
       "Everything in Elevate",
       "🤖 AI Coach, your personal guide",
