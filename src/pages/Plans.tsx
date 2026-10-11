@@ -426,8 +426,8 @@ const Plans = () => {
                   </div>
                 ) : (
                   iap.enabled && !isPro && plan.trialDays && (
-                    <div className="mt-2 text-[11px] text-muted-foreground">
-                      New subscribers may be eligible for a {plan.trialDays}-day free trial.
+                    <div className="mt-2 inline-flex self-start rounded-full bg-accent/60 border border-primary/30 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                      {plan.trialDays}-day free trial for eligible new subscribers, then {priceAfter(plan)}/month
                     </div>
                   )
                 )}
