@@ -182,6 +182,10 @@ export interface AppleState {
   autoRenew: boolean | null;
   appAccountToken: string | null;
   environment: "Production" | "Sandbox";
+  /** Plan Apple has queued for the next renewal (downgrade/crossgrade). Only set when Apple reports it and auto-renew is on. */
+  pendingPriceId: string | null;
+  /** Apple-reported date the queued plan takes effect; null if Apple didn't provide one. */
+  pendingEffectiveAt: string | null;
 }
 
 /** Authoritative status from Apple's App Store Server API. */
@@ -230,7 +234,24 @@ export async function fetchAppleState(
       mapped = "expired";
   }
 
+  // Scheduled plan change, straight from Apple's signed renewal info.
+  let pendingPriceId: string | null = null;
+  let pendingEffectiveAt: string | null = null;
+  const nextProduct = renewal?.autoRenewProductId;
+  if (
+    (mapped === "active" || mapped === "trialing") &&
+    renewal?.autoRenewStatus === 1 &&
+    nextProduct && nextProduct !== tx.productId &&
+    APPLE_PRODUCT_TO_PRICE_ID[nextProduct]
+  ) {
+    pendingPriceId = APPLE_PRODUCT_TO_PRICE_ID[nextProduct];
+    const eff = renewal.renewalDate ?? tx.expiresDate ?? null;
+    pendingEffectiveAt = eff ? new Date(eff).toISOString() : null;
+  }
+
   return {
+    pendingPriceId,
+    pendingEffectiveAt,
     originalTransactionId: String(tx.originalTransactionId),
     productId: tx.productId!,
     priceId: APPLE_PRODUCT_TO_PRICE_ID[tx.productId!],
@@ -265,6 +286,8 @@ export async function saveAppleState(supabase: any, userId: string, s: AppleStat
     apple_original_transaction_id: s.originalTransactionId,
     apple_environment: s.environment,
     apple_auto_renew: s.autoRenew,
+    apple_pending_price_id: s.pendingPriceId,
+    apple_pending_effective_at: s.pendingEffectiveAt,
     last_verified_at: now,
     stripe_subscription_id: `apple:${s.originalTransactionId}`,
     stripe_customer_id: `apple:${userId}`,

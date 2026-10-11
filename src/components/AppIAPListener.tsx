@@ -51,6 +51,13 @@ export const AppIAPListener = () => {
       await reconcileAppleSubscription();
       refreshed();
 
+      const onCheck = async () => {
+        await reconcileAppleSubscription();
+        refreshed();
+      };
+      window.addEventListener("evora:subscription-check", onCheck);
+      handles.push({ remove: async () => window.removeEventListener("evora:subscription-check", onCheck) });
+
       handles.push(
         await CapApp.addListener("resume", async () => {
           await reconcileAppleSubscription();

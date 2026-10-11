@@ -89,6 +89,8 @@ Deno.serve(async (req) => {
       result: active ? "active" : states.length ? "inactive" : "none",
       price_id: active?.priceId ?? null,
       current_period_end: active?.periodEnd ?? null,
+      pending_price_id: active?.pendingPriceId ?? null,
+      pending_effective_at: active?.pendingEffectiveAt ?? null,
       verified: states.length,
     });
   } catch (err) {

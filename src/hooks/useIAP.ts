@@ -65,6 +65,8 @@ export type VerifyResult = {
   result: "active" | "inactive" | "none";
   price_id: string | null;
   current_period_end: string | null;
+  pending_price_id?: string | null;
+  pending_effective_at?: string | null;
 };
 
 /** Sends signed transactions to the server, which verifies them with Apple. */
