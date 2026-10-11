@@ -420,10 +420,16 @@ const Plans = () => {
                 </div>
 
                 <div className="text-xs text-muted-foreground mt-1">{plan.perDay}</div>
-                {trialFor(plan) && (
+                {trialFor(plan) ? (
                   <div className="mt-2 inline-flex self-start rounded-full bg-accent/60 border border-primary/30 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                     {trialFor(plan)!.label}, then {priceAfter(plan)}/month
                   </div>
+                ) : (
+                  iap.enabled && !isPro && plan.trialDays && (
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      New subscribers may be eligible for a {plan.trialDays}-day free trial.
+                    </div>
+                  )
                 )}
                 <p className="text-sm text-foreground/80 mt-3 italic">{plan.tagline}</p>
 
@@ -468,7 +474,13 @@ const Plans = () => {
                     size="sm"
                     className="mt-5 w-full"
                   >
-                    {isPro ? `Switch to ${plan.name}` : trialFor(plan) ? "Start free trial" : `Choose ${plan.name}`}
+                    {isPro
+                      ? `Switch to ${plan.name}`
+                      : trialFor(plan)
+                      ? "Start Free Trial"
+                      : iap.enabled
+                      ? "Subscribe"
+                      : `Choose ${plan.name}`}
                   </Button>
                 )}
               </div>
@@ -530,7 +542,7 @@ const Plans = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Not now</AlertDialogCancel>
             <Button type="button" onClick={confirmCheckout}>
-              {trialFor(pendingPlan) ? "Start free trial" : "Continue to payment"}
+              {trialFor(pendingPlan) ? "Start Free Trial" : "Continue to payment"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
