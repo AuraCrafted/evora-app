@@ -12,7 +12,8 @@
 
 import nodeCrypto from "node:crypto";
 import { Buffer } from "node:buffer";
-import jsrsasign from "npm:jsrsasign@11.1.0";
+// @ts-ignore: untyped CJS package
+import jsrsasign from "npm:jsrsasign@^11.0.0";
 
 const { X509, KEYUTIL } = jsrsasign as any;
 const Native = nodeCrypto.X509Certificate as any;
