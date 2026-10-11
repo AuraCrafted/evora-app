@@ -19,6 +19,7 @@ import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
   appleIAPErrorMessage,
   isApplePurchaseCancelled,
+  openAppleSubscriptionManagement,
   useIAP,
   type IAPProductId,
 } from "@/hooks/useIAP";
@@ -115,7 +116,19 @@ const Plans = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const { streak } = useSpins();
-  const { tier, isPro, cancelAtPeriodEnd, periodEnd, refetch } = useSubscription();
+  const {
+    tier,
+    isPro,
+    cancelAtPeriodEnd,
+    periodEnd,
+    refetch,
+    isAppleVerified,
+    appleAutoRenew,
+  } = useSubscription();
+  // On iOS only show an end date Apple itself reported; never an assumed one.
+  const trustedEnd = iap.enabled ? (isAppleVerified ? periodEnd : null) : periodEnd;
+  const fmtEnd = trustedEnd ? new Date(trustedEnd).toLocaleDateString() : null;
+  const renewalOff = iap.enabled ? appleAutoRenew === false : cancelAtPeriodEnd;
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
   const iap = useIAP();
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
@@ -223,12 +236,17 @@ const Plans = () => {
     setCancelling(true);
     try {
       if (iap.enabled) {
-        // Apple requires subscription cancellation through App Store settings.
-        toast.message("Manage your subscription in the App Store", {
-          description:
-            "Open Settings → [Your Name] → Subscriptions to cancel. Changes sync back on next launch.",
-        });
+        // Apple owns cancellation. Evora never cancels in its own database;
+        // the change comes back through Apple's verified notifications.
         setShowCancel(false);
+        try {
+          await openAppleSubscriptionManagement();
+        } catch {
+          toast.message("Manage your subscription in the App Store", {
+            description: "Open Settings, tap your name, then Subscriptions.",
+          });
+        }
+        window.dispatchEvent(new Event("evora:subscription-changed"));
         return;
       }
       const { error } = await supabase.functions.invoke("cancel-subscription");
@@ -290,20 +308,24 @@ const Plans = () => {
                 You're on {tier === "year" ? "Evora Evolve" : "Evora Elevate"}.
               </span>{" "}
               <span className="text-muted-foreground">
-                {cancelAtPeriodEnd && periodEnd
-                  ? `Ends ${new Date(periodEnd).toLocaleDateString()}.`
+                {renewalOff
+                  ? fmtEnd
+                    ? `Auto-renew is off. Access until ${fmtEnd}.`
+                    : "Auto-renew is off."
+                  : fmtEnd
+                  ? `Renews monthly. Next renewal ${fmtEnd}.`
                   : "All features unlocked."}
               </span>
             </div>
-            {!cancelAtPeriodEnd && (
+            {(iap.enabled || !cancelAtPeriodEnd) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => { sfx.tap(); setShowCancel(true); }}
                 className="text-muted-foreground hover:text-destructive"
               >
-                <X className="h-4 w-4" />
-                Cancel
+                {!iap.enabled && <X className="h-4 w-4" />}
+                {iap.enabled ? "Manage" : "Cancel"}
               </Button>
             )}
           </div>
@@ -364,10 +386,12 @@ const Plans = () => {
                       variant="outline"
                       size="sm"
                       className="mt-5 w-full"
-                      disabled={cancelAtPeriodEnd}
+                      disabled={!iap.enabled && cancelAtPeriodEnd}
                       onClick={() => { sfx.tap(); setShowCancel(true); }}
                     >
-                      {cancelAtPeriodEnd ? "Cancellation scheduled" : "Cancel & downgrade"}
+                      {renewalOff
+                        ? iap.enabled ? "Auto-renew off" : "Cancellation scheduled"
+                        : iap.enabled ? "Manage in App Store" : "Cancel & downgrade"}
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" disabled className="mt-5 w-full">
@@ -448,9 +472,13 @@ const Plans = () => {
       <AlertDialog open={showCancel} onOpenChange={setShowCancel}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {iap.enabled ? "Manage your subscription" : "Cancel your subscription?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You'll keep access until {periodEnd ? new Date(periodEnd).toLocaleDateString() : "the end of your billing period"}, then move to Free.
+              {iap.enabled
+                ? `Your subscription is billed by Apple, so cancelling happens in the App Store. Cancelling turns off auto-renew: you keep access until ${fmtEnd ?? "the end of the current month you've paid for"}, then move to Free. Refunds and revoked purchases end access right away.`
+                : `Cancelling turns off auto-renew. You'll keep access until ${fmtEnd ?? "the end of your billing period"}, then move to Free.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -460,7 +488,13 @@ const Plans = () => {
               disabled={cancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, cancel"}
+              {cancelling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : iap.enabled ? (
+                "Open App Store"
+              ) : (
+                "Yes, cancel"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

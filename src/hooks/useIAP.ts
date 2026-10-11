@@ -103,6 +103,12 @@ export async function reconcileAppleSubscription(): Promise<void> {
   }
 }
 
+/** Opens Apple's own subscription management sheet (cancel / change plan). */
+export async function openAppleSubscriptionManagement(): Promise<void> {
+  const { EvoraStoreKit } = await import("evora-storekit");
+  await EvoraStoreKit.manageSubscriptions();
+}
+
 export type RestoreOutcome = "restored" | "none";
 
 /**
