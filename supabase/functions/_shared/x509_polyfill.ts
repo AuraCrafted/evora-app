@@ -12,11 +12,11 @@
 
 import nodeCrypto from "node:crypto";
 import { Buffer } from "node:buffer";
-// jsrsasign ships no types; load it untyped (same major version Apple's library uses).
-const JSRSASIGN = "npm:jsrsasign@^11.0.0";
+// Same jsrsasign version Apple's library resolves to.
+import jsrsasign from "npm:jsrsasign@11.1.0";
+
 // deno-lint-ignore no-explicit-any
-const jsrsasign: any = (await import(JSRSASIGN)).default;
-const { X509, KEYUTIL } = jsrsasign;
+const { X509, KEYUTIL } = jsrsasign as any;
 const Native = nodeCrypto.X509Certificate as any;
 
 if (!Native.__evoraPolyfilled) {
