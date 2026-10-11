@@ -13,6 +13,9 @@ export interface SubscriptionRow {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   environment: string;
+  apple_original_transaction_id?: string | null;
+  apple_auto_renew?: boolean | null;
+  last_verified_at?: string | null;
 }
 
 function tierFromPriceId(priceId: string | undefined): SubTier {
@@ -52,7 +55,7 @@ export function useSubscription() {
     const { data } = await supabase
       .from("subscriptions" as any)
       .select(
-        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment",
+        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment, apple_original_transaction_id, apple_auto_renew, last_verified_at",
       )
       .eq("user_id", user.id)
       .eq("environment", env)
@@ -122,6 +125,11 @@ export function useSubscription() {
     tier,
     cancelAtPeriodEnd: row?.cancel_at_period_end ?? false,
     periodEnd: row?.current_period_end ?? null,
+    /** True only when the row was written from Apple-verified data. */
+    isAppleVerified: !!row?.apple_original_transaction_id && !!row?.last_verified_at,
+    /** Apple-reported auto-renew; null when unknown. */
+    appleAutoRenew: row?.apple_auto_renew ?? null,
+    status: row?.status ?? null,
     refetch,
   };
 }
