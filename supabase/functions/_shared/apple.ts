@@ -98,7 +98,9 @@ function clientFor(env: Environment): AppStoreServerAPIClient {
 /** Reads the (unverified) environment claim only to pick the right verifier. */
 function claimedEnvironment(jws: string): Environment {
   try {
-    const payload = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
+    const raw = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
+    // Transactions carry `environment`; V2 notifications carry `data.environment`.
+    const payload = { environment: raw?.environment ?? raw?.data?.environment };
     if (payload?.environment === "Sandbox") return Environment.SANDBOX;
     if (payload?.environment === "Xcode") return Environment.XCODE;
     if (payload?.environment === "LocalTesting") return Environment.LOCAL_TESTING;
@@ -112,7 +114,7 @@ export function safeClaims(jws: string): Record<string, unknown> {
     const p = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
     const h = JSON.parse(Buffer.from(jws.split(".")[0], "base64url").toString("utf8"));
     return {
-      environment: p?.environment ?? null,
+      environment: p?.environment ?? p?.data?.environment ?? null,
       bundleId: p?.bundleId ?? p?.data?.bundleId ?? null,
       productId: p?.productId ?? null,
       type: p?.type ?? p?.notificationType ?? null,
