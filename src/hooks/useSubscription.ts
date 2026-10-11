@@ -16,6 +16,23 @@ export interface SubscriptionRow {
   apple_original_transaction_id?: string | null;
   apple_auto_renew?: boolean | null;
   last_verified_at?: string | null;
+  apple_pending_price_id?: string | null;
+  apple_pending_effective_at?: string | null;
+  apple_environment?: string | null;
+}
+
+export function planNameForPriceId(priceId: string | null | undefined): string | null {
+  if (priceId === "evora_monthly") return "Evora Elevate";
+  if (priceId === "evora_yearly") return "Evora Evolve";
+  return null;
+}
+
+/** Formats an Apple date; includes the time when it's within a day (Sandbox renews in minutes). */
+export function formatAppleDate(iso: string): string {
+  const d = new Date(iso);
+  return d.getTime() - Date.now() < 24 * 60 * 60 * 1000
+    ? d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : d.toLocaleDateString();
 }
 
 function tierFromPriceId(priceId: string | undefined): SubTier {
@@ -55,7 +72,7 @@ export function useSubscription() {
     const { data } = await supabase
       .from("subscriptions" as any)
       .select(
-        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment, apple_original_transaction_id, apple_auto_renew, last_verified_at",
+        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment, apple_original_transaction_id, apple_auto_renew, last_verified_at, apple_pending_price_id, apple_pending_effective_at, apple_environment",
       )
       .eq("user_id", user.id)
       .eq("environment", env)
@@ -117,6 +134,30 @@ export function useSubscription() {
   const active = isActive(row);
   const tier: SubTier = active ? tierFromPriceId(row?.price_id) : "free";
 
+  // A scheduled plan change, only when Apple reported it, auto-renew is still on,
+  // and it hasn't already passed. Never guessed.
+  const pendingEnd = row?.apple_pending_effective_at ?? null;
+  const pendingName = planNameForPriceId(row?.apple_pending_price_id);
+  const pendingChange =
+    active && !!row?.apple_original_transaction_id && row?.apple_auto_renew === true &&
+    pendingName && row?.apple_pending_price_id !== row?.price_id &&
+    (!pendingEnd || new Date(pendingEnd).getTime() > Date.now())
+      ? { planName: pendingName, effectiveAt: pendingEnd }
+      : null;
+
+  // Refresh right after a scheduled change or period end (minutes apart in Sandbox).
+  useEffect(() => {
+    const target = pendingEnd ?? row?.current_period_end ?? null;
+    if (!user || !target) return;
+    const ms = new Date(target).getTime() - Date.now();
+    if (ms <= 0 || ms > 6 * 60 * 60 * 1000) return;
+    const t = setTimeout(() => {
+      window.dispatchEvent(new Event("evora:subscription-check"));
+      refetch();
+    }, ms + 15000);
+    return () => clearTimeout(t);
+  }, [user, pendingEnd, row?.current_period_end, refetch]);
+
   return {
     loading,
     subscription: row,
@@ -130,6 +171,8 @@ export function useSubscription() {
     /** Apple-reported auto-renew; null when unknown. */
     appleAutoRenew: row?.apple_auto_renew ?? null,
     status: row?.status ?? null,
+    /** Apple-reported upcoming plan change, or null. */
+    pendingChange,
     refetch,
   };
 }

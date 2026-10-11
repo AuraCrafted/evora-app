@@ -125,6 +125,7 @@ const Plans = () => {
     refetch,
     isAppleVerified,
     appleAutoRenew,
+    pendingChange,
   } = useSubscription();
   // On iOS only show an end date Apple itself reported; never an assumed one.
   const trustedEnd = iap.enabled ? (isAppleVerified ? periodEnd : null) : periodEnd;
@@ -196,8 +197,22 @@ const Plans = () => {
         return;
       }
       try {
-        await iap.purchase(productId);
-        toast.success(`${selectedPlan.name} is active. Enjoy!`);
+        const verdict = await iap.purchase(productId);
+        const activeName = planNameForPriceId(verdict.price_id);
+        const pendingName = planNameForPriceId(verdict.pending_price_id);
+        if (activeName && verdict.price_id === selectedPlan.priceId) {
+          toast.success(`${activeName} is active. Enjoy!`);
+        } else if (activeName && pendingName) {
+          toast.success(
+            verdict.pending_effective_at
+              ? `You're on ${activeName} until ${formatAppleDate(verdict.pending_effective_at)}, then you'll switch to ${pendingName}.`
+              : `You're on ${activeName}. Apple will switch you to ${pendingName} at your next renewal.`,
+          );
+        } else if (activeName) {
+          toast.success(`Apple confirmed ${activeName} is your active plan.`);
+        } else {
+          toast.success("Apple confirmed your subscription.");
+        }
         sfx.purchase();
         refetch();
       } catch (e: any) {
@@ -330,6 +345,13 @@ const Plans = () => {
                   ? `Renews monthly. Next renewal ${fmtEnd}.`
                   : "All features unlocked."}
               </span>
+              {pendingChange && (
+                <span className="block mt-1 text-muted-foreground">
+                  {pendingChange.effectiveAt
+                    ? `Switching to ${pendingChange.planName} on ${formatAppleDate(pendingChange.effectiveAt)}.`
+                    : `Switching to ${pendingChange.planName} at your next renewal.`}
+                </span>
+              )}
             </div>
             {(iap.enabled || !cancelAtPeriodEnd) && (
               <Button
