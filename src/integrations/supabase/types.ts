@@ -177,6 +177,8 @@ export type Database = {
           apple_auto_renew: boolean | null
           apple_environment: string | null
           apple_original_transaction_id: string | null
+          apple_pending_effective_at: string | null
+          apple_pending_price_id: string | null
           cancel_at_period_end: boolean | null
           created_at: string | null
           current_period_end: string | null
@@ -198,6 +200,8 @@ export type Database = {
           apple_auto_renew?: boolean | null
           apple_environment?: string | null
           apple_original_transaction_id?: string | null
+          apple_pending_effective_at?: string | null
+          apple_pending_price_id?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -219,6 +223,8 @@ export type Database = {
           apple_auto_renew?: boolean | null
           apple_environment?: string | null
           apple_original_transaction_id?: string | null
+          apple_pending_effective_at?: string | null
+          apple_pending_price_id?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null

@@ -15,6 +15,13 @@
       "when": 1791655099708,
       "tag": "0001_apple_storekit_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791689295080,
+      "tag": "0002_migration",
+      "breakpoints": true
     }
   ]
 }
