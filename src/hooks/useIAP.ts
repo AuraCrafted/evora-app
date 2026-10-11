@@ -49,7 +49,17 @@ export function appleIAPErrorMessage(error: unknown): string {
   return (error as Error)?.message || "Apple purchase failed. Please try again.";
 }
 
-const loadStoreKit = () => import("evora-storekit").then((m) => m.EvoraStoreKit);
+// Capacitor plugin proxies answer every property, including `then`, so a
+// plugin must never be the resolved value of a promise (the promise would
+// call the native "then" method and hang forever). Resolve the module instead.
+const loadStoreKitModule = () => import("evora-storekit");
+
+function withTimeout<T>(p: Promise<T>, ms: number, msg: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new AppleIAPError(msg, "timeout")), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
 
 export type VerifyResult = {
   result: "active" | "inactive" | "none";
@@ -80,9 +90,12 @@ async function verifyWithServer(body: {
  * StoreKit, so an unconfirmed purchase is redelivered on the next launch.
  */
 export async function processTransactions(txs: StoreKitTransaction[]): Promise<VerifyResult> {
+  // Ignore transactions for products that aren't Evora's current App Store products
+  // (for example old local StoreKit test purchases).
+  txs = txs.filter((t) => priceIdForApple(t.productId));
   if (!txs.length) return { result: "none", price_id: null, current_period_end: null };
   const res = await verifyWithServer({ signedTransactions: txs.map((t) => t.jws) });
-  const sk = await loadStoreKit();
+  const { EvoraStoreKit: sk } = await loadStoreKitModule();
   for (const t of txs) {
     try {
       await sk.finish({ transactionId: t.transactionId });
@@ -119,6 +132,7 @@ export function useIAP() {
   const enabled = isIAPPlatform();
   const [products, setProducts] = useState<IAPProduct[]>([]);
   const [loading, setLoading] = useState(enabled);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadProducts = useCallback(async () => {
@@ -127,8 +141,16 @@ export function useIAP() {
       return;
     }
     try {
-      const sk = await loadStoreKit();
-      const res = await sk.getProducts({ ids: [...IAP_PRODUCT_IDS] });
+      setLoadError(null);
+      const { EvoraStoreKit: sk } = await loadStoreKitModule();
+      const res = await withTimeout(
+        sk.getProducts({ ids: [...IAP_PRODUCT_IDS] }),
+        15000,
+        "The App Store took too long to respond. Please try again.",
+      );
+      if (!res.products.length) {
+        setLoadError("Subscriptions aren't available from the App Store right now. Please try again later.");
+      }
       setProducts(
         res.products.map((p) => ({
           identifier: p.id,
@@ -141,6 +163,7 @@ export function useIAP() {
       );
     } catch (e) {
       console.error("[IAP] Failed to load products", e);
+      setLoadError(appleIAPErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -159,7 +182,7 @@ export function useIAP() {
       if (!userId) throw new AppleIAPError("Please sign in before purchasing.", "auth");
       setBusy(true);
       try {
-        const sk = await loadStoreKit();
+        const { EvoraStoreKit: sk } = await loadStoreKitModule();
         const res = await sk.purchase({ productId, appAccountToken: userId });
         if (res.status === "cancelled") throw new AppleIAPError("Purchase cancelled.", "cancelled");
         if (res.status === "pending") {
@@ -188,7 +211,7 @@ export function useIAP() {
     if (!enabled) throw new AppleIAPError("Restore is only available in the iOS app.");
     setBusy(true);
     try {
-      const sk = await loadStoreKit();
+      const { EvoraStoreKit: sk } = await loadStoreKitModule();
       await sk.sync();
       const { transactions } = await sk.currentEntitlements();
       const ours = transactions.filter((t) => priceIdForApple(t.productId));
@@ -203,6 +226,7 @@ export function useIAP() {
   return {
     enabled,
     loading,
+    loadError,
     busy,
     products,
     purchase,

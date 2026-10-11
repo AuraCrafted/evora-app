@@ -114,7 +114,7 @@ const plans: Plan[] = [
 const Plans = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { streak } = useSpins();
   const iap = useIAP();
   const {
@@ -149,7 +149,12 @@ const Plans = () => {
   }, [searchParams, setSearchParams, refetch]);
 
   const requireAuth = (next: () => void) => {
+    if (authLoading) {
+      toast.message("One moment, checking your account…");
+      return;
+    }
     if (!user) {
+      toast.message("Please sign in to subscribe.");
       navigate("/auth?mode=signup&redirect=/plans");
       return;
     }
@@ -177,6 +182,15 @@ const Plans = () => {
     if (iap.enabled) {
       const productId = appleProductIdForPlan(selectedPlan.id);
       setPendingPlan(null);
+      if (iap.loading) {
+        toast.message("Still loading App Store prices. Please try again in a moment.");
+        return;
+      }
+      if (iap.loadError || !iap.products.some((p) => p.identifier === productId)) {
+        toast.error(iap.loadError || "This plan isn't available from the App Store right now.");
+        iap.reloadProducts();
+        return;
+      }
       if (!productId) {
         toast.error("This plan isn't available in the App Store.");
         return;
