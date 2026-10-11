@@ -3,11 +3,14 @@
 // App Store Server API for the authoritative subscription status.
 // Never trusts client-supplied product IDs, dates or success flags.
 
+// Must load first: fills Deno gaps in node:crypto X509Certificate used by Apple's library.
+import "./x509_polyfill.ts";
 import {
   AppStoreServerAPIClient,
   Environment,
   SignedDataVerifier,
   Status,
+  VerificationStatus,
   type JWSTransactionDecodedPayload,
   type JWSRenewalInfoDecodedPayload,
 } from "npm:@apple/app-store-server-library@3.1.0";
@@ -68,7 +71,7 @@ function normalizeP8(raw: string): string {
 }
 
 const clients = new Map<Environment, AppStoreServerAPIClient>();
-function clientFor(env: Environment): AppStoreServerAPIClient {
+export function clientFor(env: Environment): AppStoreServerAPIClient {
   let c = clients.get(env);
   if (!c) {
     // Deno reports the P-256 curve as "p256"; jsonwebtoken expects "prime256v1".
@@ -95,12 +98,47 @@ function clientFor(env: Environment): AppStoreServerAPIClient {
 /** Reads the (unverified) environment claim only to pick the right verifier. */
 function claimedEnvironment(jws: string): Environment {
   try {
-    const payload = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
+    const raw = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
+    // Transactions carry `environment`; V2 notifications carry `data.environment`.
+    const payload = { environment: raw?.environment ?? raw?.data?.environment };
     if (payload?.environment === "Sandbox") return Environment.SANDBOX;
     if (payload?.environment === "Xcode") return Environment.XCODE;
     if (payload?.environment === "LocalTesting") return Environment.LOCAL_TESTING;
   } catch { /* fall through */ }
   return Environment.PRODUCTION;
+}
+
+/** Unverified, non-personal claims from a JWS, for diagnostic logs only. */
+export function safeClaims(jws: string): Record<string, unknown> {
+  try {
+    const p = JSON.parse(Buffer.from(jws.split(".")[1], "base64url").toString("utf8"));
+    const h = JSON.parse(Buffer.from(jws.split(".")[0], "base64url").toString("utf8"));
+    return {
+      environment: p?.environment ?? p?.data?.environment ?? null,
+      bundleId: p?.bundleId ?? p?.data?.bundleId ?? null,
+      productId: p?.productId ?? null,
+      type: p?.type ?? p?.notificationType ?? null,
+      alg: h?.alg ?? null,
+      chainLength: Array.isArray(h?.x5c) ? h.x5c.length : 0,
+    };
+  } catch {
+    return { unparseable: true };
+  }
+}
+
+/** Human-readable reason for a verification failure (no tokens or personal data). */
+export function failureReason(err: unknown): Record<string, unknown> {
+  // deno-lint-ignore no-explicit-any
+  const e = err as any;
+  const status = typeof e?.status === "number" ? e.status : undefined;
+  return {
+    name: e?.name ?? null,
+    verificationStatus: status !== undefined ? (VerificationStatus as any)[status] ?? status : null,
+    message: String(e?.message ?? "").slice(0, 200) || null,
+    cause: e?.cause ? String(e.cause?.message ?? e.cause).slice(0, 200) : null,
+    apiError: e?.apiError ?? null,
+    httpStatusCode: e?.httpStatusCode ?? null,
+  };
 }
 
 export async function verifyTransaction(jws: string): Promise<{
@@ -111,14 +149,25 @@ export async function verifyTransaction(jws: string): Promise<{
   if (env !== Environment.PRODUCTION && env !== Environment.SANDBOX) {
     throw new Error("Transactions from local Xcode StoreKit testing cannot be verified by Apple.");
   }
-  const tx = await verifierFor(env).verifyAndDecodeTransaction(jws);
+  let tx: JWSTransactionDecodedPayload;
+  try {
+    tx = await verifierFor(env).verifyAndDecodeTransaction(jws);
+  } catch (err) {
+    console.error("[apple] transaction signature verification failed", JSON.stringify({ claims: safeClaims(jws), reason: failureReason(err) }));
+    throw err;
+  }
   if (tx.bundleId !== BUNDLE_ID) throw new Error("Bundle ID mismatch");
   return { tx, env };
 }
 
 export async function verifyNotification(signedPayload: string) {
   const env = claimedEnvironment(signedPayload);
-  return { note: await verifierFor(env).verifyAndDecodeNotification(signedPayload), env };
+  try {
+    return { note: await verifierFor(env).verifyAndDecodeNotification(signedPayload), env };
+  } catch (err) {
+    console.error("[apple] notification verification failed", JSON.stringify({ claims: safeClaims(signedPayload), reason: failureReason(err) }));
+    throw err;
+  }
 }
 
 export interface AppleState {
