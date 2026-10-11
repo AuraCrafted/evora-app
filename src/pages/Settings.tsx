@@ -32,7 +32,7 @@ import { Slider } from "@/components/ui/slider";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useSpins } from "@/hooks/useSpins";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, formatAppleDate } from "@/hooks/useSubscription";
 import { useIAP } from "@/hooks/useIAP";
 import { sfx } from "@/lib/feedback";
 import {
@@ -85,7 +85,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { streak } = useSpins();
-  const { tier, isPro } = useSubscription();
+  const { tier, isPro, pendingChange } = useSubscription();
   const iap = useIAP();
   const [restoring, setRestoring] = useState(false);
   const [sound, setSound] = useState(getSoundSettings());
@@ -201,6 +201,13 @@ const Settings = () => {
                 <div className="text-[11px] text-muted-foreground">
                   {isPro ? "All features unlocked" : "5 rolls / day"}
                 </div>
+                {pendingChange && (
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {pendingChange.effectiveAt
+                      ? `Switching to ${pendingChange.planName} on ${formatAppleDate(pendingChange.effectiveAt)}`
+                      : `Switching to ${pendingChange.planName} at next renewal`}
+                  </div>
+                )}
               </div>
             </div>
             <Row icon={CreditCard} label="Manage plans" to="/plans" />

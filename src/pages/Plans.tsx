@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSpins, type PlanTier } from "@/hooks/useSpins";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, planNameForPriceId, formatAppleDate } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
