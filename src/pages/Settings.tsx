@@ -85,7 +85,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { streak } = useSpins();
-  const { tier, isPro, pendingChange } = useSubscription();
+  const { tier, isPro, pendingChange, status: subStatus, periodEnd, isAppleVerified, appleAutoRenew } = useSubscription();
   const iap = useIAP();
   const [restoring, setRestoring] = useState(false);
   const [sound, setSound] = useState(getSoundSettings());
@@ -199,7 +199,15 @@ const Settings = () => {
                   {isPro ? (tier === "year" ? "Evora Evolve" : "Evora Elevate") : "Free"}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {isPro ? "All features unlocked" : "5 rolls / day"}
+                  {isPro
+                    ? subStatus === "trialing"
+                      ? isAppleVerified && periodEnd
+                        ? appleAutoRenew === false
+                          ? `Free trial ends ${formatAppleDate(periodEnd)}, then Free`
+                          : `Free trial ends ${formatAppleDate(periodEnd)}, then ${tier === "year" ? "$24.99" : "$9.99"}/month`
+                        : "Free trial active"
+                      : "All features unlocked"
+                    : "5 rolls / day"}
                 </div>
                 {pendingChange && (
                   <div className="text-[11px] text-muted-foreground mt-0.5">
