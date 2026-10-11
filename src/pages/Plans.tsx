@@ -53,6 +53,8 @@ interface Plan {
   tagline: string;
   features: string[];
   priceId?: "evora_monthly" | "evora_yearly";
+  /** Trial length configured in App Store Connect; shown only as a "may be eligible" note, never as a promise. */
+  trialDays?: number;
 }
 
 const plans: Plan[] = [
@@ -81,6 +83,7 @@ const plans: Plan[] = [
     highlight: true,
     tagline: "Right-Time Rolls, context-aware.",
     priceId: "evora_monthly",
+    trialDays: 7,
     features: [
       "Unlimited rolls",
       "Choose your category",
@@ -100,6 +103,7 @@ const plans: Plan[] = [
     badge: "Most complete",
     tagline: "A long-term action system.",
     priceId: "evora_yearly",
+    trialDays: 3,
     features: [
       "Everything in Elevate",
       "🤖 AI Coach, your personal guide",
@@ -416,10 +420,16 @@ const Plans = () => {
                 </div>
 
                 <div className="text-xs text-muted-foreground mt-1">{plan.perDay}</div>
-                {trialFor(plan) && (
+                {trialFor(plan) ? (
                   <div className="mt-2 inline-flex self-start rounded-full bg-accent/60 border border-primary/30 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                     {trialFor(plan)!.label}, then {priceAfter(plan)}/month
                   </div>
+                ) : (
+                  iap.enabled && !isPro && plan.trialDays && (
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      New subscribers may be eligible for a {plan.trialDays}-day free trial.
+                    </div>
+                  )
                 )}
                 <p className="text-sm text-foreground/80 mt-3 italic">{plan.tagline}</p>
 
@@ -464,7 +474,13 @@ const Plans = () => {
                     size="sm"
                     className="mt-5 w-full"
                   >
-                    {isPro ? `Switch to ${plan.name}` : trialFor(plan) ? "Start free trial" : `Choose ${plan.name}`}
+                    {isPro
+                      ? `Switch to ${plan.name}`
+                      : trialFor(plan)
+                      ? "Start Free Trial"
+                      : iap.enabled
+                      ? "Subscribe"
+                      : `Choose ${plan.name}`}
                   </Button>
                 )}
               </div>
@@ -526,7 +542,7 @@ const Plans = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Not now</AlertDialogCancel>
             <Button type="button" onClick={confirmCheckout}>
-              {trialFor(pendingPlan) ? "Start free trial" : "Continue to payment"}
+              {trialFor(pendingPlan) ? "Start Free Trial" : "Continue to payment"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
