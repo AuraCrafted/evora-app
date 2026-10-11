@@ -116,6 +116,7 @@ const Plans = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const { streak } = useSpins();
+  const iap = useIAP();
   const {
     tier,
     isPro,
@@ -130,7 +131,6 @@ const Plans = () => {
   const fmtEnd = trustedEnd ? new Date(trustedEnd).toLocaleDateString() : null;
   const renewalOff = iap.enabled ? appleAutoRenew === false : cancelAtPeriodEnd;
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
-  const iap = useIAP();
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
