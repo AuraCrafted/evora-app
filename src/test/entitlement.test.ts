@@ -1,3 +1,4 @@
+// @ts-nocheck node fs used only in tests
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { pickEntitlement, pickDisplayRow, isEvolve } from "@/lib/entitlement";
