@@ -20,6 +20,8 @@ import {
 const Body = z.object({
   signedTransactions: z.array(z.string().min(20).max(20000)).max(20).optional(),
   reconcile: z.boolean().optional(),
+  /** App open/resume recovery of StoreKit entitlements; skips recently verified records. */
+  recover: z.boolean().optional(),
 });
 
 const json = (body: unknown, status = 200) =>
@@ -47,21 +49,42 @@ Deno.serve(async (req) => {
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return json({ error: "Invalid request" }, 400);
-  const { signedTransactions = [], reconcile = false } = parsed.data;
+  const { signedTransactions = [], reconcile = false, recover = false } = parsed.data;
 
   try {
     const states: AppleState[] = [];
+    const seen = new Set<string>();
+    let skipped = 0;
 
     for (const jws of signedTransactions) {
+      // Signature, certificate chain and bundle ID are always verified.
       const { tx, env } = await verifyTransaction(jws);
       if (tx.appAccountToken && tx.appAccountToken.toLowerCase() !== userId.toLowerCase()) {
         return json({ error: "This purchase belongs to a different Evora account.", code: "ownership" }, 409);
       }
-      const state = await fetchAppleState(String(tx.originalTransactionId), env);
+      const originalId = String(tx.originalTransactionId);
+      if (seen.has(originalId)) continue; // one Apple lookup per subscription per request
+      seen.add(originalId);
+      if (recover) {
+        const { data: existing } = await supabase
+          .from("subscriptions")
+          .select("user_id, last_verified_at")
+          .eq("apple_original_transaction_id", originalId)
+          .maybeSingle();
+        const last = existing?.last_verified_at ? new Date(existing.last_verified_at).getTime() : 0;
+        if (existing?.user_id === userId && Date.now() - last < RECONCILE_MIN_INTERVAL_MS) {
+          skipped++;
+          continue;
+        }
+      }
+      const state = await fetchAppleState(originalId, env);
       if (state) {
         await saveAppleState(supabase, userId, state);
         states.push(state);
       }
+    }
+    if (recover) {
+      console.log("[sync-apple-subscription] recovery", JSON.stringify({ received: signedTransactions.length, checked: seen.size - skipped, skipped, saved: states.length }));
     }
 
     if (reconcile && signedTransactions.length === 0) {

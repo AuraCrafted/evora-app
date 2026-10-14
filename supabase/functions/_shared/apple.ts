@@ -210,7 +210,17 @@ export async function fetchAppleState(
       }
     }
   }
-  if (!best) return null;
+  if (!best) {
+    // Inconclusive: nothing is written, so the stored record (and its own
+    // Apple-verified expiry) stays in force. No IDs or tokens are logged.
+    const groups = res.data ?? [];
+    console.warn("[apple] inconclusive subscription status", JSON.stringify({
+      environment: env === Environment.SANDBOX ? "Sandbox" : "Production",
+      groups: groups.length,
+      transactions: groups.reduce((n, g) => n + (g.lastTransactions?.length ?? 0), 0),
+    }));
+    return null;
+  }
 
   const { tx, renewal, status } = best;
   let mapped: AppleState["status"];

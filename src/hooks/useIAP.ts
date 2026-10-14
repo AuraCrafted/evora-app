@@ -111,12 +111,18 @@ async function verifyWithServer(body: {
  * Verifies transactions with the server and only then finishes them in
  * StoreKit, so an unconfirmed purchase is redelivered on the next launch.
  */
-export async function processTransactions(txs: StoreKitTransaction[]): Promise<VerifyResult> {
+export async function processTransactions(
+  txs: StoreKitTransaction[],
+  opts: { recover?: boolean } = {},
+): Promise<VerifyResult> {
   // Ignore transactions for products that aren't Evora's current App Store products
   // (for example old local StoreKit test purchases).
   txs = txs.filter((t) => priceIdForApple(t.productId));
   if (!txs.length) return { result: "none", price_id: null, current_period_end: null };
-  const res = await verifyWithServer({ signedTransactions: txs.map((t) => t.jws) });
+  const res = await verifyWithServer({
+    signedTransactions: txs.map((t) => t.jws),
+    ...(opts.recover ? { recover: true } : {}),
+  });
   const { EvoraStoreKit: sk } = await loadStoreKitModule();
   for (const t of txs) {
     try {
@@ -128,14 +134,38 @@ export async function processTransactions(txs: StoreKitTransaction[]): Promise<V
   return res;
 }
 
-/** Server-side re-check of stored Apple subscriptions (throttled on the server). */
+const RECOVER_MIN_INTERVAL_MS = 5 * 60 * 1000;
+let lastRecoverAt = 0;
+let recoverInFlight: Promise<void> | null = null;
+
+/**
+ * App open/resume: re-checks stored Apple subscriptions, then sends StoreKit's
+ * current signed entitlements so a purchase missed by a network error is
+ * recovered. The server verifies every signature with Apple and skips records
+ * it verified recently; this client never decides access itself.
+ */
 export async function reconcileAppleSubscription(): Promise<void> {
   if (!isIAPPlatform()) return;
-  try {
-    await verifyWithServer({ reconcile: true });
-  } catch (e) {
-    console.warn("[IAP] reconcile failed", e);
-  }
+  if (recoverInFlight) return recoverInFlight;
+  recoverInFlight = (async () => {
+    try {
+      await verifyWithServer({ reconcile: true });
+    } catch (e) {
+      console.warn("[IAP] reconcile failed", e);
+    }
+    if (Date.now() - lastRecoverAt < RECOVER_MIN_INTERVAL_MS) return;
+    try {
+      const { EvoraStoreKit: sk } = await loadStoreKitModule();
+      const { transactions } = await withTimeout(sk.currentEntitlements(), 15000, "StoreKit timed out");
+      lastRecoverAt = Date.now();
+      if (transactions.length) await processTransactions(transactions, { recover: true });
+    } catch (e) {
+      console.warn("[IAP] entitlement recovery not verified yet", e);
+    }
+  })().finally(() => {
+    recoverInFlight = null;
+  });
+  return recoverInFlight;
 }
 
 /** Opens Apple's own subscription management sheet (cancel / change plan). */

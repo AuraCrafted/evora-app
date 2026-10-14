@@ -115,17 +115,11 @@ Deno.serve(async (req) => {
     if (cErr || !claims?.claims?.sub) return json({ error: "unauthorized" }, 401);
 
     const svc = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const { data: sub } = await svc
+    const { data: subs } = await svc
       .from("subscriptions")
-      .select("status, price_id, current_period_end")
-      .eq("user_id", claims.claims.sub)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const end = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
-    const yearly = !!sub && YEARLY_PRICE_IDS.includes(sub.price_id) &&
-      ((["active", "trialing", "past_due"].includes(sub.status) && (end === null || end > Date.now())) ||
-        (sub.status === "canceled" && end !== null && end > Date.now()));
+      .select("status, price_id, current_period_end, created_at")
+      .eq("user_id", claims.claims.sub);
+    const yearly = isEvolve(pickEntitlement(subs));
     if (!yearly) return json({ error: "forbidden" }, 403);
 
     const body = await req.json().catch(() => ({}));
