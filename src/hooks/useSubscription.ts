@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuth } from "@/hooks/useAuth";
+import { pickDisplayRow, rowIsValid } from "@/lib/entitlement";
 
 export type SubTier = "free" | "month" | "year";
 
@@ -19,6 +20,7 @@ export interface SubscriptionRow {
   apple_pending_price_id?: string | null;
   apple_pending_effective_at?: string | null;
   apple_environment?: string | null;
+  created_at?: string | null;
 }
 
 export function planNameForPriceId(priceId: string | null | undefined): string | null {
@@ -42,12 +44,7 @@ function tierFromPriceId(priceId: string | undefined): SubTier {
 }
 
 function isActive(row: SubscriptionRow | null): boolean {
-  if (!row) return false;
-  const end = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
-  const inWindow = end === null || end > Date.now();
-  if (["active", "trialing", "past_due"].includes(row.status) && inWindow) return true;
-  if (row.status === "canceled" && end !== null && end > Date.now()) return true;
-  return false;
+  return !!row && rowIsValid(row);
 }
 
 export function useSubscription() {
@@ -72,14 +69,12 @@ export function useSubscription() {
     const { data } = await supabase
       .from("subscriptions" as any)
       .select(
-        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment, apple_original_transaction_id, apple_auto_renew, last_verified_at, apple_pending_price_id, apple_pending_effective_at, apple_environment",
+        "stripe_subscription_id, product_id, price_id, status, current_period_end, cancel_at_period_end, environment, apple_original_transaction_id, apple_auto_renew, last_verified_at, apple_pending_price_id, apple_pending_effective_at, apple_environment, created_at",
       )
       .eq("user_id", user.id)
-      .eq("environment", env)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setRow((data as any) ?? null);
+      .eq("environment", env);
+    // Access comes from every valid record (Evolve over Elevate), never just the newest.
+    setRow(pickDisplayRow((data as any as SubscriptionRow[]) ?? []));
     setLoading(false);
   }, [user]);
 
