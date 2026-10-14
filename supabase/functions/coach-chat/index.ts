@@ -69,23 +69,11 @@ Deno.serve(async (req) => {
       supabaseUrl,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const { data: sub } = await serviceClient
+    const { data: subs } = await serviceClient
       .from("subscriptions")
-      .select("status, price_id, current_period_end")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const hasYearly = (() => {
-      if (!sub) return false;
-      if (!YEARLY_PRICE_IDS.includes(sub.price_id)) return false;
-      const end = sub.current_period_end ? new Date(sub.current_period_end).getTime() : null;
-      const inWindow = end === null || end > Date.now();
-      if (["active", "trialing", "past_due"].includes(sub.status) && inWindow) return true;
-      if (sub.status === "canceled" && end !== null && end > Date.now()) return true;
-      return false;
-    })();
+      .select("status, price_id, current_period_end, created_at")
+      .eq("user_id", userId);
+    const hasYearly = isEvolve(pickEntitlement(subs));
 
     if (!hasYearly) {
       return json({ error: "forbidden" }, 403);
