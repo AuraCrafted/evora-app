@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useSpins, type PlanTier } from "@/hooks/useSpins";
 import { useSubscription, planNameForPriceId, formatAppleDate } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useTrialHistory } from "@/hooks/useTrialHistory";
+import { trialDisplay } from "@/lib/trialOffer";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import {
   appleIAPErrorMessage,
@@ -132,6 +134,7 @@ const Plans = () => {
     pendingChange,
     status: subStatus,
   } = useSubscription();
+  const trialUsed = useTrialHistory();
   // Apple-only trial info; never shown on web, never shown unless StoreKit confirms eligibility.
   const appleProductFor = (plan?: Plan | null) => {
     const id = appleProductIdForPlan(plan?.id);
@@ -139,7 +142,7 @@ const Plans = () => {
   };
   const display = (plan?: Plan | null) => {
     const p = appleProductFor(plan);
-    return trialDisplay({ offer: p?.introOffer, appleEligible: p?.introEligible, accountTrialUsed: trialUsed });
+    return trialDisplay({ offer: p?.introOffer, appleEligible: p?.introEligible, accountTrialUsed: isPro ? true : trialUsed });
   };
   // Prominent trial + "Start Free Trial" only when Apple AND the Evora account both confirm eligibility.
   const trialFor = (plan?: Plan | null) => {
