@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import type { StoreKitTransaction } from "evora-storekit";
+import { trialOfferFrom, type TrialInfo } from "@/lib/trialOffer";
 
 // Apple App Store Connect product identifiers
 export const IAP_PRODUCT_IDS = [
@@ -18,26 +19,10 @@ export interface IAPProduct {
   priceString: string;
   price: number;
   currencyCode?: string;
-  /** Set only when StoreKit confirms an introductory free trial AND this Apple ID is eligible. */
-  freeTrial?: { days: number; label: string } | null;
-}
-
-/** Conservative: returns a trial only when Apple explicitly reports eligibility and a free-trial offer. */
-function freeTrialFrom(p: { introEligible?: boolean; introOffer?: { paymentMode: string; periodValue: number; periodUnit: string; periodCount: number } }) {
-  const o = p.introOffer;
-  if (p.introEligible !== true || !o || o.paymentMode !== "freeTrial") return null;
-  const perUnit: Record<string, number> = { day: 1, week: 7 };
-  const mult = perUnit[o.periodUnit];
-  const count = Math.max(1, o.periodCount || 1);
-  if (mult && o.periodValue > 0) {
-    const days = o.periodValue * mult * count;
-    return { days, label: `${days}-day free trial` };
-  }
-  if (o.periodUnit === "month" && o.periodValue > 0) {
-    const m = o.periodValue * count;
-    return { days: m * 30, label: `${m}-month free trial` };
-  }
-  return null;
+  /** Apple's introductory free-trial offer for this product (exists regardless of eligibility). */
+  introOffer?: TrialInfo | null;
+  /** StoreKit's subscription-group eligibility for this Apple ID; undefined if unknown. */
+  introEligible?: boolean;
 }
 
 export function priceIdForApple(
@@ -211,7 +196,8 @@ export function useIAP() {
           priceString: p.displayPrice,
           price: p.price,
           currencyCode: p.currencyCode,
-          freeTrial: freeTrialFrom(p),
+          introOffer: trialOfferFrom(p.introOffer),
+          introEligible: typeof p.introEligible === "boolean" ? p.introEligible : undefined,
         })),
       );
     } catch (e) {
