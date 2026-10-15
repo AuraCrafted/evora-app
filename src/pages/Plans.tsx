@@ -137,7 +137,15 @@ const Plans = () => {
     const id = appleProductIdForPlan(plan?.id);
     return iap.enabled && id ? iap.products.find((p) => p.identifier === id) ?? null : null;
   };
-  const trialFor = (plan?: Plan | null) => (isPro ? null : appleProductFor(plan)?.freeTrial ?? null);
+  const display = (plan?: Plan | null) => {
+    const p = appleProductFor(plan);
+    return trialDisplay({ offer: p?.introOffer, appleEligible: p?.introEligible, accountTrialUsed: trialUsed });
+  };
+  // Prominent trial + "Start Free Trial" only when Apple AND the Evora account both confirm eligibility.
+  const trialFor = (plan?: Plan | null) => {
+    const d = display(plan);
+    return d.kind === "eligible" ? d.trial : null;
+  };
   const priceAfter = (plan?: Plan | null) => appleProductFor(plan)?.priceString ?? plan?.price ?? "";
   const currentPlan = plans.find((p) => p.id === tier) ?? null;
   const inTrial = subStatus === "trialing";
@@ -425,9 +433,9 @@ const Plans = () => {
                     {trialFor(plan)!.label}, then {priceAfter(plan)}/month
                   </div>
                 ) : (
-                  iap.enabled && !isPro && plan.trialDays && (
+                  display(plan).kind === "ineligible" && (
                     <div className="mt-2 inline-flex self-start rounded-full bg-accent/60 border border-primary/30 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                      {plan.trialDays}-day free trial for eligible new subscribers, then {priceAfter(plan)}/month
+                      {(display(plan) as { trial: { label: string } }).trial.label} for eligible new subscribers, then {priceAfter(plan)}/month
                     </div>
                   )
                 )}
