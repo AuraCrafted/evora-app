@@ -186,7 +186,13 @@ export interface AppleState {
   pendingPriceId: string | null;
   /** Apple-reported date the queued plan takes effect; null if Apple didn't provide one. */
   pendingEffectiveAt: string | null;
+  /** True when Apple's signed data shows an introductory free trial was redeemed on this subscription. */
+  trialRedeemed: boolean;
 }
+
+/** Apple-signed marker of an introductory free trial (offerType 1 + FREE_TRIAL). */
+export const isFreeTrialTx = (tx: { offerType?: number; offerDiscountType?: unknown }) =>
+  tx.offerType === 1 && String(tx.offerDiscountType ?? "") === "FREE_TRIAL";
 
 /** Authoritative status from Apple's App Store Server API. */
 export async function fetchAppleState(
@@ -195,6 +201,7 @@ export async function fetchAppleState(
 ): Promise<AppleState | null> {
   const res = await clientFor(env).getAllSubscriptionStatuses(originalTransactionId);
   const verifier = verifierFor(env);
+  let trialRedeemed = false;
   let best: { tx: JWSTransactionDecodedPayload; renewal: JWSRenewalInfoDecodedPayload | null; status: Status | undefined } | null = null;
 
   for (const group of res.data ?? []) {
@@ -202,6 +209,7 @@ export async function fetchAppleState(
       if (!last.signedTransactionInfo) continue;
       const tx = await verifier.verifyAndDecodeTransaction(last.signedTransactionInfo);
       if (!tx.productId || !APPLE_PRODUCT_TO_PRICE_ID[tx.productId]) continue;
+      if (isFreeTrialTx(tx)) trialRedeemed = true;
       const renewal = last.signedRenewalInfo
         ? await verifier.verifyAndDecodeRenewalInfo(last.signedRenewalInfo)
         : null;
@@ -228,7 +236,7 @@ export async function fetchAppleState(
   switch (status) {
     case Status.ACTIVE:
       // Only an actual introductory free trial counts as "trialing"; paid intro offers are "active".
-      mapped = tx.offerType === 1 && String(tx.offerDiscountType ?? "") === "FREE_TRIAL" ? "trialing" : "active";
+      mapped = isFreeTrialTx(tx) ? "trialing" : "active";
       break;
     case Status.BILLING_GRACE_PERIOD:
       mapped = "active";
@@ -261,6 +269,7 @@ export async function fetchAppleState(
   }
 
   return {
+    trialRedeemed: trialRedeemed || isFreeTrialTx(tx),
     pendingPriceId,
     pendingEffectiveAt,
     originalTransactionId: String(tx.originalTransactionId),
@@ -314,6 +323,7 @@ export async function saveAppleState(supabase: any, userId: string, s: AppleStat
     if (byTx.user_id !== userId) throw new OwnershipError();
     const { error } = await supabase.from("subscriptions").update(payload).eq("id", byTx.id);
     if (error) throw error;
+    if (s.trialRedeemed || s.status === "trialing") await recordTrialRedemption(supabase, userId, s.originalTransactionId, s.productId, s.environment);
     return;
   }
   // Adopt a legacy unverified Apple row for this user, if one exists.
@@ -329,10 +339,25 @@ export async function saveAppleState(supabase: any, userId: string, s: AppleStat
     ? await supabase.from("subscriptions").update(payload).eq("id", legacy.id)
     : await supabase.from("subscriptions").insert({ ...payload, created_at: now });
   if (error) throw error;
+  if (s.trialRedeemed || s.status === "trialing") await recordTrialRedemption(supabase, userId, s.originalTransactionId, s.productId, s.environment);
 }
 
 export class OwnershipError extends Error {
   constructor() {
     super("This Apple subscription belongs to a different Evora account.");
   }
+}
+
+
+/**
+ * Permanent, idempotent record that this Evora account redeemed an Apple free trial.
+ * Never deleted on expiry, cancel, restore or plan change. Only written from Apple-verified data.
+ */
+// deno-lint-ignore no-explicit-any
+export async function recordTrialRedemption(supabase: any, userId: string, originalTransactionId: string, productId: string, environment: string | null) {
+  const { error } = await supabase.from("trial_redemptions").upsert(
+    { user_id: userId, apple_original_transaction_id: originalTransactionId, product_id: productId, apple_environment: environment },
+    { onConflict: "user_id,apple_original_transaction_id", ignoreDuplicates: true },
+  );
+  if (error) console.error("[apple] trial redemption not recorded", JSON.stringify({ code: error.code }));
 }
