@@ -294,7 +294,6 @@ export { Environment };
 // deno-lint-ignore no-explicit-any
 export async function saveAppleState(supabase: any, userId: string, s: AppleState) {
   const now = new Date().toISOString();
-  if (s.trialRedeemed || s.status === "trialing") await recordTrialRedemption(supabase, userId, s.originalTransactionId, s.productId, s.environment);
   const payload = {
     user_id: userId,
     product_id: s.productId,
@@ -324,6 +323,7 @@ export async function saveAppleState(supabase: any, userId: string, s: AppleStat
     if (byTx.user_id !== userId) throw new OwnershipError();
     const { error } = await supabase.from("subscriptions").update(payload).eq("id", byTx.id);
     if (error) throw error;
+    if (s.trialRedeemed || s.status === "trialing") await recordTrialRedemption(supabase, userId, s.originalTransactionId, s.productId, s.environment);
     return;
   }
   // Adopt a legacy unverified Apple row for this user, if one exists.
@@ -339,6 +339,7 @@ export async function saveAppleState(supabase: any, userId: string, s: AppleStat
     ? await supabase.from("subscriptions").update(payload).eq("id", legacy.id)
     : await supabase.from("subscriptions").insert({ ...payload, created_at: now });
   if (error) throw error;
+  if (s.trialRedeemed || s.status === "trialing") await recordTrialRedemption(supabase, userId, s.originalTransactionId, s.productId, s.environment);
 }
 
 export class OwnershipError extends Error {
