@@ -244,6 +244,30 @@ export type Database = {
         }
         Relationships: []
       }
+      trial_redemptions: {
+        Row: {
+          apple_environment: string | null
+          apple_original_transaction_id: string
+          product_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          apple_environment?: string | null
+          apple_original_transaction_id: string
+          product_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          apple_environment?: string | null
+          apple_original_transaction_id?: string
+          product_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_state: {
         Row: {
           key: string
