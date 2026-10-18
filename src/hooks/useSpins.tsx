@@ -114,7 +114,7 @@ export interface SpinsContextValue {
   recentIds: string[];
   streak: number;
   completed: number;
-  nextResetMs: number;
+  nextResetAt: number;
   hasNudgedToday: boolean;
   tier: PlanTier;
   setTier: (t: PlanTier) => void;
@@ -233,12 +233,14 @@ export function SpinsProvider({ children }: { children: ReactNode }) {
     () => state.history.filter((h) => h.accepted).length,
     [state.history],
   );
-  // Live clock: tick every 15s, and on resume/focus, so the countdown updates
-  // and daily counters reset the moment the local day rolls over.
+  // Live clock: tick every second, and on resume/focus, so daily counters roll
+  // over the instant the local day changes. The context value below is memoized
+  // on nextResetAt (which only moves once a day), so this tick re-renders the
+  // provider but not the screens that read roll state.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const tick = () => setNow(Date.now());
-    const id = window.setInterval(tick, 15_000);
+    const id = window.setInterval(tick, 1000);
     const onVis = () => {
       if (document.visibilityState === "visible") tick();
     };
@@ -258,7 +260,7 @@ export function SpinsProvider({ children }: { children: ReactNode }) {
       );
     }
   }, [now, state.dayStart]);
-  const nextResetMs = Math.max(0, startOfDay(now) + 24 * 60 * 60 * 1000 - now);
+  const nextResetAt = startOfDay(now) + 24 * 60 * 60 * 1000;
   const hasNudgedToday = useMemo(() => {
     const today = startOfDay();
     return state.history.some((h) => h.accepted && startOfDay(h.ts) === today);
@@ -271,29 +273,50 @@ export function SpinsProvider({ children }: { children: ReactNode }) {
     [state.history, state.hiddenBeforeTs],
   );
 
-  const value: SpinsContextValue = {
-    used: state.used,
-    total: FREE_ROLLS_PER_DAY,
-    remaining,
-    bonus: state.bonus,
-    canSpin,
-    isPro,
-    history: visibleHistory,
-    allHistory: state.history,
-    recentIds: state.recentIds ?? [],
-    streak,
-    completed,
-    nextResetMs,
-    hasNudgedToday,
-    tier,
-    setTier,
-    recordSpin,
-    recordDecision,
-    grantBonusSpin,
-    upgrade,
-    downgrade,
-    clearHistory,
-  };
+  const value = useMemo<SpinsContextValue>(
+    () => ({
+      used: state.used,
+      total: FREE_ROLLS_PER_DAY,
+      remaining,
+      bonus: state.bonus,
+      canSpin,
+      isPro,
+      history: visibleHistory,
+      allHistory: state.history,
+      recentIds: state.recentIds ?? [],
+      streak,
+      completed,
+      nextResetAt,
+      hasNudgedToday,
+      tier,
+      setTier,
+      recordSpin,
+      recordDecision,
+      grantBonusSpin,
+      upgrade,
+      downgrade,
+      clearHistory,
+    }),
+    [
+      state,
+      remaining,
+      canSpin,
+      isPro,
+      visibleHistory,
+      streak,
+      completed,
+      nextResetAt,
+      hasNudgedToday,
+      tier,
+      setTier,
+      recordSpin,
+      recordDecision,
+      grantBonusSpin,
+      upgrade,
+      downgrade,
+      clearHistory,
+    ],
+  );
 
   return <SpinsContext.Provider value={value}>{children}</SpinsContext.Provider>;
 }
