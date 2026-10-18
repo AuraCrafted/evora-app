@@ -233,7 +233,32 @@ export function SpinsProvider({ children }: { children: ReactNode }) {
     () => state.history.filter((h) => h.accepted).length,
     [state.history],
   );
-  const nextResetMs = state.dayStart + 24 * 60 * 60 * 1000 - Date.now();
+  // Live clock: tick every 15s, and on resume/focus, so the countdown updates
+  // and daily counters reset the moment the local day rolls over.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const id = window.setInterval(tick, 15_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", tick);
+    };
+  }, []);
+  useEffect(() => {
+    const today = startOfDay(now);
+    if (state.dayStart !== today) {
+      setState((s) =>
+        s.dayStart === today ? s : { ...s, dayStart: today, used: 0, bonus: 0 },
+      );
+    }
+  }, [now, state.dayStart]);
+  const nextResetMs = Math.max(0, startOfDay(now) + 24 * 60 * 60 * 1000 - now);
   const hasNudgedToday = useMemo(() => {
     const today = startOfDay();
     return state.history.some((h) => h.accepted && startOfDay(h.ts) === today);
