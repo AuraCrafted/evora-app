@@ -23,6 +23,7 @@ import { Sparkles, Infinity as InfinityIcon, Plus, Zap, ArrowLeft } from "lucide
 import { sfx } from "@/lib/feedback";
 import { celebrateAccept, celebrateMilestone } from "@/lib/confetti";
 import { currentTimeOfDay, timeOfDayLabel } from "@/lib/context";
+import { formatTimeLeft, useNow } from "@/lib/countdown";
 import { buildEligiblePool, selectSpin } from "@/lib/rollEngine";
 import { buildSmartProfile } from "@/lib/smartSpins";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,12 +52,10 @@ function saveAiTasks(t: Suggestion[]) {
   }
 }
 
-function formatTimeLeft(ms: number): string {
-  if (ms <= 0) return "soon";
-  const hours = Math.floor(ms / (60 * 60 * 1000));
-  const mins = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
+// Ticks on its own timer: only this line redraws each second.
+function ResetCountdown({ resetAt }: { resetAt: number }) {
+  const now = useNow(1000);
+  return <>Resets in {formatTimeLeft(resetAt - now)}.</>;
 }
 
 const Roll = () => {
@@ -68,7 +67,7 @@ const Roll = () => {
     canSpin,
     isPro,
     streak,
-    nextResetMs,
+    nextResetAt,
     recentIds,
     recordSpin,
     recordDecision,
@@ -476,7 +475,7 @@ const Roll = () => {
                   <>
                     {remaining} roll{remaining === 1 ? "" : "s"} left today.
                     <br />
-                    Resets in {formatTimeLeft(nextResetMs)}.
+                    <ResetCountdown resetAt={nextResetAt} />
                   </>
                 ) : (
                   <>You've used all {total} rolls today. Watch a short ad for +1 roll, or upgrade for unlimited.</>
