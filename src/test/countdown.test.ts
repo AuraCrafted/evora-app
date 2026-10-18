@@ -8,9 +8,9 @@ describe("formatTimeLeft", () => {
     expect(formatTimeLeft(9_000)).toBe("9s");
   });
 
-  it("keeps a stable shape as each second passes", () => {
+  it("counts down one second at a time", () => {
     expect(formatTimeLeft(3_600_000)).toBe("1h 0m 0s");
-    expect(formatTimeLeft(3_599_000)).toBe("0m 59m 59s".replace("0m 59m", "59m"));
+    expect(formatTimeLeft(3_599_000)).toBe("59m 59s");
   });
 
   it("says soon once the day has rolled over", () => {
