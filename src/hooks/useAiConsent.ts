@@ -36,7 +36,7 @@ export function useAiConsent() {
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const server = data?.value as AiConsentRecord | undefined;
+        const server = data?.value as unknown as AiConsentRecord | undefined;
         if (server && typeof server.granted === "boolean" && server.version === AI_CONSENT_VERSION) {
           writeLocalAiConsent(server.granted);
           setStatus(resolveAiConsent(server));
