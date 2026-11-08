@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { YearlyLock } from "@/components/YearlyLock";
 import { useSpins } from "@/hooks/useSpins";
+import { useAiConsent } from "@/hooks/useAiConsent";
+import { AiConsentDialog } from "@/components/AiConsentDialog";
 import { useAiJourneys, type AiJourney, type PlanDraft } from "@/hooks/useAiJourneys";
 import { journeys as starters } from "@/data/journeys";
 import { supabase } from "@/integrations/supabase/client";
