@@ -8,7 +8,7 @@ export default function Privacy() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Privacy Notice</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: September 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: November 2026</p>
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground/90 leading-relaxed">
         <section>
