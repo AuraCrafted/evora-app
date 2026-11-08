@@ -182,7 +182,7 @@ const Roll = () => {
         aiFetchingRef.current = false;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.completedAt, feedback.count]);
+  }, [prefs.completedAt, feedback.count, aiConsent.status]);
 
   const triggerRoll = (excludeId?: string) => {
     setRolling(true);
@@ -506,8 +506,7 @@ const Roll = () => {
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
       <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
-      <AdDialog
-        mode="rewarded"
+      <AdDialog        mode="rewarded"
         open={showRewardedAd}
         onOpenChange={setShowRewardedAd}
         onUpgrade={handleUpgrade}
