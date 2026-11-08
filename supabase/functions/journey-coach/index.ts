@@ -124,6 +124,12 @@ Deno.serve(async (req) => {
     const yearly = isEvolve(pickEntitlement(subs));
     if (!yearly) return json({ error: "forbidden" }, 403);
 
+    // Apple 5.1.1(i): explicit, recorded AI consent required before any
+    // personal data is sent to the third-party AI provider. Fail closed.
+    if (!(await hasAiConsent(svc, claims.claims.sub))) {
+      return json({ error: "ai_consent_required" }, 403);
+    }
+
     const body = await req.json().catch(() => ({}));
     const mode = body?.mode;
     let system: string;

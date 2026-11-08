@@ -81,6 +81,12 @@ Deno.serve(async (req) => {
       return json({ error: "forbidden" }, 403);
     }
 
+    // Apple 5.1.1(i): explicit, recorded AI consent required before any
+    // personal data is sent to the third-party AI provider. Fail closed.
+    if (!(await hasAiConsent(serviceClient, userId))) {
+      return json({ error: "ai_consent_required" }, 403);
+    }
+
     const body = await req.json().catch(() => ({}));
     const messages = Array.isArray(body?.messages) ? (body.messages as ChatMessage[]) : null;
     if (!messages || messages.length === 0) {
