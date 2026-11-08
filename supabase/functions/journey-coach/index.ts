@@ -1,5 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isEvolve, pickEntitlement } from "../_shared/entitlement.ts";
+import { hasAiConsent } from "../_shared/aiConsent.ts";
 
 const MODEL = "openai/gpt-6-astra";
 const YEARLY_PRICE_IDS = ["evora_yearly"];
@@ -121,6 +123,12 @@ Deno.serve(async (req) => {
       .eq("user_id", claims.claims.sub);
     const yearly = isEvolve(pickEntitlement(subs));
     if (!yearly) return json({ error: "forbidden" }, 403);
+
+    // Apple 5.1.1(i): explicit, recorded AI consent required before any
+    // personal data is sent to the third-party AI provider. Fail closed.
+    if (!(await hasAiConsent(svc, claims.claims.sub))) {
+      return json({ error: "ai_consent_required" }, 403);
+    }
 
     const body = await req.json().catch(() => ({}));
     const mode = body?.mode;

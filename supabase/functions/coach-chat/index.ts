@@ -1,5 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isEvolve, pickEntitlement } from "../_shared/entitlement.ts";
+import { hasAiConsent } from "../_shared/aiConsent.ts";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -77,6 +79,12 @@ Deno.serve(async (req) => {
 
     if (!hasYearly) {
       return json({ error: "forbidden" }, 403);
+    }
+
+    // Apple 5.1.1(i): explicit, recorded AI consent required before any
+    // personal data is sent to the third-party AI provider. Fail closed.
+    if (!(await hasAiConsent(serviceClient, userId))) {
+      return json({ error: "ai_consent_required" }, 403);
     }
 
     const body = await req.json().catch(() => ({}));

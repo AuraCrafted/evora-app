@@ -1,4 +1,13 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { hasAiConsent } from '../_shared/aiConsent.ts';
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 interface AiTask {
   id: string;
@@ -26,6 +35,29 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Apple 5.1.1(i): this function sends personal preferences to a
+    // third-party AI provider, so it requires a signed-in user with
+    // explicit, recorded AI consent. Fail closed on any doubt.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(
+      authHeader.replace('Bearer ', ''),
+    );
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    const userId = claimsData.claims.sub;
+    const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    if (!(await hasAiConsent(serviceClient, userId))) {
+      return json({ error: 'ai_consent_required' }, 403);
     }
 
     const { prefs = {}, energy = 5, recentTitles = [] } = await req.json().catch(() => ({}));
