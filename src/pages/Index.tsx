@@ -10,6 +10,8 @@ import { TaskTimer } from "@/components/TaskTimer";
 import { BottomNav } from "@/components/BottomNav";
 import { CustomSuggestionsDialog } from "@/components/CustomSuggestionsDialog";
 import { AdDialog } from "@/components/AdDialog";
+import { AiConsentDialog } from "@/components/AiConsentDialog";
+import { useAiConsent } from "@/hooks/useAiConsent";
 import { EnergySelector } from "@/components/EnergySelector";
 import { Button } from "@/components/ui/button";
 import { useSpins } from "@/hooks/useSpins";
@@ -149,10 +151,17 @@ const Roll = () => {
   }, [rollMode, builtInPool, customSuggestions, filterOpts]);
 
   // Fetch AI-personalized tasks once the user has given enough feedback.
+  // Apple 5.1.1(i): never send preferences to the AI provider before
+  // explicit consent — ask once at the moment the first request would fire.
   useEffect(() => {
     if (aiFetchingRef.current) return;
     if (!prefs.completedAt) return;
     if (feedback.count < AI_FEEDBACK_THRESHOLD) return;
+    if (aiConsent.status === "declined") return;
+    if (aiConsent.status === "unknown") {
+      setShowAiConsent(true);
+      return;
+    }
     // Refresh when we have fewer than 6 cached or the cache is older than a day.
     const last = Number(localStorage.getItem("evora.aiTasks.ts") || 0);
     if (aiTasks.length >= 6 && Date.now() - last < 24 * 60 * 60 * 1000) return;
