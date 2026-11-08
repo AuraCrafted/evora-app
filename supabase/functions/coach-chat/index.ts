@@ -1,5 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isEvolve, pickEntitlement } from "../_shared/entitlement.ts";
+import { hasAiConsent } from "../_shared/aiConsent.ts";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";

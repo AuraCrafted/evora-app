@@ -1,5 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isEvolve, pickEntitlement } from "../_shared/entitlement.ts";
+import { hasAiConsent } from "../_shared/aiConsent.ts";
 
 const MODEL = "openai/gpt-6-astra";
 const YEARLY_PRICE_IDS = ["evora_yearly"];
