@@ -42,6 +42,11 @@ export const PrivacyConsent = () => {
     window.dispatchEvent(new Event("privacy-accepted"));
   };
 
+  // Apple 5.1.1(i): declining must never trap the user behind a full-screen
+  // wall. "Not now" dismisses for this session without recording acceptance.
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
   return (
     <div className="fixed inset-0 z-[110] bg-background/95 backdrop-blur-sm flex items-center justify-center px-5 animate-fade-in-up">
       <div className="w-full max-w-md rounded-3xl bg-card p-6 soft-shadow border border-border">

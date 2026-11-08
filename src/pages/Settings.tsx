@@ -93,6 +93,8 @@ const Settings = () => {
   const [sound, setSound] = useState(getSoundSettings());
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const aiConsent = useAiConsent();
+  const [showAiConsent, setShowAiConsent] = useState(false);
 
   useEffect(() => subscribeSoundSettings(setSound), []);
 
