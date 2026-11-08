@@ -31,6 +31,8 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { useAiConsent } from "@/hooks/useAiConsent";
+import { AiConsentDialog } from "@/components/AiConsentDialog";
 import { useSpins } from "@/hooks/useSpins";
 import { useSubscription, formatAppleDate } from "@/hooks/useSubscription";
 import { useIAP } from "@/hooks/useIAP";
@@ -382,12 +384,49 @@ const Settings = () => {
             About
           </div>
           <div className="rounded-2xl bg-card border border-border/60 soft-shadow overflow-hidden divide-y divide-border/60">
+            <Row
+              icon={Sparkles}
+              label="AI features"
+              right={
+                <Switch
+                  checked={aiConsent.granted}
+                  onCheckedChange={(on) => {
+                    sfx.tap();
+                    if (on) setShowAiConsent(true);
+                    else {
+                      aiConsent.decline();
+                      toast.success("AI features off", {
+                        description: "Nothing new is sent to AI providers. Everything else keeps working.",
+                      });
+                    }
+                  }}
+                />
+              }
+            />
             <Row icon={Lock} label="Privacy Policy" to="/privacy" />
             <Row icon={FileText} label="Terms of Service" to="/terms" />
             <Row icon={RefreshCw} label="Refund Policy" to="/refunds" />
           </div>
+          <p className="mt-2 px-2 text-[11px] text-muted-foreground leading-relaxed">
+            AI features send your goals, preferences, energy, and what you write to the coach to
+            Google (Gemini) and OpenAI via our AI gateway Lovable, only to personalize your
+            experience. Turn this off anytime to stop all AI sharing.
+          </p>
         </div>
       </section>
+
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
 
       <BottomNav streak={streak} />
     </main>
