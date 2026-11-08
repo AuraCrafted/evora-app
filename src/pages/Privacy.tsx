@@ -8,7 +8,7 @@ export default function Privacy() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Privacy Notice</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: September 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: November 2026</p>
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground/90 leading-relaxed">
         <section>
@@ -23,8 +23,9 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">2. What we collect</h2>
           <p>
             We collect the email address and authentication information you provide at sign-up, the nudges you accept or
-            skip, your streak data, your selected energy and preferences, support messages, and
-            basic device/usage information (e.g. device identifiers, IP address) needed to keep
+            skip, your streak data, your selected energy and preferences (interests, goals, struggles, and your avoid
+            list), the messages you send to the AI Coach, your Journey goals and check-in reflections, support
+            messages, and basic device/usage information (e.g. device identifiers, IP address) needed to keep
             the app working.
           </p>
         </section>
@@ -50,6 +51,18 @@ export default function Privacy() {
             your data. We require service providers that process personal data on our behalf to
             provide protections consistent with this Privacy Notice and applicable law.
           </p>
+          <p className="mt-2">
+            <span className="font-medium">AI features.</span> If you explicitly allow AI features,
+            Evora sends the data needed for the feature you are using — your interests, goals,
+            struggles, avoid list, and energy level (for personalized task suggestions), and what
+            you write in AI Coach conversations and Journey check-ins — to our AI providers{" "}
+            <span className="font-medium">Google (Gemini) and OpenAI</span>, through our AI gateway{" "}
+            <span className="font-medium">Lovable</span>. This happens only to generate your
+            personal suggestions and coach replies, and only after you opt in. You can withdraw
+            permission anytime in Settings → AI features, which stops all further sharing; the rest
+            of the app keeps working. How these providers handle data on their side is described in
+            their own privacy policies.
+          </p>
         </section>
 
         <section>
@@ -65,7 +78,8 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">6. Your rights</h2>
           <p>
             Subject to applicable law, you have the right to access, correct, delete, or export
-            your data, restrict or object to processing, and withdraw consent at any time. You can
+            your data, restrict or object to processing, and withdraw consent at any time — including
+            AI-sharing consent, via Settings → AI features. You can
             delete your account directly in the app at any time from Settings, under Danger zone,
             which permanently removes your account and the data tied to it. Note that deleting your
             account does not cancel an App Store subscription; cancel that in Settings, Apple ID,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import {
   AI_CONSENT_KEY,
@@ -7,6 +8,7 @@ import {
   readLocalAiConsent,
   resolveAiConsent,
   writeLocalAiConsent,
+  type AiConsentRecord,
   type AiConsentStatus,
 } from "@/lib/aiConsent";
 
@@ -34,16 +36,19 @@ export function useAiConsent() {
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const server = data?.value as { granted?: boolean; version?: string; at?: number } | undefined;
-        if (server && typeof server.granted === "boolean") {
-          const rec = writeLocalAiConsent(server.granted);
-          setStatus(resolveAiConsent(server.version === AI_CONSENT_VERSION ? server : { ...rec, granted: false, version: "" }));
+        const server = data?.value as unknown as AiConsentRecord | undefined;
+        if (server && typeof server.granted === "boolean" && server.version === AI_CONSENT_VERSION) {
+          writeLocalAiConsent(server.granted);
+          setStatus(resolveAiConsent(server));
+        } else if (server) {
+          // Outdated disclosure version: treat as not yet asked.
+          setStatus("unknown");
         } else {
           // No server record: push any local choice up, else unknown.
           const local = readLocalAiConsent();
           if (local) {
             void supabase.from("user_state").upsert(
-              { user_id: user.id, key: AI_CONSENT_KEY, value: local },
+              { user_id: user.id, key: AI_CONSENT_KEY, value: local as unknown as Json },
               { onConflict: "user_id,key" },
             );
             setStatus(resolveAiConsent(local));
@@ -63,7 +68,7 @@ export function useAiConsent() {
       setStatus(resolveAiConsent(rec));
       if (user) {
         void supabase.from("user_state").upsert(
-          { user_id: user.id, key: AI_CONSENT_KEY, value: rec },
+          { user_id: user.id, key: AI_CONSENT_KEY, value: rec as unknown as Json },
           { onConflict: "user_id,key" },
         );
       }

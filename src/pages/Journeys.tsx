@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { YearlyLock } from "@/components/YearlyLock";
 import { useSpins } from "@/hooks/useSpins";
+import { useAiConsent } from "@/hooks/useAiConsent";
+import { AiConsentDialog } from "@/components/AiConsentDialog";
 import { useAiJourneys, type AiJourney, type PlanDraft } from "@/hooks/useAiJourneys";
 import { journeys as starters } from "@/data/journeys";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +51,8 @@ const Journeys = () => {
   const [goal, setGoal] = useState("");
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
+  const aiConsent = useAiConsent();
+  const [showAiConsent, setShowAiConsent] = useState(false);
 
   if (tier !== "year") {
     return (
@@ -81,6 +85,11 @@ const Journeys = () => {
   const start = (text: string) => {
     const t = text.trim();
     if (!t) return;
+    // Apple 5.1.1(i): no goal text leaves for the AI provider before consent.
+    if (!aiConsent.granted) {
+      setShowAiConsent(true);
+      return;
+    }
     sfx.tap();
     haptic("light");
     const j: AiJourney = {
@@ -96,6 +105,10 @@ const Journeys = () => {
 
   const sendReply = () => {
     if (!open || !reply.trim()) return;
+    if (!aiConsent.granted) {
+      setShowAiConsent(true);
+      return;
+    }
     const j = upsert({ ...open, status: "discovering", draft: undefined, messages: [...open.messages, { role: "user", content: reply.trim() }] });
     setReply("");
     void discover(j);
@@ -124,6 +137,10 @@ const Journeys = () => {
   };
 
   const reflect = async (j: AiJourney, extendDays = 0) => {
+    if (!aiConsent.granted) {
+      setShowAiConsent(true);
+      return;
+    }
     setBusy(true);
     const text = reply.trim();
     try {
@@ -363,6 +380,18 @@ const Journeys = () => {
     <main className="min-h-screen flex flex-col pt-6">
       {body}
       <div className="pb-24" />
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
       <BottomNav streak={streak} />
     </main>
   );

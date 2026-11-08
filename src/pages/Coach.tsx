@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { BottomNav } from "@/components/BottomNav";
 import { useSpins } from "@/hooks/useSpins";
 import { useAuth } from "@/hooks/useAuth";
+import { useAiConsent } from "@/hooks/useAiConsent";
+import { AiConsentDialog } from "@/components/AiConsentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { sfx } from "@/lib/feedback";
 import { toast } from "sonner";
@@ -82,6 +84,8 @@ const Coach = () => {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const aiConsent = useAiConsent();
+  const [showAiConsent, setShowAiConsent] = useState(false);
   const [syncedUser, setSyncedUser] = useState<string | null | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -330,6 +334,11 @@ const Coach = () => {
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || !activeThread || sending) return;
+    // Apple 5.1.1(i): no message leaves for the AI provider before consent.
+    if (!aiConsent.granted) {
+      setShowAiConsent(true);
+      return;
+    }
     sfx.tap();
 
     const userMsg: ChatMessage = { id: newId(), role: "user", content: text, ts: Date.now() };
@@ -568,6 +577,18 @@ const Coach = () => {
         </section>
       </div>
 
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
       <BottomNav streak={streak} />
     </main>
   );
