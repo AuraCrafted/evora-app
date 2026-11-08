@@ -89,6 +89,8 @@ const Roll = () => {
   const { feedback, record: recordFeedback } = useTaskFeedback();
   const [aiTasks, setAiTasks] = useState<Suggestion[]>(() => loadAiTasks());
   const aiFetchingRef = useRef(false);
+  const aiConsent = useAiConsent();
+  const [showAiConsent, setShowAiConsent] = useState(false);
   const [current, setCurrent] = useState<Suggestion | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -505,6 +507,18 @@ const Roll = () => {
         days={milestone ?? 0}
       />
       <CustomSuggestionsDialog open={showCustomDialog} onOpenChange={setShowCustomDialog} />
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
       <AdDialog open={showAd} onOpenChange={setShowAd} onUpgrade={handleUpgrade} />
       <AdDialog        mode="rewarded"
         open={showRewardedAd}
