@@ -577,6 +577,18 @@ const Coach = () => {
         </section>
       </div>
 
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
       <BottomNav streak={streak} />
     </main>
   );

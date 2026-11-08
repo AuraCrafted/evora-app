@@ -380,6 +380,18 @@ const Journeys = () => {
     <main className="min-h-screen flex flex-col pt-6">
       {body}
       <div className="pb-24" />
+      {showAiConsent && (
+        <AiConsentDialog
+          onAgree={() => {
+            aiConsent.grant();
+            setShowAiConsent(false);
+          }}
+          onNotNow={() => {
+            aiConsent.decline();
+            setShowAiConsent(false);
+          }}
+        />
+      )}
       <BottomNav streak={streak} />
     </main>
   );
