@@ -48,7 +48,7 @@ export function useAiConsent() {
           const local = readLocalAiConsent();
           if (local) {
             void supabase.from("user_state").upsert(
-              { user_id: user.id, key: AI_CONSENT_KEY, value: local },
+              { user_id: user.id, key: AI_CONSENT_KEY, value: local as unknown as Json },
               { onConflict: "user_id,key" },
             );
             setStatus(resolveAiConsent(local));
@@ -68,7 +68,7 @@ export function useAiConsent() {
       setStatus(resolveAiConsent(rec));
       if (user) {
         void supabase.from("user_state").upsert(
-          { user_id: user.id, key: AI_CONSENT_KEY, value: rec },
+          { user_id: user.id, key: AI_CONSENT_KEY, value: rec as unknown as Json },
           { onConflict: "user_id,key" },
         );
       }
