@@ -78,7 +78,8 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">6. Your rights</h2>
           <p>
             Subject to applicable law, you have the right to access, correct, delete, or export
-            your data, restrict or object to processing, and withdraw consent at any time. You can
+            your data, restrict or object to processing, and withdraw consent at any time — including
+            AI-sharing consent, via Settings → AI features. You can
             delete your account directly in the app at any time from Settings, under Danger zone,
             which permanently removes your account and the data tied to it. Note that deleting your
             account does not cancel an App Store subscription; cancel that in Settings, Apple ID,
