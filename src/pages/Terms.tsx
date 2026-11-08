@@ -8,7 +8,7 @@ export default function Terms() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Terms & Conditions</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: June 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: November 2026</p>
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground/90 leading-relaxed">
         <section>
@@ -58,9 +58,12 @@ export default function Terms() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">6. Payments & subscriptions</h2>
           <p>
-            Payments are processed securely by our payment provider. Subscriptions renew
-            automatically until cancelled. You can cancel any time from the Plans page; access
-            continues until the end of the current billing period.
+            App Store subscriptions are billed by Apple and renew automatically until cancelled.
+            Cancel in your iPhone's Settings → your name → Subscriptions → Evora. Access continues
+            until the expiration date Apple reports; Apple may end free-trial access immediately
+            upon cancellation. To avoid a trial renewing, cancel at least 24 hours before it ends.
+            Refund requests are handled by Apple under its policies and applicable law; see our{" "}
+            <Link to="/refunds" className="text-primary underline underline-offset-4">Refund Policy</Link>.
           </p>
         </section>
 
@@ -95,7 +98,8 @@ export default function Terms() {
           <h2 className="font-display text-xl font-semibold mb-2">10. Changes & contact</h2>
           <p>
             We may update these terms from time to time. Material changes will be communicated in
-            the app. Questions? Reach out via the Feedback page.
+            the app. Questions? Reach out via the{" "}
+            <Link to="/feedback" className="text-primary underline underline-offset-4">Feedback page</Link>.
           </p>
         </section>
       </div>
@@ -104,6 +108,7 @@ export default function Terms() {
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Notice</Link>
           <Link to="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link>
+          <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
         </div>
       </footer>
     </main>

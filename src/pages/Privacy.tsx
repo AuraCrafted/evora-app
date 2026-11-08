@@ -83,8 +83,9 @@ export default function Privacy() {
             delete your account directly in the app at any time from Settings, under Danger zone,
             which permanently removes your account and the data tied to it. Note that deleting your
             account does not cancel an App Store subscription; cancel that in Settings, Apple ID,
-            Subscriptions. You can also request a copy of your data or cancel your subscription
-            from the Plans page. If you are in the UK/EEA, you also have the right to complain to
+            Subscriptions. You can also request a copy of your data via the{" "}
+            <Link to="/feedback" className="text-primary underline underline-offset-4">Feedback page</Link>.
+            If you are in the UK/EEA, you also have the right to complain to
             your local supervisory authority.
           </p>
         </section>
@@ -117,7 +118,8 @@ export default function Privacy() {
         <section>
           <h2 className="font-display text-xl font-semibold mb-2">10. Contact</h2>
           <p>
-            Questions about your privacy? Reach out via the Feedback page in the app and
+            Questions about your privacy? Reach out via the{" "}
+            <Link to="/feedback" className="text-primary underline underline-offset-4">Feedback page</Link> and
             AURACRAFTED LLC will get back to you.
           </p>
         </section>
@@ -127,6 +129,7 @@ export default function Privacy() {
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms & Conditions</Link>
           <Link to="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link>
+          <Link to="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
         </div>
       </footer>
     </main>
