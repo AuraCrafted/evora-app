@@ -11,4 +11,4 @@ Manual steps remaining for the user: App Store Connect App Privacy answers, resu
 ## Apple refund policy and support links
 - [x] Replace refund guarantee and cancellation wording with Apple's process across policy pages.
 - [x] Link directly to Feedback from refund, terms, and privacy pages.
-- [ ] Verify policy pages and Feedback navigation in the preview.
+- [x] Verify policy pages and Feedback navigation in the preview (all three links work; no runtime errors).
