@@ -7,3 +7,8 @@
 - [x] 5. Tests (30 pass) + typecheck clean + functions deployed + live 401/403/200 verified
 
 Manual steps remaining for the user: App Store Connect App Privacy answers, resubmit build.
+
+## Apple refund policy and support links
+- [x] Replace refund guarantee and cancellation wording with Apple's process across policy pages.
+- [x] Link directly to Feedback from refund, terms, and privacy pages.
+- [ ] Verify policy pages and Feedback navigation in the preview.
