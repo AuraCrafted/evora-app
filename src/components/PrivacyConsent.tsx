@@ -84,6 +84,16 @@ export const PrivacyConsent = () => {
             <Check className="h-4 w-4" />
             Read and Accept
           </Button>
+          <button
+            type="button"
+            onClick={() => {
+              sfx.tap();
+              setDismissed(true);
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            Not now
+          </button>
         </div>
       </div>
     </div>
