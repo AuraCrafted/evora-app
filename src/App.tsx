@@ -30,6 +30,7 @@ import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import { AppLoadingScreen } from "./components/AppLoadingScreen";
 import { readPreferences, usePreferences } from "./hooks/usePreferences";
+import { isPublicDocRoute } from "./lib/legalRoutes";
 
 const queryClient = new QueryClient();
 
