@@ -30,6 +30,7 @@ import { SpinsProvider } from "./hooks/useSpins";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import { AppLoadingScreen } from "./components/AppLoadingScreen";
 import { readPreferences, usePreferences } from "./hooks/usePreferences";
+import { isPublicDocRoute } from "./lib/legalRoutes";
 
 const queryClient = new QueryClient();
 
@@ -37,9 +38,9 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { isComplete } = usePreferences();
   const location = useLocation();
   const completedAt = readPreferences().completedAt;
-  const exempt = ["/onboarding", "/auth", "/reset-password", "/privacy", "/terms", "/refunds"].some((p) =>
-    location.pathname.startsWith(p),
-  );
+  const exempt =
+    ["/onboarding", "/auth", "/reset-password"].some((p) => location.pathname.startsWith(p)) ||
+    isPublicDocRoute(location.pathname);
 
   if (isComplete || completedAt) {
     console.log("[ONBOARDING DEBUG] Gate detected completion", {

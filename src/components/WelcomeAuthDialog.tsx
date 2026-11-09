@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { isPublicDocRoute } from "@/lib/legalRoutes";
 
 const SEEN_KEY = "evora.welcomeAuth.seen.v1";
 
 export function WelcomeAuthDialog() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (loading) return;
     if (user) return;
+    // Policy / help pages must stay readable for anyone following a link.
+    if (isPublicDocRoute(location.pathname)) return;
     if (localStorage.getItem(SEEN_KEY)) return;
     setOpen(true);
-  }, [loading, user]);
+  }, [loading, user, location.pathname]);
 
   const dismiss = () => {
     try {
