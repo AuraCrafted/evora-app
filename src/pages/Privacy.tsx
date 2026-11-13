@@ -34,8 +34,12 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">3. How we use it</h2>
           <p>
             We use your data to create your account, provide and personalize the service, sync your
-            plan across devices, prevent fraud and abuse, provide customer support, and improve
-            the product. Our legal bases are performance of our contract with you, our legitimate
+            plan across devices, prevent fraud and abuse, and provide customer support.
+            Purchase and subscription records are used only to verify and manage access, restore
+            purchases, handle subscription-related support, prevent fraud, and meet legal obligations.
+            We do not analyze your purchase history for business metrics, behavioral profiling,
+            advertising, or AI personalization. Website analytics, described below, are separate
+            from these records. Our legal bases are performance of our contract with you, our legitimate
             interests in operating and improving the service, your consent where required, and
             compliance with legal obligations.
           </p>
@@ -45,11 +49,27 @@ export default function Privacy() {
           <h2 className="font-display text-xl font-semibold mb-2">4. Who we share it with</h2>
           <p>
             We share data with: (a) service providers and subprocessors that help us host and
-            operate the app (hosting, analytics, support tooling); (b) our payment processor, for
-            subscription management, payments, tax compliance, and invoicing; (c) professional
+            operate the app (hosting, account authentication, data syncing, and support); (b) Apple,
+            which processes App Store payments and provides transaction and subscription information
+            so we can verify purchases and manage access; (c) professional
             advisers (legal, accounting); and (d) authorities where required by law. We never sell
             your data. We require service providers that process personal data on our behalf to
             provide protections consistent with this Privacy Notice and applicable law.
+          </p>
+          <p className="mt-2">
+            <span className="font-medium">Website analytics.</span> On our published website,
+            Lovable records button and link clicks for every visitor. It also records page visits,
+            time on page, page speed, and errors for every visitor, without cookies and without
+            identifying anyone. This includes the pages visited, where visitors came from, their
+            country, browser, operating system, and device type. These analytics use no cookies,
+            store nothing on your device, do not keep IP addresses, and do not identify visitors.
+            We do not send purchase history or subscription records to these analytics.
+            Detailed data is kept for 90 days and daily summaries for a year. Lovable collects
+            this data for us. {" "}
+            <a href="https://lovable.dev/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
+              Lovable's privacy policy
+            </a>{" "}
+            explains how it handles it.
           </p>
           <p className="mt-2">
             <span className="font-medium">AI features.</span> If you explicitly allow AI features,
