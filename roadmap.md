@@ -15,5 +15,6 @@ Manual steps remaining for the user: App Store Connect App Privacy answers, resu
 
 ## Purchase-history privacy wording
 - [x] Separate subscription verification/support/fraud/legal use from website analytics in Evora's Privacy Notice.
-- [ ] Verify the revised notice in the preview.
-- [ ] Check AuraCrafted's privacy wording; changes to that website require its own project chat.
+- [x] Verify the revised notice in the preview (visible after opening screen; no runtime errors; build OK).
+- [x] Check AuraCrafted's privacy wording and existing link to Evora's policy.
+- [ ] Update AuraCrafted's broad privacy wording — blocked: the other project is read-only here; open its project chat to edit.
