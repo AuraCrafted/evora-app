@@ -12,3 +12,8 @@ Manual steps remaining for the user: App Store Connect App Privacy answers, resu
 - [x] Replace refund guarantee and cancellation wording with Apple's process across policy pages.
 - [x] Link directly to Feedback from refund, terms, and privacy pages.
 - [x] Verify policy pages and Feedback navigation in the preview (all three links work; no runtime errors).
+
+## Purchase-history privacy wording
+- [x] Separate subscription verification/support/fraud/legal use from website analytics in Evora's Privacy Notice.
+- [ ] Verify the revised notice in the preview.
+- [ ] Check AuraCrafted's privacy wording; changes to that website require its own project chat.
